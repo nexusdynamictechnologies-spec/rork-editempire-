@@ -1,0 +1,2017 @@
+import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+  Platform,
+  Alert,
+  ActivityIndicator,
+  PanResponder,
+  GestureResponderEvent,
+  PanResponderGestureState,
+  LayoutChangeEvent,
+  Keyboard,
+  TouchableWithoutFeedback,
+  Modal,
+  KeyboardAvoidingView,
+  AppState,
+  AppStateStatus,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import {
+  ArrowLeft,
+  Sparkles,
+  History,
+  Wand2,
+  Brain,
+  Plus,
+  X,
+  Images,
+  RotateCcw,
+  Layers,
+  Expand,
+  Minimize,
+  Maximize2,
+  Crop,
+  ZoomIn,
+  ChevronDown,
+  Camera,
+  Mic,
+  MicOff,
+} from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { Audio } from 'expo-av';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEditor } from '@/contexts/EditorContext';
+import { Image as ExpoImage } from 'expo-image';
+import { frameSizePresets } from '@/constants/stylePresets';
+import WebSlider from '@/components/WebSlider';
+import { advertisingKnowledge } from '@/constants/advertising';
+
+
+// Slimmed down editor per request
+
+type ToolMode = 'prompt' | 'frames' | 'enlarge' | 'undo' | 'upscale';
+
+type SelectMode = 'none' | 'region';
+
+interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface CrossSliderProps {
+  testID?: string;
+  minimumValue?: number;
+  maximumValue?: number;
+  step?: number;
+  value?: number;
+  onValueChange?: (val: number) => void;
+  minimumTrackTintColor?: string;
+  maximumTrackTintColor?: string;
+  thumbTintColor?: string;
+  style?: any;
+}
+
+const nativeSliderStyles = StyleSheet.create({
+  trackContainer: { height: 40, justifyContent: 'center' },
+  track: { height: 4, backgroundColor: '#444', borderRadius: 2, overflow: 'hidden' },
+  fill: { height: 4, backgroundColor: '#FFD700' },
+  thumb: { position: 'absolute', marginLeft: -10, width: 20, height: 20, borderRadius: 10, backgroundColor: '#FFD700', borderWidth: 2, borderColor: '#1A1A1A' },
+});
+
+const CrossSliderNative: React.FC<CrossSliderProps> = (props) => {
+  const min = props.minimumValue ?? 0;
+  const max = props.maximumValue ?? 1;
+  const step = props.step ?? 0.01;
+  const [val, setVal] = React.useState<number>(props.value ?? min);
+  const trackRef = React.useRef<View | null>(null);
+  const widthRef = React.useRef<number>(0);
+
+  React.useEffect(() => {
+    setVal(props.value ?? min);
+  }, [props.value, min]);
+
+  const clamp = (n: number) => Math.min(Math.max(n, min), max);
+  const quantize = (n: number) => Math.round(n / step) * step;
+
+  const pan = React.useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onPanResponderGrant: (e) => {
+      const x = e.nativeEvent.locationX;
+      if (widthRef.current > 0) {
+        const ratio = Math.min(Math.max(x / widthRef.current, 0), 1);
+        const next = quantize(min + ratio * (max - min));
+        setVal(next);
+        props.onValueChange?.(next);
+      }
+    },
+    onPanResponderMove: (e) => {
+      const x = e.nativeEvent.locationX;
+      if (widthRef.current > 0) {
+        const ratio = Math.min(Math.max(x / widthRef.current, 0), 1);
+        const next = clamp(quantize(min + ratio * (max - min)));
+        setVal(next);
+        props.onValueChange?.(next);
+      }
+    },
+  }), [min, max, step, props.onValueChange]);
+
+  const trackColor = props.maximumTrackTintColor ?? '#444';
+  const fillColor = props.minimumTrackTintColor ?? '#FFD700';
+  const thumbColor = props.thumbTintColor ?? '#FFD700';
+  const ratio = (val - min) / (max - min || 1);
+  const fillWidthPct = `${Math.max(0, Math.min(100, ratio * 100))}%`;
+
+  return (
+    <View
+      ref={(r) => { trackRef.current = r; }}
+      onLayout={(e) => { widthRef.current = e.nativeEvent.layout.width; }}
+      style={[nativeSliderStyles.trackContainer, props.style]}
+      testID={props.testID ?? 'cross-slider'}
+      {...pan.panHandlers}
+    >
+      <View style={[nativeSliderStyles.track, { backgroundColor: trackColor }]}>
+        <View style={[nativeSliderStyles.fill, { width: fillWidthPct, backgroundColor: fillColor }]} />
+      </View>
+      <View style={[nativeSliderStyles.thumb, { left: fillWidthPct, backgroundColor: thumbColor }]} />
+    </View>
+  );
+};
+
+const CrossSlider: React.FC<CrossSliderProps> = (props) => {
+  if (Platform.OS === 'web') return <WebSlider {...props} />;
+  return <CrossSliderNative {...props} />;
+};
+
+export default function EditorScreen() {
+  const {
+    sourceImage,
+    setSourceImage,
+    initialSourceImage,
+    editedImage,
+    setEditedImage,
+    referenceImages,
+    addReferenceImage,
+    removeReferenceImage,
+    resizeImageIfNeeded,
+    addToHistory,
+    history,
+    generateEdit,
+    resetToOriginal,
+    startNewSourceImage,
+    revertToInitialImage,
+    saveCurrentImage,
+    undoOne,
+    undoAll,
+    revertToHistoryIndex,
+    upscaleImage,
+  } = useEditor();
+  const params = useLocalSearchParams<{ prompt?: string }>();
+
+  const [editPrompt, setEditPrompt] = useState<string>('');
+  const [isEnhancingPrompt, setIsEnhancingPrompt] = useState<boolean>(false);
+  const [toolMode, setToolMode] = useState<ToolMode>('prompt');
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [cleanUI, setCleanUI] = useState<boolean>(true);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [statusType, setStatusType] = useState<'info' | 'error' | 'success'>('info');
+  const [selectMode, setSelectMode] = useState<SelectMode>('none');
+  const [selectionRect, setSelectionRect] = useState<Rect | null>(null);
+  const [imageBoxSize, setImageBoxSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+
+  const [isUpscaling, setIsUpscaling] = useState<boolean>(false);
+  const imageBoxRef = useRef<View | null>(null);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState<boolean>(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const cameraRef = useRef<any>(null);
+
+  const [frameCategory, setFrameCategory] = useState<keyof typeof frameSizePresets>('Social');
+  const [selectedFrameKey, setSelectedFrameKey] = useState<string | null>(null);
+  const selectedFrame = useMemo(() => {
+    if (!selectedFrameKey) return null;
+    const cat = frameSizePresets[frameCategory];
+    const found = cat.items.find(i => i.key === selectedFrameKey);
+    return found ?? null;
+  }, [selectedFrameKey, frameCategory]);
+
+  const [imageScale, setImageScale] = useState<number>(1);
+  const [imagePositionX, setImagePositionX] = useState<number>(0);
+  const [imagePositionY, setImagePositionY] = useState<number>(0);
+  const [frameBoxSize, setFrameBoxSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+  
+  const lastScale = useRef<number>(1);
+  const lastDistance = useRef<number>(0);
+  const lastPanX = useRef<number>(0);
+  const lastPanY = useRef<number>(0);
+  const isPinching = useRef<boolean>(false);
+  const initialTouchDistance = useRef<number>(0);
+  const initialScale = useRef<number>(1);
+
+
+
+  const scrollViewRef = useRef<ScrollView>(null);
+  const promptInputRef = useRef<TextInput>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [recordingInstance, setRecordingInstance] = useState<Audio.Recording | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const appState = useRef<AppStateStatus>(AppState.currentState);
+  const [isAppActive, setIsAppActive] = useState<boolean>(true);
+  const isRecordingRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    isRecordingRef.current = isRecording;
+  }, [isRecording]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', async (nextAppState) => {
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        console.log('📱 App has come to the foreground');
+        setIsAppActive(true);
+      } else if (nextAppState.match(/inactive|background/)) {
+        console.log('📱 App has gone to the background');
+        setIsAppActive(false);
+        
+        if (isRecordingRef.current) {
+          console.log('🎤 App going to background - cleaning up recording');
+          await cleanupRecording();
+        }
+      }
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription.remove();
+      cleanupRecording();
+    };
+  }, []);
+
+  React.useEffect(() => {
+    const p = typeof params.prompt === 'string' ? params.prompt : undefined;
+    if (p && (!editPrompt || editPrompt.trim().length === 0)) {
+      setEditPrompt(p);
+    }
+  }, [params.prompt]);
+
+  React.useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (e) => {
+      console.log('⌨️ Keyboard shown, height:', e.endCoordinates.height);
+      setIsKeyboardVisible(true);
+      setKeyboardHeight(e.endCoordinates.height);
+      setTimeout(() => {
+        if (scrollViewRef.current && toolMode === 'prompt') {
+          scrollViewRef.current.scrollToEnd({ animated: true });
+        }
+      }, Platform.OS === 'ios' ? 350 : 150);
+    });
+    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+      console.log('⌨️ Keyboard hidden');
+      setIsKeyboardVisible(false);
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      keyboardDidShowListener?.remove();
+      keyboardDidHideListener?.remove();
+    };
+  }, [toolMode]);
+
+  const dismissKeyboard = () => {
+    Keyboard.dismiss();
+  };
+
+  const cleanupRecording = async () => {
+    console.log('🧹 Cleaning up recording resources...');
+    
+    if (Platform.OS === 'web') {
+      if (mediaRecorderRef.current) {
+        try {
+          if (mediaRecorderRef.current.state === 'recording') {
+            mediaRecorderRef.current.stop();
+          }
+          mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+        } catch (e) {
+          console.warn('Error stopping web recorder:', e);
+        }
+        mediaRecorderRef.current = null;
+      }
+      audioChunksRef.current = [];
+    } else {
+      if (recordingInstance) {
+        try {
+          const status = await recordingInstance.getStatusAsync();
+          if (status.isRecording) {
+            await recordingInstance.stopAndUnloadAsync();
+          } else if (status.canRecord || status.isDoneRecording) {
+            await recordingInstance.stopAndUnloadAsync();
+          }
+        } catch (e) {
+          console.warn('Error stopping recording:', e);
+        }
+        setRecordingInstance(null);
+      }
+      
+      try {
+        await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+      } catch (e) {
+        console.warn('Error resetting audio mode:', e);
+      }
+    }
+    
+    setIsRecording(false);
+    console.log('✅ Recording cleanup complete');
+  };
+
+  const startRecording = async () => {
+    try {
+      if (isRecording) {
+        console.log('⚠️ Recording already in progress');
+        return;
+      }
+
+      if (Platform.OS !== 'web' && !isAppActive) {
+        Alert.alert('Cannot Record', 'Please ensure the app is in the foreground to start recording.');
+        return;
+      }
+
+      await cleanupRecording();
+
+      if (Platform.OS === 'web') {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          Alert.alert('Not Supported', 'Voice recording is not supported in this browser.');
+          return;
+        }
+
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const mediaRecorder = new MediaRecorder(stream);
+          audioChunksRef.current = [];
+
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+              audioChunksRef.current.push(event.data);
+            }
+          };
+
+          mediaRecorder.start();
+          mediaRecorderRef.current = mediaRecorder;
+          setIsRecording(true);
+          console.log('🎤 Recording started (web)');
+        } catch (webError) {
+          console.error('Web recording error:', webError);
+          Alert.alert('Recording Error', 'Failed to access microphone. Please check permissions.');
+          return;
+        }
+      } else {
+        const { status } = await Audio.requestPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission Required', 'Microphone access is required for voice input.');
+          return;
+        }
+
+        console.log('🎤 Setting audio mode...');
+        try {
+          await Audio.setAudioModeAsync({
+            allowsRecordingIOS: true,
+            playsInSilentModeIOS: true,
+          });
+        } catch (audioModeError) {
+          console.error('❌ Failed to set audio mode:', audioModeError);
+          const errorMessage = audioModeError instanceof Error ? audioModeError.message : 'Unknown error';
+          if (errorMessage.includes('background')) {
+            Alert.alert('Cannot Record', 'App must be in foreground to record. Please try again.');
+            return;
+          }
+          throw audioModeError;
+        }
+
+        if (!isAppActive) {
+          console.log('⚠️ App went to background, aborting recording start');
+          await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+          Alert.alert('Cannot Record', 'App went to background. Please try again.');
+          return;
+        }
+
+        console.log('🎤 Creating new recording instance...');
+        const recording = new Audio.Recording();
+        
+        const recordingOptions = {
+          android: {
+            extension: '.m4a',
+            outputFormat: Audio.AndroidOutputFormat.MPEG_4,
+            audioEncoder: Audio.AndroidAudioEncoder.AAC,
+            sampleRate: 44100,
+            numberOfChannels: 2,
+            bitRate: 128000,
+          },
+          ios: {
+            extension: '.wav',
+            outputFormat: Audio.IOSOutputFormat.LINEARPCM,
+            audioQuality: Audio.IOSAudioQuality.HIGH,
+            sampleRate: 44100,
+            numberOfChannels: 2,
+            bitRate: 128000,
+            linearPCMBitDepth: 16,
+            linearPCMIsBigEndian: false,
+            linearPCMIsFloat: false,
+          },
+          web: {},
+        };
+
+        try {
+          console.log('🎤 Preparing recording...');
+          await recording.prepareToRecordAsync(recordingOptions);
+          
+          if (!isAppActive) {
+            console.log('⚠️ App went to background during prepare, aborting');
+            await recording.stopAndUnloadAsync();
+            await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+            Alert.alert('Cannot Record', 'App went to background. Please try again.');
+            return;
+          }
+          
+          console.log('🎤 Starting recording...');
+          await recording.startAsync();
+          
+          setRecordingInstance(recording);
+          setIsRecording(true);
+          console.log('✅ Recording started successfully (mobile)');
+
+          if (Platform.OS === 'ios' || Platform.OS === 'android') {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          }
+        } catch (mobileError) {
+          console.error('❌ Mobile recording error:', mobileError);
+          const errorMessage = mobileError instanceof Error ? mobileError.message : 'Unknown error';
+          
+          try {
+            await recording.stopAndUnloadAsync();
+          } catch (e) {
+            console.warn('Error cleaning up failed recording:', e);
+          }
+          
+          await cleanupRecording();
+          
+          if (errorMessage.includes('background') || errorMessage.includes('could not be activated')) {
+            Alert.alert('Recording Error', 'Cannot record while app is in background. Please ensure the app is active and try again.');
+          } else if (errorMessage.includes('not prepared') || errorMessage.includes('recorder not prepared')) {
+            Alert.alert('Recording Error', 'Audio system not ready. Please wait a moment and try again.');
+          } else if (errorMessage.includes('Only one Recording')) {
+            Alert.alert('Recording Error', 'Previous recording still active. Please wait a moment and try again.');
+          } else {
+            Alert.alert('Recording Error', 'Failed to start recording. Please try again.');
+          }
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to start recording:', error);
+      await cleanupRecording();
+      const errorMessage = error instanceof Error ? error.message : 'Failed to start recording';
+      Alert.alert('Error', `Recording failed: ${errorMessage}`);
+    }
+  };
+
+  const transcribeAudioWithRetry = async (formData: FormData, maxRetries: number = 3): Promise<any> => {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        if (attempt > 0) {
+          const backoffMs = Math.min(5000 * Math.pow(2, attempt - 1), 15000);
+          console.log(`⏳ Transcription retry ${attempt + 1}/${maxRetries} after ${backoffMs}ms...`);
+          setStatusMessage(`Retrying voice transcription (${attempt + 1}/${maxRetries})... Please wait`);
+          await new Promise(resolve => setTimeout(resolve, backoffMs));
+        }
+        
+        console.log(`📤 Sending transcription request (attempt ${attempt + 1}/${maxRetries})...`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
+        
+        const response = await fetch('https://toolkit.rork.com/stt/transcribe/', {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+        console.log('📡 Transcription response status:', response.status);
+        console.log('📡 Content-Type:', response.headers.get('content-type'));
+        
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => 'Unknown error');
+          console.error('❌ Transcription API error (status ' + response.status + '):', errorText.substring(0, 300));
+          
+          if (response.status === 503 || response.status === 502 || response.status === 504 || response.status === 500) {
+            if (attempt < maxRetries - 1) {
+              lastError = new Error(`Service unavailable (${response.status}). Retrying...`);
+              console.log(`⚠️ Server error ${response.status}, will retry in ${Math.min(5000 * Math.pow(2, attempt), 15000)}ms`);
+              continue;
+            }
+            throw new Error('🎤 Voice transcription service is temporarily unavailable\n\n⚠️ The speech-to-text provider is experiencing high load or maintenance\n\n💡 Please try again in 3-5 minutes\n\n🔄 Your recording was saved but could not be transcribed\n\n📝 Tip: You can type your prompt manually instead');
+          }
+          
+          if (response.status === 429) {
+            throw new Error('⏸️ Too many requests\n\n💡 Please wait 30 seconds and try again');
+          }
+          
+          throw new Error(`Transcription failed with error ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          const text = await response.text();
+          console.error('❌ Non-JSON response (Content-Type: ' + contentType + '):', text.substring(0, 300));
+          
+          if (text.includes('<!DOCTYPE') || text.includes('<html') || text.includes('503') || text.includes('504') || text.includes('502') || text.includes('Error') || text.includes('no_healthy_upstream') || text.includes('Gateway') || text.includes('Timeout')) {
+            if (attempt < maxRetries - 1) {
+              lastError = new Error('Service returned HTML error page. Retrying...');
+              console.log('⚠️ Received HTML error page, will retry');
+              continue;
+            }
+            throw new Error('🎤 Voice transcription service is temporarily down\n\n⚠️ The service is experiencing technical difficulties\n\n💡 This is a temporary outage - please try again in 3-5 minutes\n\n📝 Alternative: Type your prompt manually using the text input');
+          }
+          
+          throw new Error('Invalid response format from transcription service');
+        }
+        
+        const data = await response.json();
+        console.log('✅ Transcription successful:', { hasText: !!data.text, textLength: data.text?.length || 0 });
+        
+        if (!data.text || data.text.trim().length === 0) {
+          throw new Error('🎤 No speech detected in recording\n\n💡 Please speak clearly and try again');
+        }
+        
+        return data;
+      } catch (error) {
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            if (attempt < maxRetries - 1) {
+              lastError = new Error('Request timed out. Retrying...');
+              continue;
+            }
+            throw new Error('⏱️ Transcription request timed out\n\n💡 The service is overloaded or slow\n\n🔄 Please try again in 3-5 minutes\n\n📝 Tip: You can type your prompt manually instead');
+          }
+          
+          if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('network')) {
+            if (attempt < maxRetries - 1) {
+              lastError = new Error('Network error. Retrying...');
+              continue;
+            }
+            throw new Error('🌐 Network connection issue\n\n📶 Please check your internet and try again');
+          }
+          
+          if (error.message.includes('🎤') || error.message.includes('⚠️') || error.message.includes('💡')) {
+            throw error;
+          }
+        }
+        
+        lastError = error as Error;
+        if (attempt >= maxRetries - 1) {
+          throw error;
+        }
+      }
+    }
+    
+    throw lastError || new Error('Voice transcription failed after all attempts');
+  };
+
+  const stopRecording = async () => {
+    if (!isRecording) {
+      console.log('⚠️ No recording in progress');
+      return;
+    }
+
+    try {
+      setIsRecording(false);
+      setStatusMessage('Transcribing audio...');
+      setStatusType('info');
+
+      if (Platform.OS === 'web') {
+        if (!mediaRecorderRef.current) {
+          console.warn('No media recorder found');
+          setStatusMessage('Recording not found');
+          setStatusType('error');
+          setTimeout(() => setStatusMessage(null), 2000);
+          return;
+        }
+
+        await new Promise<void>((resolve) => {
+          if (!mediaRecorderRef.current) {
+            resolve();
+            return;
+          }
+
+          mediaRecorderRef.current.onstop = () => resolve();
+          if (mediaRecorderRef.current.state === 'recording') {
+            mediaRecorderRef.current.stop();
+          }
+          mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+        });
+
+        if (audioChunksRef.current.length === 0) {
+          throw new Error('No audio data recorded');
+        }
+
+        console.log('🎵 Audio chunks collected:', audioChunksRef.current.length);
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        console.log('🎵 Audio blob size:', audioBlob.size, 'bytes');
+        
+        if (audioBlob.size < 100) {
+          throw new Error('Recording too short or empty');
+        }
+        
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'recording.webm');
+
+        const data = await transcribeAudioWithRetry(formData);
+        
+        if (data.text) {
+          setEditPrompt(prev => prev ? `${prev} ${data.text}` : data.text);
+          setStatusMessage('Voice input added successfully');
+          setStatusType('success');
+        } else {
+          throw new Error('No transcription received');
+        }
+
+        mediaRecorderRef.current = null;
+        audioChunksRef.current = [];
+      } else {
+        if (!recordingInstance) {
+          console.warn('No recording instance found');
+          setStatusMessage('Recording not found');
+          setStatusType('error');
+          setTimeout(() => setStatusMessage(null), 2000);
+          return;
+        }
+
+        const status = await recordingInstance.getStatusAsync();
+        if (!status.isRecording) {
+          console.warn('Recording was not active');
+          await cleanupRecording();
+          setStatusMessage('Recording was not active');
+          setStatusType('error');
+          setTimeout(() => setStatusMessage(null), 2000);
+          return;
+        }
+
+        console.log('🎤 Stopping recording...');
+        await recordingInstance.stopAndUnloadAsync();
+        
+        const uri = recordingInstance.getURI();
+        console.log('📁 Recording URI:', uri);
+        
+        if (!uri) throw new Error('No recording URI');
+
+        const uriParts = uri.split('.');
+        const fileType = uriParts[uriParts.length - 1];
+
+        const formData = new FormData();
+        formData.append('audio', {
+          uri,
+          name: `recording.${fileType}`,
+          type: `audio/${fileType}`,
+        } as any);
+
+        console.log('📦 Audio file info:', { uri, fileType });
+        
+        const data = await transcribeAudioWithRetry(formData);
+        
+        if (data.text) {
+          setEditPrompt(prev => prev ? `${prev} ${data.text}` : data.text);
+          setStatusMessage('Voice input added successfully');
+          setStatusType('success');
+          if (Platform.OS === 'ios' || Platform.OS === 'android') {
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          }
+        } else {
+          throw new Error('No transcription received');
+        }
+
+        await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+        setRecordingInstance(null);
+      }
+
+      setTimeout(() => setStatusMessage(null), 2000);
+    } catch (error) {
+      console.error('Failed to stop recording:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to transcribe audio';
+      setStatusMessage(errorMessage);
+      setStatusType('error');
+      
+      const displayDuration = errorMessage.includes('\n') ? 8000 : 4000;
+      setTimeout(() => setStatusMessage(null), displayDuration);
+      
+      await cleanupRecording();
+    }
+  };
+
+  const normalizePickedUri = (asset: ImagePicker.ImagePickerAsset): string => {
+    const mime: string = (asset as any)?.mimeType || 'image/jpeg';
+    if (asset.base64) {
+      return `data:${mime};base64,${asset.base64}`;
+    }
+    let u = asset.uri;
+    if (Platform.OS === 'web') {
+      const hasQuery = u.includes('?');
+      const ts = `ts=${Date.now()}`;
+      u = `${u}${hasQuery ? '&' : '?'}${ts}`;
+    }
+    return u;
+  };
+
+  const processImageWithResize = async (uri: string) => {
+    try {
+      console.log('🔄 Auto-resizing image for optimal performance...');
+      const result = await resizeImageIfNeeded(uri, 2048);
+      if (result.wasResized) {
+        console.log(`✅ Image auto-resized from ${result.originalSize.width}x${result.originalSize.height} to ${result.newSize?.width}x${result.newSize?.height}`);
+      }
+      return result.uri;
+    } catch (error) {
+      console.error('Failed to resize image:', error);
+      return uri;
+    }
+  };
+
+  const takePhoto = async () => {
+    if (!cameraPermission) {
+      const { status } = await requestCameraPermission();
+      if (status !== 'granted') {
+        Alert.alert('Camera Permission', 'Camera access is required to take photos.');
+        return;
+      }
+    }
+    
+    if (!cameraPermission?.granted) {
+      const { status } = await requestCameraPermission();
+      if (status !== 'granted') {
+        Alert.alert('Camera Permission', 'Camera access is required to take photos.');
+        return;
+      }
+    }
+
+    setShowCamera(true);
+  };
+
+  const capturePhoto = async () => {
+    if (!cameraRef.current) return;
+    
+    try {
+      if (Platform.OS !== 'web') {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
+      
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.8,
+        base64: true,
+      });
+      
+      setShowCamera(false);
+      
+      const photoUri = photo.base64 
+        ? `data:image/jpeg;base64,${photo.base64}` 
+        : photo.uri;
+      
+      const resizedUri = await processImageWithResize(photoUri);
+      
+      if (sourceImage) {
+        if (Platform.OS === 'web') {
+          const ok = typeof (globalThis as any).confirm === 'function' ? (globalThis as any).confirm('Replace current image and clear edits/references?') : true;
+          if (ok) startNewSourceImage(resizedUri);
+        } else {
+          Alert.alert('Replace Image', 'This will replace your current main image and clear edits and references. Continue?', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Replace', style: 'destructive', onPress: async () => { startNewSourceImage(resizedUri); if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } },
+          ]);
+        }
+      } else {
+        startNewSourceImage(resizedUri);
+        if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } catch (error) {
+      console.error('Failed to capture photo:', error);
+      Alert.alert('Error', 'Failed to capture photo. Please try again.');
+    }
+  };
+
+  const pickMainImage = async () => {
+    try {
+      try {
+        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (perm?.status && perm.status !== 'granted' && Platform.OS !== 'web') {
+          Alert.alert('Permission needed', 'Please allow photo library access to choose an image.');
+          return;
+        }
+      } catch {}
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        aspect: undefined,
+        quality: 1,
+        exif: false,
+        allowsMultipleSelection: false,
+        base64: Platform.OS === 'web',
+      } as ImagePicker.ImagePickerOptions);
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        const asset = result.assets[0] as ImagePicker.ImagePickerAsset;
+        const nextUri = normalizePickedUri(asset);
+        const resizedUri = await processImageWithResize(nextUri);
+        
+        if (sourceImage) {
+          if (Platform.OS === 'web') {
+            const ok = typeof (globalThis as any).confirm === 'function' ? (globalThis as any).confirm('Replace current image and clear edits/references?') : true;
+            if (ok) startNewSourceImage(resizedUri);
+          } else {
+            Alert.alert('Replace Image', 'This will replace your current main image and clear edits and references. Continue?', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Replace', style: 'destructive', onPress: async () => { startNewSourceImage(resizedUri); if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } },
+            ]);
+          }
+        } else {
+          startNewSourceImage(resizedUri);
+          if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Failed to choose image';
+      Alert.alert('Error', msg);
+    }
+  };
+
+  const pickReferenceImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        aspect: undefined,
+        quality: 1,
+        allowsMultipleSelection: true,
+        exif: false,
+        base64: Platform.OS === 'web',
+      } as ImagePicker.ImagePickerOptions);
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setStatusMessage('Processing images...');
+        setStatusType('info');
+        
+        for (const asset of result.assets) {
+          const uriToUse = normalizePickedUri(asset as ImagePicker.ImagePickerAsset);
+          await addReferenceImage(uriToUse, true);
+        }
+        
+        setStatusMessage('Reference images added successfully');
+        setStatusType('success');
+        setTimeout(() => setStatusMessage(null), 2000);
+        
+        if (Platform.OS !== 'web') {
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+      }
+    } catch (error) {
+      setStatusMessage('Failed to add reference images');
+      setStatusType('error');
+      setTimeout(() => setStatusMessage(null), 3000);
+    }
+  };
+
+  const handleEnhancePrompt = async () => {
+    if (!editPrompt.trim()) return;
+
+    setIsEnhancingPrompt(true);
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
+    try {
+      const response = await fetch('https://toolkit.rork.com/text/llm/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            { 
+              role: 'system', 
+              content: `You are a precision AI image editing prompt engineer. Your job is to enhance user requests with technical detail while maintaining ABSOLUTE ACCURACY to their exact intent.
+
+CRITICAL RULES:
+1. ONLY respond with the enhanced prompt - NO questions, NO explanations, NO preamble, NO postamble
+2. Enhance ONLY what the user explicitly requested - DO NOT add elements they didn't ask for
+3. DO NOT change the style unless explicitly requested (no anime, cartoon, or stylization unless asked)
+4. DO NOT add decorative elements (no balloons, confetti, characters, or objects unless requested)
+5. Focus on technical precision: lighting, materials, textures, and photorealistic quality
+6. Maintain the original image's composition, mood, and existing elements
+7. Add technical details that enhance realism and quality without changing content
+
+ENHANCEMENT APPROACH:
+- For backgrounds: Specify exact colors, gradients, lighting, and natural integration
+- For hairstyles: Detail texture, length, volume, flow while preserving face and identity
+- For objects: Describe materials, lighting, shadows, and realistic placement
+- For characters: Ensure natural environmental integration with proper lighting and shadows
+- For movements/poses: Specify exact positioning, natural body mechanics, and realistic physics
+
+HAIRSTYLE KNOWLEDGE:
+Female: Long straight, long wavy, long curly, classic bob, pixie cut, shoulder length, elegant updo, high ponytail, braided styles, messy bun, bangs/fringe, half-up half-down
+Male: Crew cut, buzz cut, modern undercut, pompadour, textured quiff, side part, slicked back, messy textured, fade/taper, long flowing, man bun, faux hawk
+
+${advertisingKnowledge}
+
+EXAMPLE INPUT: "make the background blue"
+EXAMPLE OUTPUT: "Transform the background to a rich, vibrant azure blue with subtle gradient variations and natural atmospheric depth. Maintain perfect edge separation between subject and background with realistic light falloff. Apply professional color grading that complements the subject. Preserve all existing elements, lighting direction, and composition exactly as they are."
+
+EXAMPLE INPUT: "add a character sitting in the chair"
+EXAMPLE OUTPUT: "Add a character naturally seated in the chair with proper weight distribution, realistic posture, and natural body positioning. Match the scene's exact lighting direction, color temperature, and atmospheric conditions. Ensure character shadows align with existing shadows in the scene. Scale character appropriately for the chair size and camera distance. Apply the same depth of field and focus characteristics as the environment. Integrate seamlessly as if photographed together originally."
+
+EXAMPLE INPUT: "give her long wavy hair"
+EXAMPLE OUTPUT: "Change hairstyle to long wavy hair with soft flowing waves cascading past shoulders, voluminous texture with natural movement and realistic hair physics. Maintain face, facial features, skin tone, expression, outfit, body, pose, and background exactly the same. Only modify the hairstyle with photorealistic precision and natural appearance."
+
+Now enhance the user's prompt with technical precision while maintaining ABSOLUTE FIDELITY to their exact request. Respond ONLY with the enhanced prompt.` 
+            },
+            { role: 'user', content: editPrompt.trim() },
+          ],
+        }),
+      });
+      if (!response.ok) throw new Error('Failed to enhance prompt');
+      const result = await response.json();
+      if (result.completion) setEditPrompt(result.completion.trim());
+    } catch (error) {
+      // silent
+    } finally {
+      setIsEnhancingPrompt(false);
+    }
+  };
+
+  const getDistance = (touches: any[]) => {
+    if (touches.length < 2) return 0;
+    const dx = touches[0].pageX - touches[1].pageX;
+    const dy = touches[0].pageY - touches[1].pageY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const constrainPosition = useCallback((x: number, y: number, scale: number) => {
+    if (!frameBoxSize.width || !frameBoxSize.height) return { x, y };
+    
+    const scaledWidth = frameBoxSize.width * scale;
+    const scaledHeight = frameBoxSize.height * scale;
+    
+    const maxX = Math.max(0, (scaledWidth - frameBoxSize.width) / 2);
+    const maxY = Math.max(0, (scaledHeight - frameBoxSize.height) / 2);
+    
+    return {
+      x: Math.max(-maxX, Math.min(maxX, x)),
+      y: Math.max(-maxY, Math.min(maxY, y))
+    };
+  }, [frameBoxSize]);
+
+  useEffect(() => {
+    if (selectedFrameKey && frameBoxSize.width > 0) {
+      setImageScale(1);
+      setImagePositionX(0);
+      setImagePositionY(0);
+      lastScale.current = 1;
+      lastPanX.current = 0;
+      lastPanY.current = 0;
+    }
+  }, [selectedFrameKey, frameBoxSize.width]);
+
+  const panResponder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderGrant: (e: GestureResponderEvent) => {
+      if (selectMode === 'region') {
+        const { locationX, locationY } = e.nativeEvent;
+        if (imageBoxSize.width > 0 && imageBoxSize.height > 0) {
+          const nx = Math.min(Math.max(locationX / imageBoxSize.width, 0), 1);
+          const ny = Math.min(Math.max(locationY / imageBoxSize.height, 0), 1);
+          setSelectionRect({ x: nx, y: ny, width: 0.001, height: 0.001 });
+        }
+      } else if (selectedFrameKey && e.nativeEvent.touches.length >= 2) {
+        isPinching.current = true;
+        initialTouchDistance.current = getDistance(e.nativeEvent.touches);
+        initialScale.current = imageScale;
+        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } else if (selectedFrameKey && e.nativeEvent.touches.length === 1) {
+        isPinching.current = false;
+        lastPanX.current = imagePositionX;
+        lastPanY.current = imagePositionY;
+      }
+    },
+    onPanResponderMove: (e: GestureResponderEvent, gestureState: PanResponderGestureState) => {
+      if (selectMode === 'region' && selectionRect) {
+        const { locationX, locationY } = e.nativeEvent;
+        if (imageBoxSize.width > 0 && imageBoxSize.height > 0) {
+          const nx = Math.min(Math.max(locationX / imageBoxSize.width, 0), 1);
+          const ny = Math.min(Math.max(locationY / imageBoxSize.height, 0), 1);
+          const x = Math.min(selectionRect.x, nx);
+          const y = Math.min(selectionRect.y, ny);
+          const w = Math.abs(nx - selectionRect.x);
+          const h = Math.abs(ny - selectionRect.y);
+          setSelectionRect({ x, y, width: Math.max(0.01, w), height: Math.max(0.01, h) });
+        }
+      } else if (selectedFrameKey) {
+        if (e.nativeEvent.touches.length >= 2) {
+          isPinching.current = true;
+          const currentDistance = getDistance(e.nativeEvent.touches);
+          if (initialTouchDistance.current > 0) {
+            const scaleRatio = currentDistance / initialTouchDistance.current;
+            const newScale = Math.max(0.5, Math.min(3, initialScale.current * scaleRatio));
+            setImageScale(newScale);
+            
+            const constrained = constrainPosition(imagePositionX, imagePositionY, newScale);
+            if (constrained.x !== imagePositionX || constrained.y !== imagePositionY) {
+              setImagePositionX(constrained.x);
+              setImagePositionY(constrained.y);
+            }
+          }
+        } else if (e.nativeEvent.touches.length === 1 && !isPinching.current) {
+          const newX = lastPanX.current + gestureState.dx;
+          const newY = lastPanY.current + gestureState.dy;
+          
+          const constrained = constrainPosition(newX, newY, imageScale);
+          setImagePositionX(constrained.x);
+          setImagePositionY(constrained.y);
+        }
+      }
+    },
+    onPanResponderRelease: () => {
+      if (isPinching.current && Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      isPinching.current = false;
+      initialTouchDistance.current = 0;
+    },
+  }), [imageBoxSize.width, imageBoxSize.height, selectMode, selectionRect, selectedFrameKey, imageScale, imagePositionX, imagePositionY, constrainPosition]);
+
+  const renderToolContent = () => {
+    switch (toolMode) {
+      case 'prompt':
+        return (
+          <View style={styles.toolContent}>
+            <Text style={styles.toolTitle}>✨ Edit Prompt</Text>
+            <View style={styles.promptContainer}>
+              <TextInput
+                ref={promptInputRef}
+                style={styles.promptInput}
+                placeholder="Describe the exact change you want."
+                placeholderTextColor="#666"
+                value={editPrompt}
+                onChangeText={setEditPrompt}
+                multiline
+                maxLength={500}
+                textAlignVertical="top"
+                onFocus={() => {
+                  console.log('📝 TextInput focused');
+                  setTimeout(() => {
+                    if (scrollViewRef.current) {
+                      scrollViewRef.current.scrollToEnd({ animated: true });
+                    }
+                  }, Platform.OS === 'ios' ? 400 : 200);
+                }}
+              />
+              <View style={styles.promptButtonsContainer}>
+                {editPrompt.trim() ? (
+                  <TouchableOpacity testID="clear-prompt" accessibilityLabel="Clear prompt" style={styles.deleteAllButton} onPress={() => setEditPrompt('')}>
+                    <X size={14} color="#FF6B6B" />
+                    <Text style={styles.deleteAllText}>Clear</Text>
+                  </TouchableOpacity>
+                ) : null}
+                <TouchableOpacity 
+                  style={[styles.voiceButton, isRecording && styles.voiceButtonActive]} 
+                  onPress={isRecording ? stopRecording : startRecording}
+                  testID="voice-input"
+                  accessibilityLabel={isRecording ? 'Stop recording' : 'Start voice input'}
+                >
+                  {isRecording ? <MicOff size={16} color="#1A1A1A" strokeWidth={2} /> : <Mic size={16} color="#1A1A1A" strokeWidth={2} />}
+                  <Text style={styles.voiceButtonText}>{isRecording ? 'Stop' : 'Voice'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.enhancePromptButton} onPress={handleEnhancePrompt} disabled={isEnhancingPrompt || !editPrompt.trim()} testID="ai-enhance">
+                  {isEnhancingPrompt ? <ActivityIndicator size="small" color="#1A1A1A" /> : <Sparkles size={16} color="#1A1A1A" strokeWidth={2} />}
+                  <Text style={styles.enhancePromptText}>{isEnhancingPrompt ? 'Enhancing...' : 'AI Enhance'}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              testID="generate-quality-image"
+              accessibilityLabel="Generate quality image"
+              style={[styles.generateButton, (!sourceImage || !editPrompt.trim() || isGenerating) && styles.generateButtonDisabled]}
+              disabled={!sourceImage || !editPrompt.trim() || isGenerating}
+              onPress={async () => {
+                try {
+                  console.log('🚀 ========================================');
+                  console.log('🚀 STARTING IMAGE GENERATION');
+                  console.log('🚀 ========================================');
+                  console.log('📸 Source image exists:', !!sourceImage);
+                  console.log('✏️ Edited image exists:', !!editedImage);
+                  console.log('📝 Prompt:', editPrompt);
+                  console.log('🖼️ Reference images count:', referenceImages.length);
+                  console.log('⏰ Start time:', new Date().toISOString());
+                  
+                  setStatusMessage(null);
+                  setIsGenerating(true);
+                  if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  
+                  const region = selectMode === 'region' && selectionRect ? { x: selectionRect.x, y: selectionRect.y, width: selectionRect.width, height: selectionRect.height } : undefined;
+                  
+                  console.log('📤 Calling generateEdit...');
+                  const result = await generateEdit({
+                    prompt: editPrompt,
+                    strength: 0.7,
+                    identityLock: true,
+                    upscale: false,
+                    watermark: false,
+                    additionsLock: true,
+                    region: region as any,
+                  });
+                  
+                  console.log('✅ ========================================');
+                  console.log('✅ GENERATION COMPLETED SUCCESSFULLY');
+                  console.log('✅ ========================================');
+                  console.log('⏰ End time:', new Date().toISOString());
+                  console.log('📊 Result received:', !!result);
+                  setIsGenerating(false);
+                  
+                  if (result) {
+                    setStatusType('success');
+                    setStatusMessage('Image generated successfully');
+                    if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    setTimeout(() => setStatusMessage(null), 3500);
+                  } else {
+                    console.error('❌ ========================================');
+                    console.error('❌ GENERATION FAILED - NULL RESULT');
+                    console.error('❌ ========================================');
+                    console.warn('⚠️ Generation returned null result');
+                    setStatusType('error');
+                    setStatusMessage('🚨 Generation failed to return a result.\n\nThis usually means the AI service is overloaded.\n\nPlease wait 5-10 minutes and try again.');
+                    setTimeout(() => setStatusMessage(null), 8000);
+                  }
+                } catch (e) {
+                  setIsGenerating(false);
+                  const msg = e instanceof Error ? e.message : 'Failed to generate image';
+                  console.error('❌ ========================================');
+                  console.error('❌ GENERATION ERROR OCCURRED');
+                  console.error('❌ ========================================');
+                  console.error('❌ Error time:', new Date().toISOString());
+                  console.error('❌ Error type:', e instanceof Error ? e.constructor.name : typeof e);
+                  console.error('❌ Error message:', msg);
+                  console.error('❌ Full error:', e);
+                  console.error('❌ ========================================');
+                  setStatusType('error');
+                  setStatusMessage(msg);
+                  
+                  const displayDuration = msg.includes('\n') ? 12000 : 6000;
+                  setTimeout(() => setStatusMessage(null), displayDuration);
+                }
+              }}
+            >
+              {isGenerating ? (
+                <ActivityIndicator size="small" color="#1A1A1A" />
+              ) : (
+                <>
+                  <Wand2 size={16} color="#1A1A1A" />
+                  <Text style={styles.generateButtonText}>Generate Quality Image</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.referenceSection}>
+              <View style={styles.referenceSectionHeader}>
+                <Text style={styles.sectionTitle}>Reference Images</Text>
+                <View style={styles.addButtonsContainer}>
+                  <TouchableOpacity testID="add-reference-images" onPress={() => pickReferenceImage()} style={styles.addReferenceButton}>
+                    <Plus size={16} color="#FFD700" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.referenceImagesScroll}>
+                {referenceImages.map((uri, idx) => (
+                  <TouchableOpacity key={`${uri}-${idx}`} style={[styles.referenceImageContainer]} onPress={() => {}}>
+                    <ExpoImage source={{ uri }} style={styles.referenceImage} contentFit="cover" />
+                    <TouchableOpacity style={styles.removeReferenceButton} onPress={() => removeReferenceImage(idx)} accessibilityLabel="Remove reference image" testID={`remove-ref-${idx}`}>
+                      <X size={12} color="#FFFFFF" />
+                    </TouchableOpacity>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        );
+
+
+
+      case 'enlarge':
+        return (
+          <View style={styles.toolContent}>
+            <Text style={styles.toolTitle}>🔍 Enlarge Image</Text>
+            <Text style={styles.toolSubtitle}>Open the canvas in fullscreen for a larger view.</Text>
+            <TouchableOpacity style={[styles.applyFrameGuidance, styles.alignStart]} onPress={() => setIsFullscreen(true)} testID="enter-fullscreen">
+              <Maximize2 size={16} color="#1A1A1A" />
+              <Text style={styles.applyFrameGuidanceText}>Enter Fullscreen</Text>
+            </TouchableOpacity>
+          </View>
+        );
+
+      case 'upscale':
+        return (
+          <View style={styles.toolContent}>
+            <Text style={styles.toolTitle}>✨ Quality Enhancement</Text>
+            <Text style={styles.toolSubtitle}>Enhance your image with maximum sharpness, detail, and clarity using advanced AI processing.</Text>
+
+            <View style={styles.upscaleInfoBox}>
+              <Text style={styles.upscaleInfoTitle}>🎯 What You Get:</Text>
+              <Text style={styles.upscaleInfoText}>• Maximum sharpness and clarity boost</Text>
+              <Text style={styles.upscaleInfoText}>• Enhanced texture and fine detail</Text>
+              <Text style={styles.upscaleInfoText}>• Professional color optimization</Text>
+              <Text style={styles.upscaleInfoText}>• Noise reduction with detail preservation</Text>
+              <Text style={styles.upscaleInfoText}>• Improved contrast and definition</Text>
+            </View>
+
+            <View style={styles.upscaleInfoBox}>
+              <Text style={styles.upscaleInfoTitle}>ℹ️ Important Note:</Text>
+              <Text style={styles.upscaleInfoText}>This feature enhances quality and sharpness of your existing image. For best results, start with the highest quality source image possible. Very blurry or low-resolution images have limited enhancement potential.</Text>
+            </View>
+
+            <TouchableOpacity
+              testID="run-upscale"
+              accessibilityLabel="Enhance Quality"
+              style={[styles.generateButton, (!sourceImage || isUpscaling) && styles.generateButtonDisabled]}
+              disabled={!sourceImage || isUpscaling}
+              onPress={async () => {
+                if (!sourceImage) return;
+                try {
+                  setIsUpscaling(true);
+                  setStatusMessage('Enhancing image quality... This may take 30-60 seconds.');
+                  setStatusType('info');
+                  if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+                  console.log('🚀 Starting quality enhancement process...');
+                  const result = await upscaleImage();
+                  
+                  if (result) {
+                    setStatusType('success');
+                    setStatusMessage('🎉 Image quality enhanced successfully!\n\nYour image now has improved clarity and detail.');
+                    if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    setTimeout(() => setStatusMessage(null), 5000);
+                  } else {
+                    throw new Error('Enhancement failed to return a result');
+                  }
+                } catch (e) {
+                  const msg = e instanceof Error ? e.message : 'Failed to enhance quality';
+                  console.error('❌ Enhancement error:', e);
+                  setStatusType('error');
+                  setStatusMessage(msg);
+                  const displayDuration = msg.includes('\n') ? 8000 : 5000;
+                  setTimeout(() => setStatusMessage(null), displayDuration);
+                } finally {
+                  setIsUpscaling(false);
+                }
+              }}
+            >
+              {isUpscaling ? (
+                <ActivityIndicator size="small" color="#1A1A1A" />
+              ) : (
+                <>
+                  <Sparkles size={16} color="#1A1A1A" />
+                  <Text style={styles.generateButtonText}>Enhance Quality Now</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            {isUpscaling && (
+              <View style={styles.upscaleProgressBox}>
+                <Text style={styles.upscaleProgressText}>⏳ Processing your image with advanced AI...</Text>
+                <Text style={styles.upscaleProgressSubtext}>This may take 30-60 seconds for best quality</Text>
+              </View>
+            )}
+          </View>
+        );
+
+      case 'frames':
+        return (
+          <View style={styles.toolContent}>
+            <Text style={styles.toolTitle}>📐 Frame & Aspect Ratio</Text>
+            <Text style={styles.toolSubtitle}>Pick a frame to compose your image</Text>
+            <View style={styles.frameCategoriesRow}>
+              {(Object.keys(frameSizePresets) as Array<keyof typeof frameSizePresets>).map((cat) => (
+                <TouchableOpacity key={cat} style={[styles.frameCategoryChip, frameCategory === cat && styles.frameCategoryChipActive]} onPress={() => setFrameCategory(cat)} testID={`frame-category-${cat}`}>
+                  <Text style={[styles.frameCategoryText, frameCategory === cat && styles.frameCategoryTextActive]}>{cat}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View style={styles.framesGrid}>
+              {frameSizePresets[frameCategory].items.map(item => (
+                <TouchableOpacity key={item.key} style={[styles.frameChip, selectedFrameKey === item.key && styles.frameChipActive]} onPress={() => setSelectedFrameKey(item.key)} testID={`frame-${item.key}`}>
+                  <View style={styles.frameIconBox}>
+                    <View style={[styles.frameIcon, item.ratio >= 1 ? { width: '90%', aspectRatio: item.ratio } : { height: '100%', aspectRatio: item.ratio }]} />
+                  </View>
+                  <Text style={[styles.frameChipText, selectedFrameKey === item.key && styles.frameChipTextActive]}>{item.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {selectedFrameKey && (
+              <View style={styles.framePositioningSection}>
+                <Text style={styles.framePositioningTitle}>🎯 Adjust Image Position</Text>
+                
+                <View style={styles.gestureInstructionsBox}>
+                  <Text style={styles.gestureInstructionTitle}>Touch Gestures:</Text>
+                  <Text style={styles.gestureInstruction}>🤏 Pinch with two fingers to zoom (0.5x - 3x)</Text>
+                  <Text style={styles.gestureInstruction}>👆 Drag with one finger to pan/move image</Text>
+                  <Text style={styles.gestureInstruction}>➕➖ Use +/− buttons for precise zoom control</Text>
+                  <Text style={styles.gestureInstruction}>🔄 Tap Reset to center and fit image</Text>
+                </View>
+
+                <View style={styles.positionInfoRow}>
+                  <View style={styles.positionInfoItem}>
+                    <Text style={styles.positionInfoLabel}>Zoom</Text>
+                    <Text style={styles.positionInfoValue}>{imageScale.toFixed(2)}x</Text>
+                  </View>
+                  <View style={styles.positionInfoItem}>
+                    <Text style={styles.positionInfoLabel}>Position</Text>
+                    <Text style={styles.positionInfoValue}>{imagePositionX.toFixed(0)}, {imagePositionY.toFixed(0)}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.zoomControlsRow}>
+                  <TouchableOpacity 
+                    style={styles.zoomButton} 
+                    onPress={() => {
+                      const newScale = Math.max(0.5, imageScale - 0.1);
+                      setImageScale(newScale);
+                      const constrained = constrainPosition(imagePositionX, imagePositionY, newScale);
+                      setImagePositionX(constrained.x);
+                      setImagePositionY(constrained.y);
+                    }}
+                    testID="zoom-out"
+                  >
+                    <Text style={styles.zoomButtonText}>−</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={styles.resetPositionButton} 
+                    onPress={() => {
+                      setImageScale(1);
+                      setImagePositionX(0);
+                      setImagePositionY(0);
+                      lastScale.current = 1;
+                      lastPanX.current = 0;
+                      lastPanY.current = 0;
+                      initialScale.current = 1;
+                      initialTouchDistance.current = 0;
+                      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    }}
+                    testID="reset-frame-position"
+                  >
+                    <RotateCcw size={14} color="#FFD700" />
+                    <Text style={styles.resetPositionText}>Reset</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={styles.zoomButton} 
+                    onPress={() => {
+                      const newScale = Math.min(3, imageScale + 0.1);
+                      setImageScale(newScale);
+                      const constrained = constrainPosition(imagePositionX, imagePositionY, newScale);
+                      setImagePositionX(constrained.x);
+                      setImagePositionY(constrained.y);
+                    }}
+                    testID="zoom-in"
+                  >
+                    <Text style={styles.zoomButtonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            <View style={styles.frameActionsRowX}>
+              <TouchableOpacity style={styles.clearFrameButton} onPress={() => {
+                setSelectedFrameKey(null);
+                setImageScale(1);
+                setImagePositionX(0);
+                setImagePositionY(0);
+                setFrameBoxSize({ width: 0, height: 0 });
+                lastScale.current = 1;
+                lastPanX.current = 0;
+                lastPanY.current = 0;
+                initialScale.current = 1;
+                initialTouchDistance.current = 0;
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              }} disabled={!selectedFrameKey} testID="clear-frame">
+                <X size={14} color={selectedFrameKey ? '#FF6B6B' : '#666'} />
+                <Text style={[styles.clearFrameText, { color: selectedFrameKey ? '#FF6B6B' : '#666' }]}>Clear Frame</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.applyFrameGuidance}
+                onPress={() => {
+                  const tag = selectedFrame ? ` Compose to ${selectedFrame.label} aspect ratio with natural framing.` : ' Compose with natural framing.';
+                  setEditPrompt(prev => prev ? prev + tag : `Compose image for selected aspect ratio.${tag}`);
+                }}
+                testID="apply-frame-guidance"
+              >
+                <Sparkles size={14} color="#1A1A1A" />
+                <Text style={styles.applyFrameGuidanceText}>Add Prompt Guidance</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        );
+
+
+
+      case 'undo':
+        return (
+          <View style={styles.toolContent}>
+            <Text style={styles.toolTitle}>↩️ Undo History</Text>
+            <Text style={styles.toolSubtitle}>Step back to any previous style. New edits append to history.</Text>
+
+            <View style={styles.undoActionsRow}>
+              <TouchableOpacity style={styles.undoOneButton} onPress={undoOne} disabled={history.length === 0} testID="undo-one">
+                <RotateCcw size={14} color={history.length ? '#1A1A1A' : '#666'} />
+                <Text style={[styles.undoOneText, { color: history.length ? '#1A1A1A' : '#666' }]}>Undo Last</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.undoAllButton} onPress={undoAll} disabled={history.length === 0} testID="undo-all">
+                <History size={14} color={history.length ? '#FF6B6B' : '#666'} />
+                <Text style={[styles.undoAllText, { color: history.length ? '#FF6B6B' : '#666' }]}>Reset To Start</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.historyScroll} contentContainerStyle={styles.historyScrollContent}>
+              {history.map((h, idx) => (
+                <TouchableOpacity
+                  key={h.id}
+                  style={styles.historyCard}
+                  onPress={() => revertToHistoryIndex(idx)}
+                  testID={`history-item-${idx}`}
+                >
+                  <ExpoImage source={{ uri: h.editedImage }} style={styles.historyThumb} contentFit="cover" />
+                  <View style={styles.historyMeta}>
+                    <Text numberOfLines={1} style={styles.historyPrompt}>{h.prompt || 'Edit'}</Text>
+                    <Text style={styles.historyDate}>{new Date(h.date).toLocaleString()}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+              {history.length === 0 ? (
+                <View style={styles.historyEmpty} testID="history-empty">
+                  <Text style={styles.historyEmptyText}>No edits yet</Text>
+                </View>
+              ) : null}
+            </ScrollView>
+          </View>
+        );
+    }
+  };
+
+  return (
+    <TouchableWithoutFeedback onPress={dismissKeyboard}>
+      <View style={styles.container}>
+        <LinearGradient colors={['#1A1A1A', '#0A0A0A']} style={StyleSheet.absoluteFillObject} />
+
+      {!isFullscreen && (
+        <SafeAreaView edges={['top']} style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <ArrowLeft size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+
+          <View style={styles.headerCenter}>
+            <View style={styles.headerTitleContainer}>
+              <Text style={styles.headerTitle}>Edit Image</Text>
+              <Text style={styles.headerSubtitle}>Edit Empire</Text>
+            </View>
+          </View>
+
+          <View style={styles.headerRight}>
+            <TouchableOpacity style={styles.headerButton} onPress={() => setCleanUI(!cleanUI)} testID="toggle-clean-ui">
+              <Wand2 size={24} color={cleanUI ? '#FFD700' : '#FFFFFF'} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.headerButton} onPress={() => router.push('/smart-help')}>
+              <Brain size={24} color="#9D4EDD" />
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      )}
+
+      {statusMessage && (
+        <View style={[styles.statusBanner, statusType === 'error' ? styles.statusError : statusType === 'success' ? styles.statusSuccess : styles.statusInfo]} testID="status-banner">
+          <Text style={styles.statusText}>{statusMessage}</Text>
+        </View>
+      )}
+
+      <View style={[styles.canvas, isFullscreen && styles.canvasFullscreen]}>
+        {sourceImage ? (
+          <View style={styles.imageContainer}>
+            <View
+              ref={(r) => { imageBoxRef.current = r as unknown as View; }}
+              onLayout={(e: LayoutChangeEvent) => {
+                const { width, height } = e.nativeEvent.layout;
+                setImageBoxSize({ width, height });
+              }}
+              style={StyleSheet.absoluteFill}
+              {...panResponder.panHandlers}
+            />
+            {selectedFrame ? (
+              <View style={styles.framedContainer}>
+                <View 
+                  style={[styles.frameBox, { aspectRatio: selectedFrame.ratio }]}
+                  onLayout={(e: LayoutChangeEvent) => {
+                    const { width, height } = e.nativeEvent.layout;
+                    setFrameBoxSize({ width, height });
+                  }}
+                > 
+                  <View style={styles.imageWrapper}>
+                    <ExpoImage 
+                      source={{ uri: editedImage || sourceImage }} 
+                      style={[
+                        styles.framedImage,
+                        {
+                          transform: [
+                            { scale: imageScale },
+                            { translateX: imagePositionX },
+                            { translateY: imagePositionY }
+                          ]
+                        }
+                      ]} 
+                      contentFit="cover" 
+                    />
+                  </View>
+                </View>
+                <View style={styles.frameLabel}>
+                  <Crop size={12} color="#1A1A1A" />
+                  <Text style={styles.frameLabelText}>{selectedFrame.label}</Text>
+                </View>
+              </View>
+            ) : (
+              <ExpoImage source={{ uri: editedImage || sourceImage }} style={styles.canvasImage} contentFit="contain" />
+            )}
+
+            {selectionRect && selectMode === 'region' && (
+              <View pointerEvents="none" style={[styles.selectionBox, {
+                left: imageBoxSize.width * selectionRect.x,
+                top: imageBoxSize.height * selectionRect.y,
+                width: imageBoxSize.width * selectionRect.width,
+                height: imageBoxSize.height * selectionRect.height,
+              }]} />
+            )}
+
+
+          </View>
+        ) : (
+          <View style={styles.centeredImageContainer}> 
+            <TouchableOpacity style={[styles.applyFrameGuidance, styles.alignCenter]} onPress={() => pickMainImage()} testID="pick-image-empty">
+              <Images size={16} color="#1A1A1A" />
+              <Text style={styles.applyFrameGuidanceText}>Upload Image</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+
+
+        {isFullscreen && (
+          <View style={styles.fullscreenInfo}>
+            <Text style={styles.fullscreenInfoText}>Tap anywhere to exit fullscreen</Text>
+          </View>
+        )}
+        {isFullscreen && (
+          <TouchableOpacity style={styles.fullscreenOverlay} onPress={() => setIsFullscreen(false)} activeOpacity={1} />
+        )}
+      </View>
+
+      {!isFullscreen && (
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={[styles.bottomSheet, cleanUI ? { maxHeight: '45%' } : null]}
+          keyboardVerticalOffset={0}
+        >
+          <View style={styles.toolTabs}>
+            {([
+              { key: 'prompt' as ToolMode, label: 'Prompt', icon: Sparkles },
+              { key: 'frames' as ToolMode, label: 'Frame', icon: Crop },
+              { key: 'undo' as ToolMode, label: 'Undo', icon: RotateCcw },
+              { key: 'upscale' as ToolMode, label: 'Enhance', icon: Maximize2 },
+            ]).map(tab => (
+              <TouchableOpacity key={tab.key} style={[styles.toolTab, toolMode === tab.key && styles.toolTabActive]} onPress={() => setToolMode(tab.key)} testID={`tool-tab-${tab.label.toLowerCase()}`}>
+                <tab.icon size={16} color={toolMode === tab.key ? '#FFD700' : '#CCCCCC'} />
+                <Text style={[styles.toolTabLabel, toolMode === tab.key && styles.toolTabLabelActive]}>{tab.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <ScrollView 
+            ref={scrollViewRef}
+            style={styles.bottomSheetScroll} 
+            contentContainerStyle={[
+              styles.bottomSheetScrollContent,
+              isKeyboardVisible && Platform.OS !== 'web' && { paddingBottom: keyboardHeight + 80 }
+            ]} 
+            keyboardShouldPersistTaps="handled" 
+            showsVerticalScrollIndicator={true}
+            keyboardDismissMode="on-drag"
+            scrollEventThrottle={16}
+          >
+            <View style={styles.bottomControlsRow}>
+              <TouchableOpacity testID="toggle-fullscreen" style={styles.bottomControlButton} onPress={() => setIsFullscreen(!isFullscreen)}>
+                {isFullscreen ? <Minimize size={18} color="#FFD700" /> : <Expand size={18} color="#FFD700" />}
+                <Text style={styles.bottomControlText}>{isFullscreen ? 'Exit' : 'Fullscreen'}</Text>
+              </TouchableOpacity>
+              {sourceImage && (
+                <TouchableOpacity
+                  testID="delete-or-replace-source"
+                  style={styles.bottomControlButton}
+                  onPress={() => {
+                    Alert.alert('Replace or Delete', 'Replace with another image, or delete to start fresh.', [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Replace', onPress: () => pickMainImage() },
+                      { text: 'Delete', style: 'destructive', onPress: async () => { setSourceImage(null); setEditedImage(null); if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); router.back(); } },
+                    ]);
+                  }}
+                >
+                  <X size={18} color="#FF6B6B" />
+                  <Text style={[styles.bottomControlText, { color: '#FF6B6B' }]}>Delete</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {renderToolContent()}
+
+            <View style={styles.spacer} />
+          </ScrollView>
+        </KeyboardAvoidingView>
+      )}
+
+      {isKeyboardVisible && Platform.OS !== 'web' && (
+        <TouchableOpacity 
+          style={styles.dismissKeyboardButton}
+          onPress={dismissKeyboard}
+          testID="dismiss-keyboard"
+          accessibilityLabel="Dismiss keyboard"
+        >
+          <ChevronDown size={20} color="#1A1A1A" />
+          <Text style={styles.dismissKeyboardText}>Done</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Camera Modal */}
+      <Modal
+        visible={showCamera}
+        animationType="slide"
+        onRequestClose={() => setShowCamera(false)}
+      >
+        <View style={styles.cameraContainer}>
+          <CameraView
+            ref={cameraRef}
+            style={styles.camera}
+            facing="back"
+          >
+            <SafeAreaView style={styles.cameraControls}>
+              <TouchableOpacity
+                style={styles.cameraCloseButton}
+                onPress={() => setShowCamera(false)}
+                activeOpacity={0.7}
+              >
+                <LinearGradient
+                  colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.6)']}
+                  style={styles.cameraCloseGradient}
+                >
+                  <X size={24} color="#FFFFFF" strokeWidth={2} />
+                </LinearGradient>
+              </TouchableOpacity>
+            </SafeAreaView>
+            
+            <View style={styles.cameraCaptureContainer}>
+              <TouchableOpacity
+                style={styles.captureButton}
+                onPress={capturePhoto}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={['#FFD700', '#FFA500']}
+                  style={styles.captureGradient}
+                >
+                  <Camera size={32} color="#1A1A1A" strokeWidth={2.5} />
+                </LinearGradient>
+              </TouchableOpacity>
+              <Text style={styles.captureHint}>Tap to capture</Text>
+            </View>
+          </CameraView>
+        </View>
+      </Modal>
+      </View>
+    </TouchableWithoutFeedback>
+  );
+}
+
+async function getBase64FromUri(uri: string): Promise<string> {
+  try {
+    if (uri.startsWith('data:')) {
+      const parts = uri.split(',');
+      return parts[1] ?? '';
+    }
+    if (Platform.OS === 'web') {
+      const res = await fetch(uri, { cache: 'no-store' });
+      const blob = await res.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          const base64 = result.split(',')[1] ?? '';
+          resolve(base64);
+        };
+        reader.onerror = (e) => reject(e);
+        reader.readAsDataURL(blob);
+      });
+    } else {
+      const FS = await import('expo-file-system');
+      const b64 = await FS.readAsStringAsync(uri, { encoding: FS.EncodingType.Base64 });
+      return b64;
+    }
+  } catch (e) {
+    throw new Error('Failed to load image for upscaling');
+  }
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#1A1A1A' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.1)' },
+  headerCenter: { flex: 1, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 16 },
+  headerRight: { flexDirection: 'row', alignItems: 'center' },
+  backButton: { padding: 8 },
+  headerTitleContainer: { alignItems: 'center' },
+  headerTitle: { fontSize: 18, fontWeight: '600' as const, color: '#FFFFFF' },
+  headerSubtitle: { fontSize: 12, color: '#FFD700', marginTop: 2 },
+  headerButton: { padding: 8, position: 'relative', marginLeft: 8 },
+  headerCumulativeIndicator: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(0, 255, 136, 0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(0, 255, 136, 0.3)' },
+  headerCumulativeText: { fontSize: 10, color: '#00FF88', fontWeight: '600' as const },
+  headerResetButton: { width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(255, 255, 255, 0.1)', alignItems: 'center', justifyContent: 'center', marginLeft: 4 },
+
+  statusBanner: { position: 'absolute', top: 72, left: 12, right: 12, zIndex: 1200, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1 },
+  statusText: { color: '#1A1A1A', fontSize: 12, fontWeight: '600' as const, textAlign: 'center' as const, lineHeight: 18 },
+  statusError: { backgroundColor: '#FFB3B3', borderColor: '#FF6B6B' },
+  statusSuccess: { backgroundColor: '#B3FFD9', borderColor: '#00FF88' },
+  statusInfo: { backgroundColor: '#FFE9A6', borderColor: '#FFD700' },
+
+  canvas: { flex: 1, backgroundColor: '#0A0A0A', position: 'relative' },
+  imageContainer: { width: '100%', height: '100%', position: 'relative' },
+  changeImageButton: { position: 'absolute', top: 16, left: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.8)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.3)', zIndex: 10, gap: 6 },
+  changeImageText: { color: '#FFD700', fontSize: 12, fontWeight: '600' as const },
+  quickUpscaleButton: { position: 'absolute', top: 60, left: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFD700', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(0,0,0,0.15)', zIndex: 10, gap: 6 },
+  quickUpscaleText: { color: '#1A1A1A', fontSize: 12, fontWeight: '700' as const },
+  bottomControlsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingHorizontal: 20, paddingVertical: 12, backgroundColor: 'rgba(26, 26, 26, 0.95)', borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.1)' },
+  bottomControlButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' },
+  bottomControlText: { fontSize: 12, color: '#FFD700', fontWeight: '600' as const },
+  canvasFullscreen: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 },
+  canvasImage: { width: '100%', height: '100%' },
+  canvasControls: { position: 'absolute', top: 16, right: 16, flexDirection: 'row', gap: 8 },
+  fullscreenButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0, 0, 0, 0.7)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.2)' },
+  fullscreenOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  fullscreenInfo: { position: 'absolute', bottom: 20, left: 20, right: 20, alignItems: 'center', gap: 8 },
+  fullscreenInfoText: { fontSize: 14, color: 'rgba(255, 255, 255, 0.7)', textAlign: 'center', backgroundColor: 'rgba(0, 0, 0, 0.5)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+
+  toolTabs: { flexDirection: 'row', backgroundColor: 'rgba(26, 26, 26, 0.95)', paddingVertical: 8, borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.1)', borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.1)' },
+  toolTab: { flex: 1, alignItems: 'center', paddingVertical: 8 },
+  toolTabActive: { borderBottomWidth: 2, borderBottomColor: '#FFD700' },
+  toolTabLabel: { fontSize: 11, color: '#666', marginTop: 4 },
+  toolTabLabelActive: { color: '#FFD700', fontWeight: '600' as const },
+  bottomSheet: { backgroundColor: 'rgba(26, 26, 26, 0.98)', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 12, paddingBottom: 12, maxHeight: '65%', minHeight: 200, zIndex: 100, overflow: 'hidden' },
+  toolContent: { paddingHorizontal: 20, paddingBottom: 12 },
+  toolTitle: { fontSize: 16, fontWeight: '600' as const, color: '#FFFFFF', marginBottom: 16 },
+  toolSubtitle: { fontSize: 12, color: '#999', marginBottom: 16 },
+
+  promptContainer: { position: 'relative' },
+  promptButtonsContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6, marginTop: 8 },
+  promptInput: { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 12, padding: 12, color: '#FFFFFF', fontSize: 14, minHeight: 80, maxHeight: 120, borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.2)' },
+  deleteAllButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255, 107, 107, 0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, gap: 4, borderWidth: 1, borderColor: 'rgba(255, 107, 107, 0.3)' },
+  deleteAllText: { fontSize: 11, fontWeight: '600' as const, color: '#FF6B6B' },
+  voiceButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#9D4EDD', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, gap: 4 },
+  voiceButtonActive: { backgroundColor: '#FF6B6B' },
+  voiceButtonText: { fontSize: 11, fontWeight: '600' as const, color: '#1A1A1A' },
+  enhancePromptButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFD700', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, gap: 4 },
+  enhancePromptText: { fontSize: 11, fontWeight: '600' as const, color: '#1A1A1A' },
+
+  referenceSection: { marginTop: 16, marginBottom: 4 },
+  referenceSectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  sectionTitle: { fontSize: 14, fontWeight: '600' as const, color: '#FFFFFF', marginBottom: 8 },
+  addButtonsContainer: { flexDirection: 'row', gap: 12 },
+  addReferenceButton: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255, 215, 0, 0.1)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.2)' },
+  referenceImagesScroll: { marginTop: 8 },
+  referenceImageContainer: { width: 60, height: 60, marginRight: 8, borderRadius: 8, overflow: 'hidden', position: 'relative' },
+  referenceImage: { width: '100%', height: '100%' },
+  removeReferenceButton: { position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(0, 0, 0, 0.7)', alignItems: 'center', justifyContent: 'center' },
+
+  framedContainer: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
+  frameBox: { width: '92%', borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.35)', borderRadius: 12, overflow: 'hidden', backgroundColor: '#000000' },
+  imageWrapper: { width: '100%', height: '100%', overflow: 'hidden' },
+  framedImage: { width: '100%', height: '100%' },
+  frameLabel: { position: 'absolute', bottom: 24, backgroundColor: '#FFD700', flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 },
+  frameLabelText: { color: '#1A1A1A', fontSize: 12, fontWeight: '700' as const },
+  frameCategoriesScroll: { marginBottom: 12, maxHeight: 50 },
+  frameCategoriesRow: { flexDirection: 'row', gap: 8 },
+  frameCategoryChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' },
+  frameCategoryChipActive: { backgroundColor: 'rgba(255, 215, 0, 0.12)', borderColor: '#FFD700' },
+  frameCategoryText: { fontSize: 12, color: '#999' },
+  frameCategoryTextActive: { color: '#FFD700', fontWeight: '600' as const },
+  presetItemsScroll: { maxHeight: 280, marginBottom: 12 },
+  framesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  frameChip: { width: '48%', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)', alignItems: 'center', gap: 8 },
+  frameChipActive: { backgroundColor: 'rgba(255, 215, 0, 0.12)', borderColor: '#FFD700' },
+  frameIconBox: { width: '100%', height: 80, alignItems: 'center', justifyContent: 'center' },
+  frameIcon: { borderWidth: 2, borderColor: 'rgba(255, 215, 0, 0.6)', borderRadius: 10, backgroundColor: 'rgba(255, 215, 0, 0.08)' },
+  frameChipText: { fontSize: 12, color: '#CCCCCC', fontWeight: '600' as const },
+  frameChipTextActive: { color: '#FFD700' },
+
+  upscaleInfoBox: { backgroundColor: 'rgba(255, 215, 0, 0.08)', borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.2)' },
+  upscaleInfoTitle: { fontSize: 13, fontWeight: '700' as const, color: '#FFD700', marginBottom: 8 },
+  upscaleInfoText: { fontSize: 11, color: '#CCCCCC', lineHeight: 18, marginBottom: 2 },
+  upscaleProgressBox: { marginTop: 16, backgroundColor: 'rgba(157, 78, 221, 0.1)', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: 'rgba(157, 78, 221, 0.3)' },
+  upscaleProgressText: { fontSize: 12, fontWeight: '600' as const, color: '#9D4EDD', textAlign: 'center' as const, marginBottom: 4 },
+  upscaleProgressSubtext: { fontSize: 10, color: '#999', textAlign: 'center' as const },
+
+  undoActionsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  undoOneButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: '#FFD700' },
+  undoOneText: { fontSize: 12, fontWeight: '700' as const, color: '#1A1A1A' },
+  undoAllButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: 'rgba(255, 107, 107, 0.1)', borderWidth: 1, borderColor: 'rgba(255, 107, 107, 0.4)' },
+  undoAllText: { fontSize: 12, fontWeight: '700' as const, color: '#FF6B6B' },
+  historyScroll: { marginTop: 6 },
+  historyScrollContent: { paddingRight: 8 },
+  historyCard: { width: 120, marginRight: 8, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  historyThumb: { width: '100%', height: 80 },
+  historyMeta: { paddingHorizontal: 8, paddingVertical: 6, gap: 2 },
+  historyPrompt: { color: '#FFFFFF', fontSize: 11, fontWeight: '600' as const },
+  historyDate: { color: '#999', fontSize: 10 },
+  historyEmpty: { paddingVertical: 16, paddingHorizontal: 12, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', alignSelf: 'flex-start' },
+  historyEmptyText: { color: '#999', fontSize: 12 },
+
+  selectionBox: { position: 'absolute', borderWidth: 2, borderColor: '#FFD700', backgroundColor: 'rgba(255, 215, 0, 0.1)', zIndex: 25 },
+  applyFrameGuidance: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: '#FFD700' },
+  applyFrameGuidanceText: { fontSize: 12, color: '#1A1A1A', fontWeight: '700' as const },
+  clearFrameButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: 'rgba(255, 107, 107, 0.08)', borderWidth: 1, borderColor: 'rgba(255, 107, 107, 0.25)' },
+  clearFrameText: { fontSize: 12, fontWeight: '600' as const },
+
+  bottomSheetScroll: { maxHeight: '100%' },
+  bottomSheetScrollContent: { paddingBottom: 20 },
+  spacer: { height: 16 },
+  generateButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FFD700', paddingVertical: 12, borderRadius: 12, marginTop: 12 },
+  generateButtonDisabled: { opacity: 0.6 },
+  generateButtonText: { color: '#1A1A1A', fontSize: 14, fontWeight: '700' as const },
+  previewBox: { marginTop: 12 },
+  previewImage: { width: '100%', height: 200, borderRadius: 12 },
+  frameActionsRowX: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  framePositioningSection: { marginTop: 16, marginBottom: 12, backgroundColor: 'rgba(255, 215, 0, 0.08)', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.2)' },
+  framePositioningTitle: { fontSize: 13, fontWeight: '700' as const, color: '#FFD700', marginBottom: 12 },
+  gestureInstructionsBox: { backgroundColor: 'rgba(0, 0, 0, 0.3)', borderRadius: 10, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.15)' },
+  gestureInstructionTitle: { fontSize: 12, fontWeight: '700' as const, color: '#FFD700', marginBottom: 8 },
+  gestureInstruction: { fontSize: 11, color: '#CCCCCC', lineHeight: 18, marginBottom: 4 },
+  positionInfoRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  positionInfoItem: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.3)', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.15)' },
+  positionInfoLabel: { fontSize: 10, color: '#999', marginBottom: 4, fontWeight: '600' as const },
+  positionInfoValue: { fontSize: 13, color: '#FFD700', fontWeight: '700' as const },
+  sliderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 8 },
+  sliderLabel: { fontSize: 11, color: '#CCCCCC', width: 70, fontWeight: '600' as const },
+  slider: { flex: 1 },
+  sliderValue: { fontSize: 11, color: '#FFD700', width: 50, textAlign: 'right' as const, fontWeight: '600' as const },
+  zoomControlsRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  zoomButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255, 215, 0, 0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.3)' },
+  zoomButtonText: { fontSize: 24, color: '#FFD700', fontWeight: '700' as const, lineHeight: 28 },
+  resetPositionButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: 'rgba(255, 215, 0, 0.1)', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.3)' },
+  resetPositionText: { fontSize: 12, color: '#FFD700', fontWeight: '700' as const },
+  alignStart: { alignSelf: 'flex-start' },
+  alignCenter: { alignSelf: 'center' },
+  centeredImageContainer: { width: '100%', height: '100%', position: 'relative', alignItems: 'center', justifyContent: 'center' },
+  dismissKeyboardButton: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 30,
+    gap: 8,
+    zIndex: 2000,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 12,
+  },
+  dismissKeyboardText: {
+    color: '#1A1A1A',
+    fontSize: 14,
+    fontWeight: '700' as const,
+  },
+  instructionTip: {
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+  },
+  instructionTipText: {
+    color: '#FFD700',
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  applyPresetSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 12,
+  },
+  applyPresetButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#FFD700',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    shadowColor: '#FFD700',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  applyPresetButtonDisabled: {
+    opacity: 0.5,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  applyPresetButtonText: {
+    color: '#1A1A1A',
+    fontSize: 14,
+    fontWeight: '700' as const,
+  },
+  changeImageButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  cameraContainer: {
+    flex: 1,
+    backgroundColor: '#000000',
+  },
+  camera: {
+    flex: 1,
+  },
+  cameraControls: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 20,
+    zIndex: 10,
+  },
+  cameraCloseButton: {
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  cameraCloseGradient: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cameraCaptureContainer: {
+    position: 'absolute',
+    bottom: 40,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    gap: 12,
+  },
+  captureButton: {
+    borderRadius: 40,
+    overflow: 'hidden',
+  },
+  captureGradient: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captureHint: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+});
