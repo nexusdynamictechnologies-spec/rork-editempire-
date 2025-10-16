@@ -255,6 +255,10 @@ export const [EditorProvider, useEditor] = createContextHook(() => {
     isBackgroundChange: boolean;
     isCharacterAddition: boolean;
     isObjectModification: boolean;
+    isReflectionEdit: boolean;
+    isComplexComposition: boolean;
+    hasWaterReflection: boolean;
+    hasMirrorReflection: boolean;
     targetElements: string[];
     preserveElements: string[];
   } => {
@@ -266,6 +270,12 @@ export const [EditorProvider, useEditor] = createContextHook(() => {
     const isCharacterAddition = /(add|insert|place).*?(character|person|people|rider|driver)/i.test(prompt);
     const isObjectModification = /(change|modify|replace|swap).*?(motorcycle|bike|vehicle|car|object)/i.test(prompt);
     
+    // Detect complex composition features
+    const isReflectionEdit = /(reflection|reflected|mirror|water reflection|puddle)/i.test(prompt);
+    const hasWaterReflection = /(water|puddle|wet|pool|lake|river)/i.test(prompt);
+    const hasMirrorReflection = /(mirror|glass|window)/i.test(prompt);
+    const isComplexComposition = /(skeleton|skull|artistic|surreal|double exposure|composite)/i.test(prompt);
+    
     // Extract what should be changed
     const targetElements: string[] = [];
     if (/(motorcycle|bike)/i.test(prompt)) targetElements.push('motorcycle');
@@ -273,9 +283,11 @@ export const [EditorProvider, useEditor] = createContextHook(() => {
     if (/(background|backdrop)/i.test(prompt)) targetElements.push('background');
     if (/(hair|hairstyle)/i.test(prompt)) targetElements.push('hair');
     if (/(clothing|outfit|shirt|pants)/i.test(prompt)) targetElements.push('clothing');
+    if (/(reflection)/i.test(prompt)) targetElements.push('reflection');
+    if (/(skeleton|skull|overlay)/i.test(prompt)) targetElements.push('artistic-overlay');
     
     // Everything else should be preserved
-    const allElements = ['motorcycle', 'rider', 'background', 'hair', 'clothing', 'face', 'body', 'pose'];
+    const allElements = ['motorcycle', 'rider', 'background', 'hair', 'clothing', 'face', 'body', 'pose', 'reflection', 'artistic-overlay'];
     const preserveElements = allElements.filter(el => !targetElements.includes(el));
     
     return {
@@ -283,6 +295,10 @@ export const [EditorProvider, useEditor] = createContextHook(() => {
       isBackgroundChange,
       isCharacterAddition,
       isObjectModification,
+      isReflectionEdit,
+      isComplexComposition,
+      hasWaterReflection,
+      hasMirrorReflection,
       targetElements,
       preserveElements
     };
@@ -384,7 +400,7 @@ export const [EditorProvider, useEditor] = createContextHook(() => {
       prompt += ' 🎯 ADVANCED SPATIAL POSITIONING & SCENE INTEGRATION PROTOCOL:\n\n📍 PRECISE SPATIAL PLACEMENT:\n- Analyze the EXACT 3D spatial coordinates of the target location (chair, seat, table, etc.)\n- Calculate proper perspective, depth, and scale for the character at that specific position\n- Ensure character size matches the distance from camera and surrounding object proportions\n- Apply correct foreshortening and perspective distortion based on camera angle\n- Position character with natural weight distribution and realistic contact with surfaces\n\n🪑 FURNITURE & OBJECT INTERACTION MASTERY:\n- SITTING: Character hips align with seat surface, thighs parallel to seat, feet naturally placed on floor\n- CHAIR POSITIONING: Character centered on chair seat, back against backrest if appropriate, arms on armrests\n- NATURAL POSTURE: Spine curvature matches sitting position, shoulders relaxed, head at natural angle\n- CONTACT POINTS: Realistic compression where body meets furniture, proper weight distribution\n- SPATIAL AWARENESS: Character appears aware of and naturally positioned relative to furniture dimensions\n\n🎨 ENVIRONMENTAL INTEGRATION FOR SEATED CHARACTERS:\n- LIGHTING MATCH: Character receives same lighting as furniture - analyze light direction, intensity, color temperature\n- SHADOW CASTING: Character casts realistic shadows on chair/floor matching scene\'s existing shadow patterns\n- ATMOSPHERIC CONSISTENCY: Apply same depth haze, air particles, and atmospheric effects as the room\n- COLOR HARMONY: Character skin tones and clothing adapt to room\'s ambient light color\n- REFLECTION INTEGRATION: If floor/surfaces are reflective, add appropriate character reflections\n\n🔬 MICRO-DETAIL SPATIAL REALISM:\n- DEPTH OF FIELD: If background is blurred, apply appropriate blur to character based on focal distance\n- EDGE QUALITY: Character edges have natural softness matching the scene\'s focus characteristics\n- OCCLUSION: Proper overlap - chair arms in front of character body where appropriate, character in front of chair back\n- CONTACT SHADOWS: Dark ambient occlusion where character body meets chair surfaces\n- FABRIC INTERACTION: Character clothing drapes naturally on chair, realistic wrinkles and compression\n\n🎭 NATURAL SEATED POSE CHARACTERISTICS:\n- RELAXED vs FORMAL: Match pose formality to scene context (casual lean vs upright professional)\n- HAND PLACEMENT: Natural hand positions - on lap, armrests, or holding objects\n- LEG POSITIONING: Feet flat on floor, legs crossed, or natural comfortable position\n- FACIAL DIRECTION: Character gaze and head angle appropriate for the scene context\n- BODY LANGUAGE: Posture conveys appropriate emotion and comfort level for the setting\n\n⚠️ CRITICAL SPATIAL ACCURACY RULES:\n- Character MUST appear to have been originally photographed sitting in that exact chair\n- NO floating or hovering - perfect contact with all surfaces\n- Scale must be PRECISELY correct - character fits naturally in the space\n- Perspective must be PERFECT - character follows same vanishing points as the room\n- Integration must be SEAMLESS - impossible to detect the character was added\n\n🌟 COMPLEX SCENE SPATIAL INTELLIGENCE:\n- MULTIPLE CHAIRS: Correctly identify which specific chair is referenced (left, right, center, empty, etc.)\n- DIRECTIONAL CLARITY: Understand "left" and "right" from camera perspective, not character perspective\n- EMPTY SPACE DETECTION: Identify unoccupied chairs/seats and place character there naturally\n- SPATIAL RELATIONSHIPS: Maintain proper distances between character and other scene elements\n- ROOM GEOMETRY: Respect the room\'s 3D space, walls, floor plane, and architectural features\n\n✨ FINAL SPATIAL INTEGRATION GOAL:\nThe character must appear INDISTINGUISHABLE from someone who was originally sitting in that chair when the photo was taken. Every aspect - position, scale, lighting, shadows, perspective, and interaction with furniture - must be ABSOLUTELY PERFECT and PHOTOREALISTIC.';
     }
     
-    // ADVANCED CONSISTENCY & ACCURACY SYSTEM
+    // ADVANCED CONSISTENCY & ACCURACY SYSTEM WITH COMPLEX COMPOSITION SUPPORT
     const consistencyInstructions = `
 🎯 ADVANCED CONSISTENCY PRESERVATION SYSTEM
 
@@ -394,6 +410,8 @@ export const [EditorProvider, useEditor] = createContextHook(() => {
 - Position Change Requested: ${intent.isPositionChange ? 'YES' : 'NO'}
 - Background Change Requested: ${intent.isBackgroundChange ? 'YES' : 'NO'}
 - Character Addition Requested: ${intent.isCharacterAddition ? 'YES' : 'NO'}
+- Complex Composition Detected: ${intent.isComplexComposition ? 'YES (artistic overlay)' : 'NO'}
+- Reflection Present: ${intent.hasWaterReflection ? 'YES (water/puddle)' : intent.hasMirrorReflection ? 'YES (mirror/glass)' : 'NO'}
 
 🔒 ABSOLUTE PRESERVATION PROTOCOL:
 ${intent.preserveElements.map(el => `- ${el.toUpperCase()}: Keep EXACTLY as is - same position, same appearance, same details`).join('\n')}
@@ -545,10 +563,20 @@ ${prompt}
 
 💎 QUALITY STANDARDS:
 - Maintain original image quality and sharpness
-- Preserve natural colors and realistic appearance
+- Preserve natural colors and realistic appearance  
 - Keep lighting and shadows consistent with the original
 - Maintain authentic material properties
-- Ensure photorealistic results
+- Ensure photorealistic results (or preserve artistic style if surreal/composite)
+- Respect complex compositions - don't oversimplify artistic imagery
+
+🎯 REFLECTION-AWARE EDITING PROTOCOL:
+When editing images with reflections:
+1. IDENTIFY reflection type: Water puddle, mirror, glass, wet surface
+2. ANALYZE subject-reflection relationship: Is it physically accurate or artistic?
+3. APPLY EDITS to both subject AND reflection if physically linked
+4. PRESERVE water/mirror surface characteristics and distortions
+5. MAINTAIN lighting coherence between subject and reflected environment
+6. For artistic/surreal reflections: Preserve creative intent, don't force realism
 
 🎭 MULTI-SUBJECT IDENTITY PRESERVATION:
 
@@ -588,9 +616,54 @@ If adding characters to a scene:
 - Integrate character naturally with proper ground contact and spatial positioning
 - Use ONLY the character type explicitly requested (no substitutions)
 
+🎨 COMPLEX COMPOSITION & ARTISTIC EFFECTS MASTERY:
+
+🌊 WATER REFLECTION PROTOCOL (for images with puddles, water, wet surfaces):
+- When editing subjects reflected in water, maintain PERFECT SYMMETRY between subject and reflection
+- Reflection must be vertically flipped version of the main subject with natural water distortion
+- Apply subtle wave ripples and water texture to reflection for realism
+- Reflection should be slightly darker and less saturated than the main subject
+- Preserve water surface characteristics (ripples, debris, lighting)
+- If editing main subject (face, clothing, pose), apply IDENTICAL changes to the reflection
+- Maintain consistent lighting direction in both subject and reflection
+- Keep reflection opacity and clarity consistent with water surface conditions
+- Preserve depth and perspective - reflection follows water plane geometry
+
+🎭 ARTISTIC OVERLAY & DOUBLE EXPOSURE HANDLING:
+- For images with skeleton/skull overlays in reflections or as artistic effects:
+  - Treat as INTENTIONAL ARTISTIC COMPOSITION, not an error to be removed
+  - Preserve the artistic relationship between subject and overlay
+  - Maintain blend modes, opacity, and visual harmony between layers
+  - If editing main subject, consider whether overlay should be affected
+  - Respect the artistic intent of composite imagery
+- For surreal/artistic compositions: Preserve creative elements while applying requested edits
+- Maintain visual balance and artistic coherence throughout edits
+
+🪞 MIRROR & GLASS REFLECTION PROTOCOL:
+- Maintain physics-accurate reflections in mirrors and glass surfaces
+- Reflection angle must match viewing angle and mirror position
+- Apply appropriate perspective distortion to reflections
+- Preserve lighting conditions affecting reflected surfaces
+- If editing reflected subject, apply changes to both primary and reflected instances
+
+💎 MATERIAL & TEXTURE INTELLIGENCE:
+${intent.hasWaterReflection || intent.hasMirrorReflection ? `
+- WATER SURFACE: Preserve ripples, transparency, color cast, and natural distortions
+- Apply physically accurate reflection properties for water depth and clarity
+- Maintain environmental integration - sky color, ambient light in water
+` : ''}
+- METALLIC SURFACES: Understand chrome, brushed metal, oxidized finishes - proper reflectivity
+- FABRIC TEXTURES: Distinguish cotton, silk, denim, leather - accurate drape and weave
+- SKIN TONES: Natural pores, subsurface scattering, realistic undertones
+- GEMSTONES: Diamond fire/refraction, emerald inclusions, proper faceting
+- PAINT FINISHES: Gloss (mirror-like), matte (no shine), metallic (sparkle), pearl (iridescent)
+- NATURAL MATERIALS: Wood grain depth, stone patterns, cement roughness, tree bark texture
+
 🔒 ULTRA-CRITICAL RESTRICTIONS:
 
 ❌ ABSOLUTELY FORBIDDEN:
+- DO NOT remove artistic overlays or intentional composite elements
+- DO NOT "fix" reflections that are meant to be artistic/surreal
 - DO NOT add any objects, characters, or elements unless explicitly requested
 - DO NOT remove or hide any subjects unless explicitly requested
 - DO NOT merge multiple subjects into one
@@ -658,15 +731,53 @@ When reference images are provided:
 - NO DRIFT: The replacement must not shift, move, or reposition other elements in the scene
 - CONTEXTUAL AWARENESS: Understand the relationship between objects (e.g., if replacing a truck with a trailer, ensure the new truck aligns with the trailer's hitch point)
 
-🔬 TEXTURE & MATERIAL MASTERY:
-When changing colors, textures, or materials:
-- UNDERSTAND MATERIAL PROPERTIES: Different materials reflect light differently (matte vs gloss, metallic vs flat, diamond sparkle vs emerald glow)
-- TEXTURE ACCURACY: Grainy surfaces stay grainy, smooth surfaces stay smooth, reflective surfaces maintain proper reflections
-- PAINT FINISHES: Distinguish between gloss (mirror-like), matte (no shine), metallic (sparkle), pearl (iridescent), chrome (mirror), candy (deep translucent)
-- GEMSTONE PROPERTIES: Diamonds have rainbow fire and sharp facets, emeralds have internal inclusions, rubies glow red, sapphires are deep blue
-- NATURAL MATERIALS: Wood grain patterns, stone textures (granite speckles, marble veins, concrete roughness), fabric weaves
-- METAL FINISHES: Brushed (linear grain), polished (mirror), oxidized (rust/patina), chrome (perfect reflection)
-- PHYSICAL ACCURACY: Materials behave according to real-world physics - proper reflectivity, transparency, refraction, subsurface scattering
+🔬 ULTRA-ADVANCED TEXTURE & MATERIAL MASTERY:
+When changing colors, textures, or materials - PRECISION MATERIAL SCIENCE:
+
+🎨 PAINT FINISHES (Complete Spectrum):
+- GLOSS: Mirror-like reflection, sharp specular highlights, deep color depth
+- MATTE: No shine, diffuse light scatter, flat appearance, powdery texture
+- METALLIC: Sparkle particles, color-shifting flakes, dimensional depth
+- PEARL/IRIDESCENT: Multi-color shift with viewing angle, delicate shimmer
+- CHROME: Perfect mirror reflection, liquid metal appearance
+- CANDY: Deep translucent color with base coat visible through
+- SATIN: Soft sheen between matte and gloss, elegant finish
+- HAMMERED: Textured surface with multiple reflection angles
+
+💎 GEMSTONE PHYSICS (Natural Properties):
+- DIAMONDS: Rainbow fire dispersion, brilliant-cut facets, maximum sparkle, refractive index 2.42
+- EMERALDS: Jardin (garden) inclusions, verdant green, less sparkle than diamond
+- RUBIES: Deep red internal glow, corundum structure, warm undertones
+- SAPPHIRES: Deep blue saturation, corundum hardness, occasional asterism
+- OPALS: Play-of-color, iridescent fire, delicate crazing patterns
+- PEARLS: Soft luster, organic layers, subtle color variations
+
+🪵 NATURAL MATERIALS (Organic Textures):
+- WOOD: Growth rings, medullary rays, knots, grain figure (straight/wavy/curly)
+- GRANITE: Crystalline structure, speckled pattern, polished reflectivity
+- MARBLE: Veining patterns, translucency, cool elegance
+- CONCRETE: Aggregate texture, porous surface, industrial roughness
+- TREE BARK: Deep fissures, layered texture, organic irregularity
+- LEATHER: Grain patterns, natural creasing, patina development
+- FABRIC WEAVES: Thread count visibility, drape characteristics, textile structure
+
+⚙️ METAL FINISHES (Industrial Precision):
+- BRUSHED: Linear grain pattern, directional reflection, satin appearance
+- POLISHED/MIRROR: Perfect reflection, liquid-smooth surface
+- OXIDIZED: Rust patina, verdigris, aged character, color transformation
+- CHROME: Liquid metal, perfect environmental reflection
+- ANODIZED: Color-treated aluminum, consistent hue, protective finish
+- HAMMERED: Hand-crafted texture, multiple faceted reflections
+- GUNMETAL: Dark grey-blue, minimal reflection, tactical aesthetic
+
+🌈 SURFACE PHYSICS (Light Interaction):
+- REFLECTIVITY: Material-accurate specular reflection strength
+- TRANSPARENCY: Glass, water, plastics - proper see-through quality with refraction
+- REFRACTION: Light bending through transparent materials (diamonds, water, glass)
+- SUBSURFACE SCATTERING: Skin, wax, jade - light penetration and glow
+- ANISOTROPIC REFLECTION: Brushed metals, hair, fabric - directional highlights
+- FRESNEL EFFECT: Stronger reflections at glancing angles
+- PHYSICAL ACCURACY: All materials behave according to real-world physics
 
 💎 ADVANCED CONSISTENCY ENFORCEMENT:
 - FACIAL IDENTITY LOCK: When editing images with people, maintain 100% facial recognition accuracy - same bone structure, features, expressions
