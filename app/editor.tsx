@@ -1329,6 +1329,7 @@ Now enhance the user's prompt with technical precision while maintaining ABSOLUT
                   <Text style={styles.gestureInstructionTitle}>Touch Gestures:</Text>
                   <Text style={styles.gestureInstruction}>🤏 Pinch with two fingers to zoom (0.5x - 3x)</Text>
                   <Text style={styles.gestureInstruction}>👆 Drag with one finger to pan/move image</Text>
+                  <Text style={styles.gestureInstruction}>⬆️⬇️⬅️➡️ Use arrow buttons to move view</Text>
                   <Text style={styles.gestureInstruction}>➕➖ Use +/− buttons for precise zoom control</Text>
                   <Text style={styles.gestureInstruction}>🔄 Tap Reset to center and fit image</Text>
                 </View>
@@ -1341,6 +1342,79 @@ Now enhance the user's prompt with technical precision while maintaining ABSOLUT
                   <View style={styles.positionInfoItem}>
                     <Text style={styles.positionInfoLabel}>Position</Text>
                     <Text style={styles.positionInfoValue}>{imagePositionX.toFixed(0)}, {imagePositionY.toFixed(0)}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.panControlsContainer}>
+                  <Text style={styles.panControlsTitle}>Pan Controls</Text>
+                  <View style={styles.panButtonsGrid}>
+                    <View style={styles.panButtonRow}>
+                      <View style={styles.panButtonSpacer} />
+                      <TouchableOpacity
+                        style={styles.panButton}
+                        onPress={() => {
+                          const panStep = 20;
+                          const newY = imagePositionY - panStep;
+                          const constrained = constrainPosition(imagePositionX, newY, imageScale);
+                          setImagePositionY(constrained.y);
+                          lastPanY.current = constrained.y;
+                          if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }}
+                        testID="pan-up"
+                      >
+                        <Text style={styles.panButtonText}>⬆</Text>
+                      </TouchableOpacity>
+                      <View style={styles.panButtonSpacer} />
+                    </View>
+                    <View style={styles.panButtonRow}>
+                      <TouchableOpacity
+                        style={styles.panButton}
+                        onPress={() => {
+                          const panStep = 20;
+                          const newX = imagePositionX - panStep;
+                          const constrained = constrainPosition(newX, imagePositionY, imageScale);
+                          setImagePositionX(constrained.x);
+                          lastPanX.current = constrained.x;
+                          if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }}
+                        testID="pan-left"
+                      >
+                        <Text style={styles.panButtonText}>⬅</Text>
+                      </TouchableOpacity>
+                      <View style={styles.panButtonCenter} />
+                      <TouchableOpacity
+                        style={styles.panButton}
+                        onPress={() => {
+                          const panStep = 20;
+                          const newX = imagePositionX + panStep;
+                          const constrained = constrainPosition(newX, imagePositionY, imageScale);
+                          setImagePositionX(constrained.x);
+                          lastPanX.current = constrained.x;
+                          if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }}
+                        testID="pan-right"
+                      >
+                        <Text style={styles.panButtonText}>➡</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles.panButtonRow}>
+                      <View style={styles.panButtonSpacer} />
+                      <TouchableOpacity
+                        style={styles.panButton}
+                        onPress={() => {
+                          const panStep = 20;
+                          const newY = imagePositionY + panStep;
+                          const constrained = constrainPosition(imagePositionX, newY, imageScale);
+                          setImagePositionY(constrained.y);
+                          lastPanY.current = constrained.y;
+                          if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }}
+                        testID="pan-down"
+                      >
+                        <Text style={styles.panButtonText}>⬇</Text>
+                      </TouchableOpacity>
+                      <View style={styles.panButtonSpacer} />
+                    </View>
                   </View>
                 </View>
 
@@ -1883,6 +1957,14 @@ const styles = StyleSheet.create({
   zoomButtonText: { fontSize: 24, color: '#FFD700', fontWeight: '700' as const, lineHeight: 28 },
   resetPositionButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: 'rgba(255, 215, 0, 0.1)', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.3)' },
   resetPositionText: { fontSize: 12, color: '#FFD700', fontWeight: '700' as const },
+  panControlsContainer: { marginBottom: 12, backgroundColor: 'rgba(0, 0, 0, 0.3)', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.15)' },
+  panControlsTitle: { fontSize: 12, fontWeight: '600' as const, color: '#FFD700', marginBottom: 8, textAlign: 'center' as const },
+  panButtonsGrid: { alignItems: 'center', gap: 6 },
+  panButtonRow: { flexDirection: 'row', gap: 6 },
+  panButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255, 215, 0, 0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.3)' },
+  panButtonText: { fontSize: 20, color: '#FFD700' },
+  panButtonSpacer: { width: 44 },
+  panButtonCenter: { width: 44 },
   alignStart: { alignSelf: 'flex-start' },
   alignCenter: { alignSelf: 'center' },
   centeredImageContainer: { width: '100%', height: '100%', position: 'relative', alignItems: 'center', justifyContent: 'center' },
