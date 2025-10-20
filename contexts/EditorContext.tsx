@@ -988,10 +988,23 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
             throw new Error('Image too large. Please use a smaller image (under 5MB).');
           }
           
-          if (response.status === 400 && (errText.includes('blocked') || errText.includes('Content was blocked'))) {
+          if (response.status === 400 || errText.toLowerCase().includes('blocked') || errText.toLowerCase().includes('content was blocked')) {
             console.error('❌ Content blocked by AI safety filters');
-            console.error('❌ Response error text:', errText.substring(0, 200));
-            throw new Error('🚫 Content Safety Filter Triggered\n\n⚠️ The AI service blocked this request due to content policy concerns.\n\n💡 Common causes:\n• Overly detailed descriptions of violence or destruction\n• Graphic or explicit language\n• Sensitive subject matter\n\n🔄 Try these solutions:\n• Simplify your prompt to focus on the main idea\n• Use less detailed descriptions\n• Avoid graphic or violent terms\n• Focus on artistic/cinematic language\n• Try "action movie scene" instead of detailed descriptions\n\n📝 Example: Instead of detailed crash descriptions, try:\n"Character in dramatic action movie scene with vehicle"');
+            console.error('❌ Response status:', response.status);
+            console.error('❌ Response error text:', errText.substring(0, 300));
+            
+            // Parse error if it's JSON
+            let errorDetail = '';
+            try {
+              const errorJson = JSON.parse(errText);
+              if (errorJson.error) {
+                errorDetail = errorJson.error;
+              }
+            } catch {
+              errorDetail = errText.substring(0, 200);
+            }
+            
+            throw new Error('🚫 Content Safety Filter Triggered\n\n⚠️ The AI service blocked this request because it detected content that may violate safety policies.\n\n💡 Common causes:\n• Images containing sensitive content\n• Prompts with graphic descriptions\n• Requests for violent or inappropriate content\n• Images with restricted subjects\n\n🔄 Solutions:\n\n1️⃣ SIMPLIFY YOUR PROMPT:\n• Use general descriptions instead of detailed ones\n• Focus on artistic/creative language\n• Avoid graphic or explicit terms\n\n2️⃣ TRY DIFFERENT WORDING:\n• "Action scene" instead of detailed violence\n• "Dramatic atmosphere" instead of explicit descriptions\n• "Cinematic composition" for stylistic changes\n\n3️⃣ CHECK YOUR IMAGE:\n• Ensure the source image doesn\'t contain restricted content\n• Try a different image if the block persists\n• Remove reference images and try again\n\n📝 Example improvements:\n❌ Detailed violent/graphic descriptions\n✅ "Cinematic action movie scene"\n\n❌ Explicit content requests\n✅ "Artistic portrait with dramatic lighting"\n\n🔍 Technical detail: ' + (errorDetail || 'Content policy violation detected'));
           }
           
           throw new Error(`Request failed (${response.status}). ${errText.substring(0, 200)}`);
