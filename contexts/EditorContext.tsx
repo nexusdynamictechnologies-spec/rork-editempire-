@@ -304,6 +304,65 @@ export const [EditorProvider, useEditor] = createContextHook(() => {
     };
   }, []);
 
+  const detectCameraAngles = useCallback((prompt: string): string => {
+    let enhanced = prompt;
+    const lower = prompt.toLowerCase();
+    
+    // CAMERA ANGLE DETECTION & ENHANCEMENT
+    const cameraAnglePatterns = [
+      // Diagonal/tilted camera angles
+      { pattern: /(diagonal|tilted|canted|dutch angle|slanted).*cam/i, enhancement: ' DIAGONAL CAMERA ANGLE: Position camera at 30-45° diagonal tilt to create dynamic, energetic framing. The horizon line is intentionally angled, not level. Subject remains upright with natural posture while the entire frame is rotated for dramatic effect. Maintain proper perspective and depth cues.' },
+      
+      // Overhead/above angles
+      { pattern: /(overhead|above|top.?down|bird.?eye|aerial view|from above|looking down)/i, enhancement: ' OVERHEAD CAMERA ANGLE: Position camera directly above subject at 60-90° angle looking straight down. Subject should be visible from top perspective showing top of head, shoulders visible, proper foreshortening of body. Ground/floor clearly visible around subject. Apply correct overhead perspective with natural size relationships.' },
+      
+      // Low angle looking up
+      { pattern: /(low angle|from below|worm.?eye|ground level|looking up)/i, enhancement: ' LOW ANGLE CAMERA: Position camera at ground level or below subject, angled 20-45° upward. Show bottom of chin, nostril visibility natural for low angle, body appears tall and powerful. Sky or ceiling visible in background. Proper upward perspective with natural foreshortening.' },
+      
+      // Character holding phone/camera
+      { pattern: /(holding.*(phone|cell|camera)|taking.*(photo|picture|selfie)|phone out|camera out)/i, enhancement: ' CHARACTER HOLDING DEVICE: Render character with phone/camera held naturally in hands at realistic height (chest to eye level). Device screen faces character, camera lens faces forward. Apply proper grip: fingers wrapped around device, thumb on side or back. Natural arm position from shoulder with realistic joint angles. Device properly scaled for hand size. Show authentic interaction: slight forward arm extension for selfie, or natural viewing position. Apply proper perspective - if taking photo of something, device points toward that target.' },
+      
+      // Showing character face in specific angles
+      { pattern: /(show.*(face|eyes|expression)|face.*visible|looking at camera|facing camera)/i, enhancement: ' FACE VISIBILITY PRIORITY: Ensure face is clearly visible and well-lit with proper exposure. Eyes should be sharp and in focus. Facial features (eyes, nose, mouth) clearly defined. Natural expression visible. If overhead angle, tilt subject head slightly up toward camera. If low angle, ensure face remains primary focus. Camera positioned to maximize facial clarity and expression readability.' },
+    ];
+    
+    for (const { pattern, enhancement } of cameraAnglePatterns) {
+      if (pattern.test(prompt)) {
+        enhanced += enhancement;
+        console.log('📷 Camera angle detected:', pattern);
+      }
+    }
+    
+    return enhanced;
+  }, []);
+
+  const preventCartoonification = useCallback((prompt: string): string => {
+    let enhanced = prompt;
+    const lower = prompt.toLowerCase();
+    
+    // Detect if user explicitly requested cartoon/anime style
+    const wantsCartoon = /(anime|cartoon|animated|cel.?shade|2d|comic|manga)/i.test(lower);
+    const wantsRealism = /(realistic|photorealistic|real life|photo|live action)/i.test(lower);
+    
+    // If no style specified or realism requested, add anti-cartoon directive
+    if (!wantsCartoon || wantsRealism) {
+      enhanced += '\n\n🚫 ANTI-CARTOON PROTOCOL - PHOTOREALISTIC RENDERING MANDATORY:\n'
+        + '- DO NOT convert to cartoon, anime, or animated style\n'
+        + '- DO NOT simplify features into cartoon aesthetics\n'
+        + '- DO NOT use cel-shading or flat color blocks\n'
+        + '- MAINTAIN photorealistic human anatomy and proportions\n'
+        + '- RENDER with real-world materials, lighting, and textures\n'
+        + '- USE authentic human skin texture with natural pores and details\n'
+        + '- APPLY realistic hair rendering with individual strand definition\n'
+        + '- PRESERVE photographic quality and cinematic realism\n'
+        + '- RENDER clothing with real fabric textures and natural drape\n'
+        + '- MAINTAIN authentic environmental integration and realistic shadows\n'
+        + '\nThis MUST be a photorealistic image that looks like it was captured with a professional camera. NO cartoon or animated stylization whatsoever.';
+    }
+    
+    return enhanced;
+  }, []);
+
   const buildEnhancedPrompt = useCallback((params: EditParams): string => {
     if (!params || !params.prompt || !params.prompt.trim()) {
       throw new Error('Edit prompt is required');
@@ -315,6 +374,12 @@ export const [EditorProvider, useEditor] = createContextHook(() => {
     validatePromptContent(params.prompt);
     
     let prompt = resolveAssetAliasesInText(params.prompt.trim());
+    
+    // APPLY CAMERA ANGLE DETECTION
+    prompt = detectCameraAngles(prompt);
+    
+    // PREVENT UNWANTED CARTOON CONVERSION
+    prompt = preventCartoonification(prompt);
     
     // Analyze user intent for better accuracy
     const intent = analyzePromptIntent(prompt);
