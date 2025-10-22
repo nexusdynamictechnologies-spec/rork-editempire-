@@ -31,7 +31,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "app.rork.nano-banana-style-prompt-editor",
+      "package": "com.editempire.app",
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
