@@ -898,6 +898,7 @@ export default function EditorScreen() {
     }
 
     try {
+      console.log('🧠 Enhancing prompt with AI...');
       const response = await fetch('https://toolkit.rork.com/text/llm/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -977,11 +978,44 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
           ],
         }),
       });
-      if (!response.ok) throw new Error('Failed to enhance prompt');
+      
+      console.log('📡 Prompt enhancement response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        console.error('❌ Prompt enhancement API error:', response.status, errorText.substring(0, 200));
+        throw new Error(`Failed to enhance prompt (${response.status})`);
+      }
+      
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('❌ Non-JSON response from prompt enhancement:', text.substring(0, 200));
+        throw new Error('Invalid response format from enhancement service');
+      }
+      
       const result = await response.json();
-      if (result.completion) setEditPrompt(result.completion.trim());
+      console.log('✅ Prompt enhancement result:', { hasCompletion: !!result.completion, hasText: !!result.text });
+      
+      // Handle different response formats
+      const enhancedText = result.completion || result.text || result.response || result.output;
+      
+      if (enhancedText && typeof enhancedText === 'string' && enhancedText.trim()) {
+        setEditPrompt(enhancedText.trim());
+        setStatusMessage('Prompt enhanced successfully');
+        setStatusType('success');
+        setTimeout(() => setStatusMessage(null), 2000);
+        console.log('✨ Prompt enhanced successfully');
+      } else {
+        console.warn('⚠️ No valid enhancement text in response');
+        throw new Error('Enhancement service returned empty result');
+      }
     } catch (error) {
-      console.error('Prompt enhancement error:', error);
+      console.error('❌ Prompt enhancement error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Failed to enhance prompt';
+      setStatusMessage(errorMsg);
+      setStatusType('error');
+      setTimeout(() => setStatusMessage(null), 3000);
     } finally {
       setIsEnhancingPrompt(false);
     }
