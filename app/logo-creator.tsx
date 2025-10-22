@@ -347,6 +347,86 @@ Create a stunning professional logo that showcases "${logoText}" with perfect ty
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
           >
+            <View style={styles.howToUseSection}>
+              <Text style={styles.howToUseTitle}>📋 How to Use the Logo Tab</Text>
+              <View style={styles.howToUseContent}>
+                <Text style={styles.howToUseHeader}>✨ NO IMAGE UPLOAD REQUIRED</Text>
+                <Text style={styles.howToUseText}>
+                  The Logo tab is designed for creating professional logos from scratch without needing to upload any images. Simply describe what you want!
+                </Text>
+                
+                <Text style={styles.howToUseStepTitle}>Step 1: Enter Your Text</Text>
+                <Text style={styles.howToUseText}>
+                  • Type the exact letters, numbers, or symbols you want in your logo
+                  • Examples: &ldquo;NDT&rdquo;, &ldquo;AB&rdquo;, &ldquo;X23&rdquo;, &ldquo;LOGO&rdquo;, &ldquo;99&rdquo;, &ldquo;A&B&rdquo;
+                  • The AI will render each character with pixel-perfect accuracy
+                  • Maximum 20 characters
+                </Text>
+                
+                <Text style={styles.howToUseStepTitle}>Step 2: Choose a Logo Style</Text>
+                <Text style={styles.howToUseText}>
+                  • Select from 10 professional styles: Modern, Vintage, Tech, Luxury, Playful, Corporate, 3D, Gradient, Monogram, or Badge
+                  • Each style is optimized for different brand aesthetics
+                  • The style will be applied while keeping your text perfectly legible
+                </Text>
+                
+                <Text style={styles.howToUseStepTitle}>Step 3: Add Custom Instructions (Optional)</Text>
+                <Text style={styles.howToUseText}>
+                  • Specify colors: &ldquo;use blue and gold colors&rdquo;
+                  • Add themes: &ldquo;tech-focused with circuit patterns&rdquo;
+                  • Request specific elements: &ldquo;incorporate a shield shape&rdquo;
+                  • Describe the mood: &ldquo;professional and trustworthy&rdquo;
+                </Text>
+                
+                <Text style={styles.howToUseStepTitle}>Step 4: Generate Your Logo</Text>
+                <Text style={styles.howToUseText}>
+                  • Click &ldquo;Generate Professional Logo&rdquo;
+                  • AI creates a high-quality logo with your exact text
+                  • Text accuracy is guaranteed - every letter rendered perfectly
+                  • Generation takes 10-30 seconds
+                </Text>
+                
+                <Text style={styles.howToUseStepTitle}>Step 5: Use in Editor (Optional)</Text>
+                <Text style={styles.howToUseText}>
+                  • Click &ldquo;Open in Editor&rdquo; to further customize your logo
+                  • Add backgrounds, effects, or additional elements
+                  • Export in various formats and sizes
+                </Text>
+                
+                <Text style={styles.howToUseHeader}>💎 Pro Tips for Best Results:</Text>
+                <Text style={styles.howToUseText}>
+                  ✓ Keep text concise (2-8 characters work best)
+                  ✓ Be specific about colors and themes in custom instructions
+                  ✓ Choose styles that match your brand identity
+                  ✓ Monogram style works great for 2-3 letters
+                  ✓ Badge style perfect for circular/emblem designs
+                  ✓ 3D Effect adds depth and modern appeal
+                  ✓ The AI guarantees accurate text rendering every time
+                </Text>
+                
+                <Text style={styles.howToUseHeader}>🎯 Example Prompts:</Text>
+                <Text style={styles.howToUseExample}>
+                  Text: &ldquo;NDT&rdquo;
+                  Style: Modern
+                  Custom: &ldquo;use electric blue and silver colors, tech theme&rdquo;
+                </Text>
+                <Text style={styles.howToUseExample}>
+                  Text: &ldquo;LUXURY&rdquo;
+                  Style: Luxury
+                  Custom: &ldquo;gold and black color scheme, elegant serif font&rdquo;
+                </Text>
+                <Text style={styles.howToUseExample}>
+                  Text: &ldquo;X7&rdquo;
+                  Style: 3D Effect
+                  Custom: &ldquo;metallic finish, gaming aesthetic, neon accents&rdquo;
+                </Text>
+                
+                <Text style={styles.howToUseFooter}>
+                  🚀 The Logo tab delivers professional-quality logos with 100% accurate text rendering, consistency, and smooth generation. Perfect for branding, social media, and business use!
+                </Text>
+              </View>
+            </View>
+
             {generatedLogo && (
               <View style={styles.previewSection}>
                 <Text style={styles.sectionTitle}>Generated Logo</Text>
@@ -553,6 +633,61 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
     paddingBottom: 40,
+  },
+  howToUseSection: {
+    backgroundColor: 'rgba(255, 215, 0, 0.05)',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 30,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.2)',
+  },
+  howToUseTitle: {
+    fontSize: 20,
+    fontWeight: '800' as const,
+    color: '#FFD700',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  howToUseContent: {
+    gap: 12,
+  },
+  howToUseHeader: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#FFD700',
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  howToUseStepTitle: {
+    fontSize: 15,
+    fontWeight: '700' as const,
+    color: '#FFA500',
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  howToUseText: {
+    fontSize: 14,
+    color: '#CCCCCC',
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  howToUseExample: {
+    fontSize: 13,
+    color: '#999',
+    fontStyle: 'italic' as const,
+    lineHeight: 18,
+    marginLeft: 12,
+    marginBottom: 8,
+  },
+  howToUseFooter: {
+    fontSize: 14,
+    color: '#FFD700',
+    fontWeight: '600' as const,
+    lineHeight: 20,
+    marginTop: 12,
+    textAlign: 'center',
+    fontStyle: 'italic' as const,
   },
   previewSection: {
     marginBottom: 30,

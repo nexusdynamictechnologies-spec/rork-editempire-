@@ -36,6 +36,12 @@ function RootLayoutNav() {
           headerShown: false,
         }} 
       />
+      <Stack.Screen 
+        name="logo-creator" 
+        options={{ 
+          headerShown: false,
+        }} 
+      />
     </Stack>
   );
 }
