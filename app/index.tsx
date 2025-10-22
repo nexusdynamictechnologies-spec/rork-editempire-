@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Upload, Sparkles, Zap, Palette, Film, BookOpen, Heart, X } from 'lucide-react-native';
+import { Upload, Sparkles, Zap, Palette, Film, BookOpen, Heart, X, Type } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 
@@ -322,6 +322,26 @@ export default function HomeScreen() {
                 <View style={styles.instructionsTextContainer}>
                   <Text style={styles.instructionsTitle}>How to Use Edit Empire</Text>
                   <Text style={styles.instructionsSubtitle}>Get the best results with our complete guide</Text>
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+
+          {/* Logo Creator Section */}
+          <View style={styles.instructionsSection}>
+            <TouchableOpacity
+              style={styles.instructionsButton}
+              onPress={() => router.push('/logo-creator')}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['rgba(255, 215, 0, 0.15)', 'rgba(255, 165, 0, 0.15)']}
+                style={styles.instructionsGradient}
+              >
+                <Type size={24} color="#FFD700" strokeWidth={2} />
+                <View style={styles.instructionsTextContainer}>
+                  <Text style={styles.instructionsTitle}>Professional Logo Creator</Text>
+                  <Text style={styles.instructionsSubtitle}>Create logos with exact text rendering & style</Text>
                 </View>
               </LinearGradient>
             </TouchableOpacity>
