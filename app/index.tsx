@@ -123,7 +123,6 @@ export default function HomeScreen() {
                   contentFit="contain"
                   testID="app-logo"
                 />
-                <Text style={styles.title}>Edit Empire</Text>
               </View>
 
             </View>
@@ -533,17 +532,17 @@ const styles = StyleSheet.create({
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     marginBottom: 12,
   },
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   logo3DWrapper: {
-    width: 48,
-    height: 48,
-    marginRight: 12,
+    width: 120,
+    height: 120,
   },
   logoEmoji: {
     fontSize: 28,
