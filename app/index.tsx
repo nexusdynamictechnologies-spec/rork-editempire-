@@ -327,21 +327,34 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Logo Creator Section */}
-          <View style={styles.instructionsSection}>
+          {/* Logo Creator Section - Featured */}
+          <View style={styles.logoCreatorSection}>
+            <Text style={styles.logoCreatorLabel}>✨ NEW FEATURE</Text>
             <TouchableOpacity
-              style={styles.instructionsButton}
-              onPress={() => router.push('/logo-creator')}
-              activeOpacity={0.8}
+              style={styles.logoCreatorButton}
+              onPress={async () => {
+                if (Platform.OS !== 'web') {
+                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
+                router.push('/logo-creator');
+              }}
+              activeOpacity={0.85}
             >
               <LinearGradient
-                colors={['rgba(255, 215, 0, 0.15)', 'rgba(255, 165, 0, 0.15)']}
-                style={styles.instructionsGradient}
+                colors={['#FFD700', '#FFA500', '#FF8C00']}
+                style={styles.logoCreatorGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
               >
-                <Type size={24} color="#FFD700" strokeWidth={2} />
-                <View style={styles.instructionsTextContainer}>
-                  <Text style={styles.instructionsTitle}>Professional Logo Creator</Text>
-                  <Text style={styles.instructionsSubtitle}>Create logos with exact text rendering & style</Text>
+                <View style={styles.logoCreatorContent}>
+                  <View style={styles.logoCreatorIconContainer}>
+                    <Type size={32} color="#1A1A1A" strokeWidth={3} />
+                  </View>
+                  <View style={styles.logoCreatorTextContainer}>
+                    <Text style={styles.logoCreatorTitle}>Professional Logo Creator</Text>
+                    <Text style={styles.logoCreatorSubtitle}>Create custom logos with AI - No image upload needed!</Text>
+                    <Text style={styles.logoCreatorFeatures}>• Exact text rendering • Multiple styles • 100% accurate</Text>
+                  </View>
                 </View>
               </LinearGradient>
             </TouchableOpacity>
@@ -924,5 +937,66 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#CCCCCC',
     textAlign: 'center',
+  },
+  logoCreatorSection: {
+    paddingHorizontal: 20,
+    marginBottom: 35,
+  },
+  logoCreatorLabel: {
+    fontSize: 12,
+    fontWeight: '800' as const,
+    color: '#FFD700',
+    textAlign: 'center',
+    marginBottom: 12,
+    letterSpacing: 1.5,
+  },
+  logoCreatorButton: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#FFD700',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  logoCreatorGradient: {
+    padding: 24,
+    borderRadius: 20,
+  },
+  logoCreatorContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logoCreatorIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    backgroundColor: 'rgba(26, 26, 26, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  logoCreatorTextContainer: {
+    flex: 1,
+  },
+  logoCreatorTitle: {
+    fontSize: 18,
+    fontWeight: '800' as const,
+    color: '#1A1A1A',
+    marginBottom: 6,
+  },
+  logoCreatorSubtitle: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#1A1A1A',
+    opacity: 0.8,
+    marginBottom: 6,
+    lineHeight: 18,
+  },
+  logoCreatorFeatures: {
+    fontSize: 11,
+    fontWeight: '600' as const,
+    color: '#1A1A1A',
+    opacity: 0.7,
   },
 });

@@ -308,18 +308,17 @@ Create a stunning professional logo that showcases "${logoText}" with perfect ty
     }
   };
 
-  const handleUseInEditor = async () => {
+  const handleUseInEditor = () => {
     if (!generatedLogo) return;
     
     if (Platform.OS !== 'web') {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
-    const EditorModule = await import('@/contexts/EditorContext');
-    const editorHook = EditorModule.useEditor;
-    const { startNewSourceImage } = editorHook();
-    startNewSourceImage(generatedLogo);
-    router.push('/editor');
+    router.push({
+      pathname: '/editor',
+      params: { sourceImage: generatedLogo }
+    });
   };
 
   return (
