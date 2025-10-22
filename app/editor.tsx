@@ -42,6 +42,7 @@ import {
   Camera,
   Mic,
   MicOff,
+  Type,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
@@ -57,7 +58,7 @@ import { advertisingKnowledge } from '@/constants/advertising';
 
 // Slimmed down editor per request
 
-type ToolMode = 'prompt' | 'frames' | 'enlarge' | 'undo' | 'upscale';
+type ToolMode = 'prompt' | 'frames' | 'enlarge' | 'undo' | 'upscale' | 'logo';
 
 type SelectMode = 'none' | 'region';
 
@@ -230,6 +231,12 @@ export default function EditorScreen() {
   const appState = useRef<AppStateStatus>(AppState.currentState);
   const [isAppActive, setIsAppActive] = useState<boolean>(true);
   const isRecordingRef = useRef<boolean>(false);
+  
+  const [logoText, setLogoText] = useState<string>('');
+  const [logoStyle, setLogoStyle] = useState<string>('modern');
+  const [logoCustomPrompt, setLogoCustomPrompt] = useState<string>('');
+  const [isGeneratingLogo, setIsGeneratingLogo] = useState<boolean>(false);
+  const [generatedLogo, setGeneratedLogo] = useState<string | null>(null);
 
   useEffect(() => {
     isRecordingRef.current = isRecording;
@@ -1570,6 +1577,188 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
 
 
 
+      case 'logo':
+        return (
+          <View style={styles.toolContent}>
+            <Text style={styles.toolTitle}>✨ Logo Creator</Text>
+            <Text style={styles.toolSubtitle}>Create professional logos with AI - No image required!</Text>
+
+            <View style={styles.logoCreatorInfoBox}>
+              <Text style={styles.logoCreatorInfoText}>Enter text, choose a style, and generate. Works independently or you can add your own image.</Text>
+            </View>
+
+            <View style={styles.logoInputSection}>
+              <Text style={styles.logoSectionTitle}>Logo Text</Text>
+              <TextInput
+                style={styles.logoTextInput}
+                placeholder="e.g., AB, X23, LOGO, etc."
+                placeholderTextColor="#666"
+                value={logoText}
+                onChangeText={setLogoText}
+                maxLength={20}
+                testID="logo-text-input"
+              />
+              <Text style={styles.logoCharCount}>{logoText.length}/20 characters</Text>
+            </View>
+
+            <View style={styles.logoStylesSection}>
+              <Text style={styles.logoSectionTitle}>Style</Text>
+              <View style={styles.logoStylesGrid}>
+                {['modern', 'vintage', 'tech', 'luxury', 'playful', 'corporate', '3d', 'gradient', 'monogram', 'badge'].map((style) => (
+                  <TouchableOpacity
+                    key={style}
+                    style={[styles.logoStyleCard, logoStyle === style && styles.logoStyleCardActive]}
+                    onPress={() => setLogoStyle(style)}
+                    testID={`logo-style-${style}`}
+                  >
+                    <Text style={[styles.logoStyleName, logoStyle === style && styles.logoStyleNameActive]}>
+                      {style.charAt(0).toUpperCase() + style.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.logoCustomSection}>
+              <Text style={styles.logoSectionTitle}>Custom Instructions (Optional)</Text>
+              <TextInput
+                style={styles.logoCustomInput}
+                placeholder="e.g., use blue and gold colors, tech theme"
+                placeholderTextColor="#666"
+                value={logoCustomPrompt}
+                onChangeText={setLogoCustomPrompt}
+                multiline
+                maxLength={200}
+                textAlignVertical="top"
+                testID="logo-custom-input"
+              />
+            </View>
+
+            {generatedLogo && (
+              <View style={styles.logoPreviewSection}>
+                <Text style={styles.logoSectionTitle}>Generated Logo</Text>
+                <View style={styles.logoPreviewContainer}>
+                  <ExpoImage
+                    source={{ uri: generatedLogo }}
+                    style={styles.logoPreview}
+                    contentFit="contain"
+                  />
+                </View>
+                <TouchableOpacity
+                  style={styles.logoUseButton}
+                  onPress={() => {
+                    startNewSourceImage(generatedLogo);
+                    setGeneratedLogo(null);
+                    setLogoText('');
+                    setLogoCustomPrompt('');
+                    setToolMode('prompt');
+                  }}
+                  testID="use-logo"
+                >
+                  <Wand2 size={16} color="#9D4EDD" />
+                  <Text style={styles.logoUseButtonText}>Use as Source Image</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={[styles.generateButton, (!logoText.trim() || isGeneratingLogo) && styles.generateButtonDisabled]}
+              disabled={!logoText.trim() || isGeneratingLogo}
+              onPress={async () => {
+                if (!logoText.trim()) {
+                  Alert.alert('Missing Text', 'Please enter the text/letters for your logo');
+                  return;
+                }
+
+                if (Platform.OS !== 'web') {
+                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
+
+                setIsGeneratingLogo(true);
+                setStatusMessage('Generating logo...');
+                setStatusType('info');
+
+                try {
+                  const stylePrompts: Record<string, string> = {
+                    modern: 'modern minimalist logo with clean lines and geometric shapes, contemporary aesthetic, professional',
+                    vintage: 'vintage retro logo with classic typography, aged texture, timeless design, heritage brand aesthetic',
+                    tech: 'futuristic tech logo with digital elements, circuit patterns, innovation-focused, cutting-edge design',
+                    luxury: 'luxury premium logo with elegant typography, sophisticated design, high-end brand aesthetic, refined details',
+                    playful: 'playful energetic logo with vibrant colors, dynamic shapes, fun personality, approachable design',
+                    corporate: 'corporate professional logo with authoritative presence, business-focused, trustworthy design, formal aesthetic',
+                    '3d': '3D logo with dimensional depth, realistic shadows, volumetric design, modern depth effect',
+                    gradient: 'gradient logo with smooth color transitions, vibrant spectrum, modern gradient design, eye-catching colors',
+                    monogram: 'monogram logo with interlocked letters, elegant typography, sophisticated letter combination, classic monogram style',
+                    badge: 'badge logo with circular or shield emblem, vintage badge aesthetic, classic seal design, authoritative mark',
+                  };
+
+                  const stylePrompt = stylePrompts[logoStyle] || stylePrompts.modern;
+
+                  const enhancedPrompt = `🎯 PROFESSIONAL LOGO DESIGN - ULTRA-PRECISE TEXT RENDERING\n\nText Content: "${logoText}"\nStyle: ${logoStyle}\n${logoCustomPrompt ? `Additional: ${logoCustomPrompt}` : ''}\n\nCreate a professional logo design featuring the EXACT text "${logoText}" with PIXEL-PERFECT accuracy. ${stylePrompt}. Every letter must be rendered with absolute precision and clarity. The text must be crystal clear and instantly recognizable. This is a precision task where text accuracy is paramount.`;
+
+                  console.log('🎨 Generating logo with AI...');
+                  console.log('📝 Logo text:', logoText);
+                  console.log('🎭 Style:', logoStyle);
+
+                  const response = await fetch('https://toolkit.rork.com/images/generate/', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      prompt: enhancedPrompt,
+                      size: '1024x1024',
+                    }),
+                  });
+
+                  if (!response.ok) {
+                    const errorText = await response.text().catch(() => '');
+                    console.error('❌ API Error:', response.status, errorText);
+                    throw new Error(`Failed to generate logo (${response.status})`);
+                  }
+
+                  const result = await response.json();
+                  
+                  if (!result || !result.image || !result.image.base64Data) {
+                    throw new Error('Invalid response from logo generation service');
+                  }
+
+                  const logoDataUri = `data:${result.image.mimeType || 'image/png'};base64,${result.image.base64Data}`;
+                  setGeneratedLogo(logoDataUri);
+
+                  setStatusMessage('Logo generated successfully!');
+                  setStatusType('success');
+                  setTimeout(() => setStatusMessage(null), 2000);
+
+                  if (Platform.OS !== 'web') {
+                    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  }
+
+                  console.log('✅ Logo generated successfully!');
+                } catch (error) {
+                  console.error('❌ Logo generation error:', error);
+                  const errorMsg = error instanceof Error ? error.message : 'Failed to generate logo';
+                  setStatusMessage(errorMsg);
+                  setStatusType('error');
+                  setTimeout(() => setStatusMessage(null), 4000);
+                } finally {
+                  setIsGeneratingLogo(false);
+                }
+              }}
+              testID="generate-logo"
+            >
+              {isGeneratingLogo ? (
+                <ActivityIndicator size="small" color="#1A1A1A" />
+              ) : (
+                <>
+                  <Sparkles size={16} color="#1A1A1A" />
+                  <Text style={styles.generateButtonText}>{generatedLogo ? 'Regenerate Logo' : 'Generate Logo'}</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        );
+
       case 'undo':
         return (
           <View style={styles.toolContent}>
@@ -1735,6 +1924,7 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
         >
           <View style={styles.toolTabs}>
             {([
+              { key: 'logo' as ToolMode, label: 'Logo', icon: Type },
               { key: 'prompt' as ToolMode, label: 'Prompt', icon: Sparkles },
               { key: 'frames' as ToolMode, label: 'Frame', icon: Crop },
               { key: 'undo' as ToolMode, label: 'Undo', icon: RotateCcw },
@@ -2057,6 +2247,120 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     fontSize: 14,
     fontWeight: '700' as const,
+  },
+  logoCreatorInfoBox: {
+    backgroundColor: 'rgba(255, 215, 0, 0.08)',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.2)',
+  },
+  logoCreatorInfoText: {
+    fontSize: 12,
+    color: '#CCCCCC',
+    lineHeight: 18,
+  },
+  logoInputSection: {
+    marginBottom: 16,
+  },
+  logoSectionTitle: {
+    fontSize: 14,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+    marginBottom: 8,
+  },
+  logoTextInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 14,
+    color: '#FFFFFF',
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.2)',
+    fontWeight: '600' as const,
+    textAlign: 'center' as const,
+  },
+  logoCharCount: {
+    fontSize: 10,
+    color: '#666',
+    textAlign: 'right' as const,
+    marginTop: 4,
+  },
+  logoStylesSection: {
+    marginBottom: 16,
+  },
+  logoStylesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  logoStyleCard: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  logoStyleCardActive: {
+    backgroundColor: 'rgba(255, 215, 0, 0.12)',
+    borderColor: '#FFD700',
+  },
+  logoStyleName: {
+    fontSize: 12,
+    color: '#CCCCCC',
+    fontWeight: '600' as const,
+  },
+  logoStyleNameActive: {
+    color: '#FFD700',
+  },
+  logoCustomSection: {
+    marginBottom: 16,
+  },
+  logoCustomInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 12,
+    color: '#FFFFFF',
+    fontSize: 13,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.2)',
+    minHeight: 70,
+  },
+  logoPreviewSection: {
+    marginBottom: 16,
+  },
+  logoPreviewContainer: {
+    width: '100%',
+    height: 150,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+    marginBottom: 12,
+  },
+  logoPreview: {
+    width: '100%',
+    height: '100%',
+  },
+  logoUseButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(157, 78, 221, 0.2)',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(157, 78, 221, 0.4)',
+  },
+  logoUseButtonText: {
+    fontSize: 13,
+    fontWeight: '700' as const,
+    color: '#9D4EDD',
   },
   instructionTip: {
     backgroundColor: 'rgba(255, 215, 0, 0.1)',
