@@ -2124,6 +2124,64 @@ Deliver MAXIMUM QUALITY with EXCEPTIONAL CLARITY that reveals every intricate de
     });
   }, []);
 
+  const resizeToSpecificSize = useCallback(async (width: number, height: number): Promise<string | null> => {
+    try {
+      const imageToResize = editedImage || sourceImage;
+      if (!imageToResize) {
+        throw new Error('No image available to resize');
+      }
+
+      console.log(`🔄 Resizing image to ${width}x${height}...`);
+      
+      const fileUri = await ensureFileUri(imageToResize);
+      
+      const manipulated = await ImageManipulator.manipulateAsync(
+        fileUri,
+        [{ resize: { width, height } }],
+        { compress: 0.95, format: ImageManipulator.SaveFormat.PNG }
+      );
+
+      let resizedUri = manipulated.uri;
+      
+      if (Platform.OS === 'web') {
+        const response = await fetch(manipulated.uri);
+        const blob = await response.blob();
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            resolve(result);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        resizedUri = base64;
+      }
+      
+      console.log(`✅ Image resized successfully to ${width}x${height}`);
+      
+      setEditedImage(resizedUri);
+      
+      const historyItem: EditHistory = {
+        id: Date.now().toString(),
+        originalImage: sourceImage!,
+        editedImage: resizedUri,
+        prompt: `Resized to ${width}×${height}`,
+        date: new Date().toISOString(),
+      };
+      addToHistory(historyItem);
+      
+      return resizedUri;
+    } catch (error) {
+      console.error('❌ Resize error:', error);
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        throw new Error('Failed to resize image');
+      }
+    }
+  }, [sourceImage, editedImage, addToHistory, ensureFileUri]);
+
   return useMemo(() => ({
     sourceImage,
     setSourceImage,
@@ -2134,6 +2192,7 @@ Deliver MAXIMUM QUALITY with EXCEPTIONAL CLARITY that reveals every intricate de
     addReferenceImage,
     removeReferenceImage,
     resizeImageIfNeeded,
+    resizeToSpecificSize,
     history,
     historyCursor,
     addToHistory,
@@ -2170,6 +2229,7 @@ Deliver MAXIMUM QUALITY with EXCEPTIONAL CLARITY that reveals every intricate de
     addReferenceImage,
     removeReferenceImage,
     resizeImageIfNeeded,
+    resizeToSpecificSize,
     addToHistory,
     clearHistory,
     generateEdit,
