@@ -118,7 +118,7 @@ export default function HomeScreen() {
             <View style={styles.headerTop}>
               <View style={styles.logoContainer}>
                 <ExpoImage
-                  source={{ uri: 'https://r2-pub.rork.com/generated-images/ed73c7b4-9f08-46ac-b59d-7db99592451b.png' }}
+                  source={{ uri: 'https://r2-pub.rork.com/generated-images/422e1139-1fa1-45ef-8c7b-4bacd4ad22e2.png' }}
                   style={styles.logo3DWrapper}
                   contentFit="contain"
                   testID="app-logo"
