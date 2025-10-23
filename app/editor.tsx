@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { generateText } from '@rork/toolkit-sdk';
 import {
   View,
   Text,
@@ -317,14 +318,7 @@ export default function EditorScreen() {
     }
 
     try {
-      const response = await fetch('https://toolkit.rork.com/agent/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [
-            {
-              role: 'system',
-              content: `You are an ELITE AI IMAGE PROMPT ENGINEER with MASTERY in:
+      const systemPrompt = `You are an ELITE AI IMAGE PROMPT ENGINEER with MASTERY in:
 • Professional photography techniques and cinematic composition
 • Advanced material science (fabrics, metals, gemstones, natural materials)
 • Photorealistic rendering with physically accurate lighting and textures
@@ -394,23 +388,13 @@ Enhanced: "Replace the background with a beautiful beach scene: golden sand, tur
 • Make the prompt comprehensive but focused on the actual edit request
 • Include enough detail for the AI to render with precision and confidence
 
-🎯 Now enhance the user's prompt with professional detail and technical precision:`
-            },
-            { role: 'user', content: editPrompt.trim() },
-          ],
-        }),
-      });
+🎯 Now enhance the user's prompt with professional detail and technical precision:`;
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Prompt enhancement API error:', response.status, errorText);
-        throw new Error(`Failed to enhance prompt (${response.status})`);
-      }
-      
-      const result = await response.json();
-      console.log('Enhancement API response:', result);
-      
-      const enhancedText = result.message?.content || result.completion || result.text || result.response || result.output;
+      const enhancedText = await generateText({
+        messages: [
+          { role: 'user', content: systemPrompt + '\n\nUser prompt: ' + editPrompt.trim() },
+        ],
+      });
 
       if (enhancedText && typeof enhancedText === 'string' && enhancedText.trim()) {
         setEditPrompt(enhancedText.trim());
@@ -418,7 +402,6 @@ Enhanced: "Replace the background with a beautiful beach scene: golden sand, tur
         setStatusType('success');
         setTimeout(() => setStatusMessage(null), 2000);
       } else {
-        console.error('No valid enhanced text in response:', result);
         throw new Error('No enhanced text received');
       }
     } catch (error) {
