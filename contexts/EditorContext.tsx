@@ -1183,6 +1183,18 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
         throw new Error('No source image available');
       }
       const currentImage = editedImage || sourceImage;
+      
+      // Get original image dimensions to preserve them
+      let originalWidth = 0;
+      let originalHeight = 0;
+      try {
+        const dimensions = await getImageDimensions(currentImage);
+        originalWidth = dimensions.width;
+        originalHeight = dimensions.height;
+        console.log(`📐 Original image dimensions: ${originalWidth}x${originalHeight}`);
+      } catch (dimError) {
+        console.warn('Could not get image dimensions:', dimError);
+      }
       let enhancedPrompt = buildEnhancedPrompt(params);
       if (params.region) {
         const pct = (n: number) => Math.round(n * 100);
@@ -1288,8 +1300,23 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
 - Create this scene with natural lighting, realistic positioning, and authentic environmental details`;
         }
         
+        // Add dimension preservation instruction if we have original dimensions
+        let dimensionInstruction = '';
+        if (originalWidth > 0 && originalHeight > 0) {
+          dimensionInstruction = `\n\n📐 CRITICAL DIMENSION PRESERVATION:
+- Original image dimensions: ${originalWidth}×${originalHeight} pixels
+- OUTPUT MUST BE EXACTLY: ${originalWidth}×${originalHeight} pixels
+- DO NOT resize, scale, or change dimensions in any way
+- Maintain pixel-perfect dimensional accuracy
+- Keep the exact aspect ratio: ${(originalWidth / originalHeight).toFixed(4)}
+- Apply edits within the original image boundaries
+- Preserve image canvas size precisely
+\n🎯 DIMENSION LOCK MANDATE:
+The output image MUST be exactly ${originalWidth}×${originalHeight} pixels. Any dimensional change would corrupt the image. Treat the dimensions as absolute constraints that cannot be modified under any circumstances.`;
+        }
+        
         const requestBody = { 
-          prompt: sanitizedPrompt + '\n\n🎯 ULTRA-HIGH RESOLUTION OUTPUT: Generate this image at MAXIMUM 4K RESOLUTION (3840x2160 or higher). Apply professional-grade upscaling with crystal-clear detail enhancement, ultra-sharp textures, and stunning visual clarity that matches cinema-quality standards.', 
+          prompt: sanitizedPrompt + dimensionInstruction + '\n\n🎯 QUALITY OUTPUT: Apply professional-grade quality with crystal-clear detail enhancement, ultra-sharp textures, and stunning visual clarity. Maintain the exact original dimensions.', 
           images 
         } as const;
         console.log('🚀 Calling image edit API with 4K resolution request');
@@ -1320,7 +1347,51 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
           throw new Error('Image editing service returned invalid image data. Please try again.');
         }
         const mimeType = imgObj.mimeType || 'image/png';
-        const editedImageUri = `data:${mimeType};base64,${imgObj.base64Data}`;
+        let editedImageUri = `data:${mimeType};base64,${imgObj.base64Data}`;
+        
+        // Verify and enforce original dimensions if needed
+        if (originalWidth > 0 && originalHeight > 0) {
+          try {
+            const resultDimensions = await getImageDimensions(editedImageUri);
+            console.log(`📊 Result image dimensions: ${resultDimensions.width}x${resultDimensions.height}`);
+            
+            // If dimensions don't match, resize to match original
+            if (resultDimensions.width !== originalWidth || resultDimensions.height !== originalHeight) {
+              console.log(`⚠️ Dimensions mismatch! Resizing from ${resultDimensions.width}x${resultDimensions.height} to ${originalWidth}x${originalHeight}`);
+              
+              const fileUri = await ensureFileUri(editedImageUri);
+              const manipulated = await ImageManipulator.manipulateAsync(
+                fileUri,
+                [{ resize: { width: originalWidth, height: originalHeight } }],
+                { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+              );
+              
+              if (Platform.OS === 'web') {
+                const response = await fetch(manipulated.uri);
+                const blob = await response.blob();
+                const base64 = await new Promise<string>((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    const result = reader.result as string;
+                    resolve(result);
+                  };
+                  reader.onerror = reject;
+                  reader.readAsDataURL(blob);
+                });
+                editedImageUri = base64;
+              } else {
+                editedImageUri = manipulated.uri;
+              }
+              
+              console.log(`✅ Image resized back to original dimensions: ${originalWidth}x${originalHeight}`);
+            } else {
+              console.log(`✅ Image dimensions preserved correctly: ${originalWidth}x${originalHeight}`);
+            }
+          } catch (verifyError) {
+            console.warn('Could not verify/fix dimensions:', verifyError);
+          }
+        }
+        
         setEditedImage(editedImageUri);
         try {
           const historyItem: EditHistory = {
