@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,12 +24,16 @@ import {
   ZoomIn,
   Mic,
   MicOff,
+  Maximize2,
+  Minimize2,
+  Frame,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Audio } from 'expo-av';
 import { router } from 'expo-router';
 import { useEditor } from '@/contexts/EditorContext';
 import { Image as ExpoImage } from 'expo-image';
+import ResizeModal from '@/components/ResizeModal';
 
 export default function EditorScreen() {
   const {
@@ -38,6 +43,7 @@ export default function EditorScreen() {
     undoOne,
     saveCurrentImage,
     upscaleImage,
+    resizeToSpecificSize,
   } = useEditor();
 
   const [editPrompt, setEditPrompt] = useState<string>('');
@@ -51,6 +57,10 @@ export default function EditorScreen() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const scrollViewRef = useRef<ScrollView>(null);
+  const [showResizeModal, setShowResizeModal] = useState<boolean>(false);
+  const [showFullScreen, setShowFullScreen] = useState<boolean>(false);
+  const [showFramesModal, setShowFramesModal] = useState<boolean>(false);
+  const [selectedFrame, setSelectedFrame] = useState<string | null>(null);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
@@ -449,6 +459,79 @@ export default function EditorScreen() {
 
   const currentImage = editedImage || sourceImage;
 
+  const handleResize = async (width: number, height: number) => {
+    try {
+      setStatusMessage(`Resizing to ${width}×${height}...`);
+      setStatusType('info');
+      await resizeToSpecificSize(width, height);
+      setStatusMessage('Image resized successfully!');
+      setStatusType('success');
+      setTimeout(() => setStatusMessage(null), 2000);
+      if (Platform.OS !== 'web') {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } catch (error) {
+      console.error('Resize error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Failed to resize';
+      setStatusMessage(errorMsg);
+      setStatusType('error');
+      setTimeout(() => setStatusMessage(null), 3000);
+    }
+  };
+
+  const frames = [
+    { id: 'none', name: 'No Frame', color: 'transparent', borderWidth: 0 },
+    { id: 'classic-black', name: 'Classic Black', color: '#000000', borderWidth: 20 },
+    { id: 'elegant-white', name: 'Elegant White', color: '#FFFFFF', borderWidth: 20 },
+    { id: 'gold', name: 'Gold Luxury', color: '#FFD700', borderWidth: 15 },
+    { id: 'wood', name: 'Wooden Frame', color: '#8B4513', borderWidth: 25 },
+    { id: 'modern-gray', name: 'Modern Gray', color: '#808080', borderWidth: 15 },
+    { id: 'thin-black', name: 'Thin Black', color: '#000000', borderWidth: 5 },
+    { id: 'thick-white', name: 'Thick White', color: '#FFFFFF', borderWidth: 30 },
+    { id: 'silver', name: 'Silver', color: '#C0C0C0', borderWidth: 18 },
+  ];
+
+  const applyFrame = async (frameId: string) => {
+    const frame = frames.find(f => f.id === frameId);
+    if (!frame) return;
+    
+    setSelectedFrame(frameId);
+    setShowFramesModal(false);
+    
+    if (frameId === 'none') {
+      setStatusMessage('Frame removed');
+      setStatusType('success');
+      setTimeout(() => setStatusMessage(null), 2000);
+      return;
+    }
+    
+    try {
+      setStatusMessage('Applying frame...');
+      setStatusType('info');
+      
+      await generateEdit({
+        prompt: `Add a professional ${frame.name.toLowerCase()} frame/border around the entire image. The frame should be ${frame.borderWidth}px wide with ${frame.color} color. Make it look like a professional photo frame or art gallery frame. Keep the main image content exactly the same, only add the decorative frame border around the edges.`,
+        strength: 0.3,
+        identityLock: true,
+        upscale: false,
+        watermark: false,
+      });
+      
+      setStatusMessage('Frame applied!');
+      setStatusType('success');
+      setTimeout(() => setStatusMessage(null), 2000);
+      
+      if (Platform.OS !== 'web') {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } catch (error) {
+      console.error('Frame error:', error);
+      setStatusMessage('Failed to apply frame');
+      setStatusType('error');
+      setTimeout(() => setStatusMessage(null), 3000);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -468,6 +551,18 @@ export default function EditorScreen() {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Edit Image</Text>
           <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => {
+                setShowFullScreen(true);
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+              }}
+              activeOpacity={0.7}
+            >
+              <Maximize2 size={22} color="#FFD700" />
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.iconButton}
               onPress={handleSave}
@@ -593,9 +688,39 @@ export default function EditorScreen() {
                   ) : (
                     <>
                       <ZoomIn size={18} color="#FFD700" />
-                      <Text style={styles.secondaryButtonText}>Enhance Quality</Text>
+                      <Text style={styles.secondaryButtonText}>Enhance</Text>
                     </>
                   )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.secondaryButton}
+                  onPress={() => {
+                    setShowResizeModal(true);
+                    if (Platform.OS !== 'web') {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Maximize2 size={18} color="#FFD700" />
+                  <Text style={styles.secondaryButtonText}>Resize</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.secondaryButtons}>
+                <TouchableOpacity
+                  style={styles.secondaryButton}
+                  onPress={() => {
+                    setShowFramesModal(true);
+                    if (Platform.OS !== 'web') {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Frame size={18} color="#FFD700" />
+                  <Text style={styles.secondaryButtonText}>Frames</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -625,6 +750,124 @@ export default function EditorScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
+      {/* Resize Modal */}
+      <ResizeModal
+        visible={showResizeModal}
+        onClose={() => setShowResizeModal(false)}
+        onResize={handleResize}
+      />
+
+      {/* Full Screen Modal */}
+      <Modal
+        visible={showFullScreen}
+        transparent={false}
+        animationType="fade"
+        onRequestClose={() => setShowFullScreen(false)}
+      >
+        <View style={styles.fullScreenContainer}>
+          <LinearGradient
+            colors={['#000000', '#1A1A1A']}
+            style={StyleSheet.absoluteFillObject}
+          />
+          
+          <SafeAreaView style={styles.fullScreenSafeArea}>
+            <View style={styles.fullScreenHeader}>
+              <TouchableOpacity
+                style={styles.fullScreenCloseButton}
+                onPress={() => setShowFullScreen(false)}
+                activeOpacity={0.7}
+              >
+                <Minimize2 size={24} color="#FFD700" />
+              </TouchableOpacity>
+              <Text style={styles.fullScreenTitle}>Full Screen View</Text>
+              <View style={styles.fullScreenPlaceholder} />
+            </View>
+
+            <View style={styles.fullScreenImageContainer}>
+              {currentImage && (
+                <ExpoImage
+                  source={{ uri: currentImage }}
+                  style={styles.fullScreenImage}
+                  contentFit="contain"
+                  transition={200}
+                />
+              )}
+            </View>
+          </SafeAreaView>
+        </View>
+      </Modal>
+
+      {/* Frames Modal */}
+      <Modal
+        visible={showFramesModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowFramesModal(false)}
+      >
+        <View style={styles.framesModalOverlay}>
+          <View style={styles.framesModalContainer}>
+            <LinearGradient
+              colors={['#1A1A1A', '#2A2A2A']}
+              style={styles.framesModalGradient}
+            >
+              <View style={styles.framesHeader}>
+                <View style={styles.framesHeaderLeft}>
+                  <Frame size={24} color="#FFD700" strokeWidth={2.5} />
+                  <Text style={styles.framesHeaderTitle}>Select Frame</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.framesCloseButton}
+                  onPress={() => setShowFramesModal(false)}
+                  activeOpacity={0.7}
+                >
+                  <Minimize2 size={24} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView
+                style={styles.framesScroll}
+                contentContainerStyle={styles.framesScrollContent}
+                showsVerticalScrollIndicator={true}
+              >
+                {frames.map((frame) => (
+                  <TouchableOpacity
+                    key={frame.id}
+                    style={[
+                      styles.frameCard,
+                      selectedFrame === frame.id && styles.frameCardSelected,
+                    ]}
+                    onPress={() => applyFrame(frame.id)}
+                    activeOpacity={0.8}
+                  >
+                    <View
+                      style={[
+                        styles.framePreview,
+                        {
+                          borderWidth: frame.borderWidth / 3,
+                          borderColor: frame.color === 'transparent' ? '#333' : frame.color,
+                        },
+                      ]}
+                    >
+                      <View style={styles.framePreviewInner} />
+                    </View>
+                    <View style={styles.frameCardContent}>
+                      <Text style={styles.frameName}>{frame.name}</Text>
+                      <Text style={styles.frameDetails}>
+                        {frame.borderWidth === 0 ? 'Original' : `${frame.borderWidth}px border`}
+                      </Text>
+                    </View>
+                    {selectedFrame === frame.id && (
+                      <View style={styles.frameSelectedIndicator}>
+                        <Sparkles size={16} color="#FFD700" />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </LinearGradient>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -821,5 +1064,142 @@ const styles = StyleSheet.create({
     color: '#CCCCCC',
     marginBottom: 8,
     lineHeight: 20,
+  },
+  fullScreenContainer: {
+    flex: 1,
+    backgroundColor: '#000000',
+  },
+  fullScreenSafeArea: {
+    flex: 1,
+  },
+  fullScreenHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  fullScreenCloseButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fullScreenTitle: {
+    fontSize: 18,
+    fontWeight: '600' as const,
+    color: '#FFFFFF',
+  },
+  fullScreenPlaceholder: {
+    width: 40,
+  },
+  fullScreenImageContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '100%',
+  },
+  framesModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'flex-end',
+  },
+  framesModalContainer: {
+    maxHeight: '80%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: 'hidden',
+  },
+  framesModalGradient: {
+    width: '100%',
+    height: '100%',
+  },
+  framesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  framesHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  framesHeaderTitle: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+  },
+  framesCloseButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  framesScroll: {
+    flex: 1,
+  },
+  framesScrollContent: {
+    padding: 20,
+    gap: 12,
+  },
+  frameCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  frameCardSelected: {
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    borderColor: '#FFD700',
+  },
+  framePreview: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    backgroundColor: '#2A2A2A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  framePreviewInner: {
+    width: 30,
+    height: 30,
+    backgroundColor: '#444',
+    borderRadius: 4,
+  },
+  frameCardContent: {
+    flex: 1,
+    gap: 4,
+  },
+  frameName: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+  },
+  frameDetails: {
+    fontSize: 13,
+    color: '#999',
+  },
+  frameSelectedIndicator: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
