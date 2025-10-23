@@ -124,11 +124,7 @@ export default function HomeScreen() {
                   testID="app-logo"
                 />
               </View>
-
             </View>
-            <Text style={styles.subtitle}>
-              Professional AI image editing - Transform your vision into reality
-            </Text>
             
             {/* App Instructions */}
             <View style={styles.instructionsContainer}>
@@ -527,18 +523,19 @@ const styles = StyleSheet.create({
   header: {
     paddingTop: 20,
     paddingHorizontal: 20,
-    marginBottom: 30,
+    marginBottom: 10,
   },
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 0,
   },
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
   fullLogo: {
     width: '100%',
