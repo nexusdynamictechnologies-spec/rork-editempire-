@@ -316,7 +316,7 @@ export default function EditorScreen() {
     }
 
     try {
-      const response = await fetch('https://toolkit.rork.com/text/llm/', {
+      const response = await fetch('https://toolkit.rork.com/agent/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -330,10 +330,16 @@ export default function EditorScreen() {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to enhance prompt');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Prompt enhancement API error:', response.status, errorText);
+        throw new Error(`Failed to enhance prompt (${response.status})`);
+      }
       
       const result = await response.json();
-      const enhancedText = result.completion || result.text || result.response || result.output;
+      console.log('Enhancement API response:', result);
+      
+      const enhancedText = result.message?.content || result.completion || result.text || result.response || result.output;
 
       if (enhancedText && typeof enhancedText === 'string' && enhancedText.trim()) {
         setEditPrompt(enhancedText.trim());
@@ -341,11 +347,13 @@ export default function EditorScreen() {
         setStatusType('success');
         setTimeout(() => setStatusMessage(null), 2000);
       } else {
+        console.error('No valid enhanced text in response:', result);
         throw new Error('No enhanced text received');
       }
     } catch (error) {
       console.error('Prompt enhancement error:', error);
-      setStatusMessage('Failed to enhance prompt');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to enhance prompt';
+      setStatusMessage(errorMessage);
       setStatusType('error');
       setTimeout(() => setStatusMessage(null), 3000);
     } finally {
