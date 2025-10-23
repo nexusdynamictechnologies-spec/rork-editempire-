@@ -1305,33 +1305,34 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
         // Add dimension preservation instruction if we have original dimensions
         let dimensionInstruction = '';
         if (originalWidth > 0 && originalHeight > 0) {
-          dimensionInstruction = `\n\n🔒 ABSOLUTE DIMENSION LOCK - NON-NEGOTIABLE:
+          dimensionInstruction = `\n\n🔒 ABSOLUTE DIMENSION & COMPOSITION LOCK - CRITICAL:
 
-📐 INPUT IMAGE DIMENSIONS: ${originalWidth}×${originalHeight} pixels
-📐 REQUIRED OUTPUT DIMENSIONS: ${originalWidth}×${originalHeight} pixels
-📐 REQUIRED ASPECT RATIO: ${originalAspectRatio.toFixed(6)}
+📐 EXACT DIMENSIONS REQUIRED:
+- INPUT: ${originalWidth}×${originalHeight} pixels
+- OUTPUT: MUST BE EXACTLY ${originalWidth}×${originalHeight} pixels
+- ASPECT RATIO: MUST BE ${originalAspectRatio.toFixed(6)}
 
-⚠️ CRITICAL RULES:
-1. OUTPUT IMAGE **MUST** BE EXACTLY ${originalWidth}×${originalHeight} PIXELS - NO EXCEPTIONS
-2. DO NOT resize, upscale, downscale, or modify dimensions in ANY WAY
-3. DO NOT crop or change the aspect ratio from ${originalAspectRatio.toFixed(6)}
-4. DO NOT add padding, borders, or margins that change dimensions
-5. Perform ALL edits within the EXACT ${originalWidth}×${originalHeight} canvas
-6. The output canvas size is LOCKED and IMMUTABLE
-7. Treat dimensions as HARD CONSTRAINTS that override all other considerations
+🎯 MANDATORY PRESERVATION RULES:
+1. ✅ DIMENSIONS: Output MUST be ${originalWidth}×${originalHeight} - NO changes allowed
+2. ✅ COMPOSITION: Keep EXACT framing, cropping, and image bounds
+3. ✅ CANVAS SIZE: Locked at ${originalWidth}×${originalHeight} - cannot change
+4. ✅ ASPECT RATIO: Must remain ${originalAspectRatio.toFixed(6)} - no stretching
+5. ✅ NO ZOOM: Do not zoom in/out or change magnification
+6. ✅ NO CROP: Do not crop or trim any edges
+7. ✅ NO PADDING: Do not add borders, margins, or padding
+8. ✅ NO RESIZE: Do not upscale, downscale, or modify resolution
 
-🎯 ENFORCEMENT:
-- If you need to add elements, fit them within ${originalWidth}×${originalHeight}
-- If you need to modify elements, keep them within ${originalWidth}×${originalHeight}
-- The final image MUST pass dimension validation: width === ${originalWidth} && height === ${originalHeight}
-- Any dimension deviation will be rejected and cause errors
-
-💎 WHY THIS MATTERS:
-Changing dimensions causes images to look stretched, distorted, or resized. The user wants the EXACT same size maintained. This is a CRITICAL requirement for image consistency.`;
+⚠️ CRITICAL: This means:
+- The image bounds stay identical
+- All elements maintain their EXACT positions in the frame
+- The view/framing stays the same
+- Nothing gets closer or further from camera
+- No "zooming effect" or magnification changes
+- The canvas is a fixed ${originalWidth}×${originalHeight} window that cannot move or resize`;
         }
         
         const requestBody = { 
-          prompt: sanitizedPrompt + dimensionInstruction + '\n\n🎯 QUALITY OUTPUT: Apply professional-grade quality with crystal-clear detail enhancement, ultra-sharp textures, and stunning visual clarity. Maintain the exact original dimensions.', 
+          prompt: sanitizedPrompt + dimensionInstruction + '\n\n⚡ DIMENSION ENFORCEMENT REMINDER:\nThe output image dimensions MUST be EXACTLY ${originalWidth}×${originalHeight} pixels. Do NOT change the size, crop, zoom, or framing in any way. Keep the exact same view and composition.' + '\n\n🎯 QUALITY OUTPUT: Apply professional-grade quality with crystal-clear detail enhancement, ultra-sharp textures, and stunning visual clarity. Maintain the exact original dimensions and composition.', 
           images 
         } as const;
         console.log('🚀 Calling image edit API with 4K resolution request');
@@ -1374,8 +1375,8 @@ Changing dimensions causes images to look stretched, distorted, or resized. The 
             const widthDiff = Math.abs(resultDimensions.width - originalWidth);
             const heightDiff = Math.abs(resultDimensions.height - originalHeight);
             
-            // Allow 1 pixel tolerance for rounding, anything else needs correction
-            if (widthDiff > 1 || heightDiff > 1) {
+            // ANY dimension difference needs correction - zero tolerance
+            if (widthDiff > 0 || heightDiff > 0) {
               console.warn(`⚠️ DIMENSION MISMATCH DETECTED!`);
               console.warn(`   API output: ${resultDimensions.width}x${resultDimensions.height}`);
               console.warn(`   Required:   ${originalWidth}x${originalHeight}`);
