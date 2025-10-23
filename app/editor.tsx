@@ -1631,14 +1631,7 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
             </View>
           </View>
 
-          <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.headerButton} onPress={() => setCleanUI(!cleanUI)} testID="toggle-clean-ui">
-              <Wand2 size={24} color={cleanUI ? '#FFD700' : '#FFFFFF'} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.headerButton} onPress={() => router.push('/smart-help')}>
-              <Brain size={24} color="#9D4EDD" />
-            </TouchableOpacity>
-          </View>
+          <View style={styles.headerRight} />
         </SafeAreaView>
       )}
 
