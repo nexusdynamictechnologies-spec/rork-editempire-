@@ -80,7 +80,7 @@ export const [EditorProvider, useEditor] = createContextHook(() => {
   const [historyCursor, setHistoryCursor] = useState<number>(-1);
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>([]);
   const [currentProject, setCurrentProject] = useState<EditHistory | null>(null);
-
+  const [savedImages, setSavedImages] = useState<SavedImage[]>([]);
 
   const [isEditLoading, setIsEditLoading] = useState(false);
   const [isUpscaleLoading, setIsUpscaleLoading] = useState(false);
@@ -88,6 +88,7 @@ export const [EditorProvider, useEditor] = createContextHook(() => {
 
   useEffect(() => {
     loadRecentProjects();
+    loadSavedImages();
   }, []);
 
   const loadRecentProjects = async () => {
@@ -101,7 +102,16 @@ export const [EditorProvider, useEditor] = createContextHook(() => {
     }
   };
 
-
+  const loadSavedImages = async () => {
+    try {
+      const stored = await AsyncStorage.getItem('savedImages');
+      if (stored) {
+        setSavedImages(JSON.parse(stored));
+      }
+    } catch (error) {
+      console.error('Failed to load saved images:', error);
+    }
+  };
 
   const createThumbnail = useCallback(async (imageUri: string): Promise<string> => {
     try {
@@ -501,35 +511,14 @@ ${intent.targetElements.map(el => `- ${el.toUpperCase()}: Apply requested change
 5. Ensure seamless integration of changes
 `;
     
-    // CRITICAL DIMENSION AND CONTENT LOCK - MUST BE FIRST
-    const dimensionLock = `🚨 CRITICAL IMAGE EDITING RULES - MANDATORY:
-
-⚡ DIMENSION & SIZE LOCK:
-- Keep EXACT same image dimensions (width × height)
-- Keep EXACT same aspect ratio
-- DO NOT resize, crop, zoom, or change framing
-- DO NOT add padding or borders
-- The output must be pixel-for-pixel the same size as input
-
-🔒 CONTENT PRESERVATION:
-- ONLY modify what is explicitly mentioned in the prompt
-- Keep ALL other elements in their EXACT positions
-- DO NOT move, shift, or reposition anything
-- DO NOT change elements that aren't mentioned
-- DO NOT regenerate the entire image
-- DO NOT add new elements unless explicitly requested
-
-✨ EDITING APPROACH:
-- Make TARGETED changes ONLY to requested elements
-- Preserve everything else with 100% accuracy
-- Think of this as "painting over" specific parts, not regenerating the whole image
-
----
-
-`;
-
     // PRECISION-FOCUSED PROMPT FOR EXACT ACCURACY
-    prompt = `${dimensionLock}${prompt}
+    prompt = `🎯 ULTRA-PRECISION IMAGE EDITING - SURGICAL ACCURACY PROTOCOL
+
+⚡ CORE DIRECTIVE: Execute ONLY what is explicitly requested. Maintain ABSOLUTE FIDELITY to the original image for all unmodified elements. Zero tolerance for unintended changes, drift, or repositioning.
+
+${consistencyInstructions}
+
+${prompt}
 
 🎯 CRITICAL POSITIONING & SPATIAL ACCURACY MANDATE:
 
@@ -1204,20 +1193,6 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
         throw new Error('No source image available');
       }
       const currentImage = editedImage || sourceImage;
-      
-      // Get original image dimensions to preserve them - CRITICAL FOR MAINTAINING SIZE
-      let originalWidth = 0;
-      let originalHeight = 0;
-      let originalAspectRatio = 1;
-      try {
-        const dimensions = await getImageDimensions(currentImage);
-        originalWidth = dimensions.width;
-        originalHeight = dimensions.height;
-        originalAspectRatio = originalWidth / originalHeight;
-        console.log(`📐 Original image dimensions: ${originalWidth}x${originalHeight} (aspect: ${originalAspectRatio.toFixed(4)})`);
-      } catch (dimError) {
-        console.warn('Could not get image dimensions:', dimError);
-      }
       let enhancedPrompt = buildEnhancedPrompt(params);
       if (params.region) {
         const pct = (n: number) => Math.round(n * 100);
@@ -1323,14 +1298,8 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
 - Create this scene with natural lighting, realistic positioning, and authentic environmental details`;
         }
         
-        // Simplified dimension instruction - redundant with the lock at the start
-        let dimensionInstruction = '';
-        if (originalWidth > 0 && originalHeight > 0) {
-          dimensionInstruction = `\n\n📐 REMINDER: Output dimensions must be ${originalWidth}×${originalHeight} pixels (same as input).`;
-        }
-        
         const requestBody = { 
-          prompt: sanitizedPrompt + dimensionInstruction, 
+          prompt: sanitizedPrompt + '\n\n🎯 ULTRA-HIGH RESOLUTION OUTPUT: Generate this image at MAXIMUM 4K RESOLUTION (3840x2160 or higher). Apply professional-grade upscaling with crystal-clear detail enhancement, ultra-sharp textures, and stunning visual clarity that matches cinema-quality standards.', 
           images 
         } as const;
         console.log('🚀 Calling image edit API with 4K resolution request');
@@ -1361,68 +1330,7 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
           throw new Error('Image editing service returned invalid image data. Please try again.');
         }
         const mimeType = imgObj.mimeType || 'image/png';
-        let editedImageUri = `data:${mimeType};base64,${imgObj.base64Data}`;
-        
-        // CRITICAL: Verify and enforce original dimensions
-        if (originalWidth > 0 && originalHeight > 0) {
-          try {
-            const resultDimensions = await getImageDimensions(editedImageUri);
-            console.log(`📊 API returned dimensions: ${resultDimensions.width}x${resultDimensions.height}`);
-            console.log(`📊 Expected dimensions: ${originalWidth}x${originalHeight}`);
-            
-            const widthDiff = Math.abs(resultDimensions.width - originalWidth);
-            const heightDiff = Math.abs(resultDimensions.height - originalHeight);
-            
-            // ANY dimension difference needs correction - zero tolerance
-            if (widthDiff > 0 || heightDiff > 0) {
-              console.warn(`⚠️ DIMENSION MISMATCH DETECTED!`);
-              console.warn(`   API output: ${resultDimensions.width}x${resultDimensions.height}`);
-              console.warn(`   Required:   ${originalWidth}x${originalHeight}`);
-              console.warn(`   Difference: ${widthDiff}px width, ${heightDiff}px height`);
-              console.warn(`🔧 Forcing resize to maintain original dimensions...`);
-              
-              const fileUri = await ensureFileUri(editedImageUri);
-              
-              // Use high-quality resize to maintain image quality
-              const manipulated = await ImageManipulator.manipulateAsync(
-                fileUri,
-                [{ resize: { width: originalWidth, height: originalHeight } }],
-                { compress: 1, format: ImageManipulator.SaveFormat.PNG }
-              );
-              
-              if (Platform.OS === 'web') {
-                const response = await fetch(manipulated.uri);
-                const blob = await response.blob();
-                const base64 = await new Promise<string>((resolve, reject) => {
-                  const reader = new FileReader();
-                  reader.onloadend = () => {
-                    const result = reader.result as string;
-                    resolve(result);
-                  };
-                  reader.onerror = reject;
-                  reader.readAsDataURL(blob);
-                });
-                editedImageUri = base64;
-              } else {
-                editedImageUri = manipulated.uri;
-              }
-              
-              // Verify the fix worked
-              const finalDimensions = await getImageDimensions(editedImageUri);
-              console.log(`✅ CORRECTED dimensions: ${finalDimensions.width}x${finalDimensions.height}`);
-              
-              if (Math.abs(finalDimensions.width - originalWidth) > 1 || Math.abs(finalDimensions.height - originalHeight) > 1) {
-                console.error(`❌ Failed to correct dimensions after resize!`);
-              }
-            } else {
-              console.log(`✅ Dimensions preserved perfectly: ${originalWidth}x${originalHeight}`);
-            }
-          } catch (verifyError) {
-            console.error('❌ Could not verify/fix dimensions:', verifyError);
-            console.warn('⚠️ Image may have incorrect dimensions');
-          }
-        }
-        
+        const editedImageUri = `data:${mimeType};base64,${imgObj.base64Data}`;
         setEditedImage(editedImageUri);
         try {
           const historyItem: EditHistory = {
@@ -1622,13 +1530,186 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
     }
   }, [initialSourceImage]);
 
+  const saveCurrentImage = useCallback(async (): Promise<boolean> => {
+    try {
+      const imageToSave = editedImage || sourceImage;
+      if (!imageToSave) {
+        console.error('No image to save');
+        throw new Error('No image to save');
+      }
+      
+      console.log('Creating saved image object...');
+      const savedImage: SavedImage = {
+        id: Date.now().toString(),
+        imageUri: imageToSave,
+        originalImageUri: sourceImage || undefined,
+        prompt: currentProject?.prompt,
+        date: new Date().toISOString(),
+        isEdited: !!editedImage,
+      };
+      
+      console.log('Creating thumbnail...');
+      const thumbnail = await createThumbnail(imageToSave);
+      const savedImageWithThumbnail: SavedImage = { ...savedImage, thumbnail };
+      
+      console.log('Storing image data...');
+      const imageKey = `saved_image_${savedImage.id}`;
+      try {
+        if (Platform.OS === 'web') {
+          await idbSet(imageKey, imageToSave);
+        } else {
+          await AsyncStorage.setItem(imageKey, imageToSave);
+        }
+        console.log('Image data stored successfully');
+      } catch (storageError) {
+        console.error('Failed to store image data:', storageError);
+        // Continue anyway, we'll use the thumbnail
+      }
+      
+      console.log('Updating saved images list...');
+      const updatedSavedImages = [savedImageWithThumbnail, ...savedImages].slice(0, 50);
+      setSavedImages(updatedSavedImages);
+      
+      try {
+        await AsyncStorage.setItem('savedImages', JSON.stringify(updatedSavedImages));
+        console.log('Saved images list updated successfully');
+      } catch (metaError) {
+        console.error('Failed to update saved images metadata:', metaError);
+        throw metaError;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Save current image error:', error);
+      
+      if (error instanceof Error && (((error.message ?? '').toLowerCase().includes('quota')) || error.name === 'QuotaExceededError')) {
+        console.log('Storage quota exceeded, cleaning up old images...');
+        try {
+          const oldestImages = savedImages.slice(30);
+          for (const oldImage of oldestImages) {
+            try {
+              if (Platform.OS === 'web') {
+                await idbDelete(`saved_image_${oldImage.id}`);
+              } else {
+                await AsyncStorage.removeItem(`saved_image_${oldImage.id}`);
+              }
+            } catch {}
+          }
+          const cleanedSavedImages = savedImages.slice(0, 30);
+          setSavedImages(cleanedSavedImages);
+          await AsyncStorage.setItem('savedImages', JSON.stringify(cleanedSavedImages));
+          console.log('Cleaned up old images, retrying save...');
+          return await saveCurrentImage();
+        } catch (cleanupError) {
+          console.error('Cleanup failed:', cleanupError);
+          return false;
+        }
+      }
+      return false;
+    }
+  }, [editedImage, sourceImage, currentProject, savedImages, createThumbnail]);
 
+  const deleteSavedImage = useCallback(async (imageId: string): Promise<boolean> => {
+    try {
+      console.log('Deleting saved image:', imageId);
+      
+      // Delete the actual image data
+      try {
+        if (Platform.OS === 'web') {
+          await idbDelete(`saved_image_${imageId}`);
+        } else {
+          await AsyncStorage.removeItem(`saved_image_${imageId}`);
+        }
+        console.log('Image data deleted successfully');
+      } catch (imageDeleteError) {
+        console.warn('Failed to delete image data (continuing anyway):', imageDeleteError);
+      }
+      
+      // Update the saved images list
+      const updatedSavedImages = savedImages.filter(img => img.id !== imageId);
+      console.log('Updated saved images count:', updatedSavedImages.length);
+      
+      setSavedImages(updatedSavedImages);
+      
+      try {
+        await AsyncStorage.setItem('savedImages', JSON.stringify(updatedSavedImages));
+        console.log('Saved images metadata updated successfully');
+      } catch (metaError) {
+        console.error('Failed to update saved images metadata:', metaError);
+        throw metaError;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to delete saved image:', error);
+      return false;
+    }
+  }, [savedImages]);
 
+  const loadSavedImage = useCallback(async (imageId: string): Promise<string | null> => {
+    try {
+      console.log('Loading saved image:', imageId);
+      const imageKey = `saved_image_${imageId}`;
+      
+      const storedImage = Platform.OS === 'web' ? await idbGet<string>(imageKey) : await AsyncStorage.getItem(imageKey);
+      
+      if (storedImage) {
+        console.log('Saved image loaded successfully');
+        return storedImage;
+      } else {
+        console.warn('No stored image found, trying to use thumbnail');
+        // Fallback to thumbnail if full image not available
+        const savedImageMeta = savedImages.find(img => img.id === imageId);
+        if (savedImageMeta?.thumbnail) {
+          console.log('Using thumbnail as fallback');
+          return savedImageMeta.thumbnail;
+        } else if (savedImageMeta?.imageUri) {
+          console.log('Using imageUri as fallback');
+          return savedImageMeta.imageUri;
+        }
+        console.error('No image data available for ID:', imageId);
+        return null;
+      }
+    } catch (error) {
+      console.error('Failed to load saved image:', error);
+      return null;
+    }
+  }, [savedImages]);
 
-
-
-
-
+  const clearAllSavedImages = useCallback(async (): Promise<boolean> => {
+    try {
+      console.log('Clearing all saved images...');
+      
+      // Delete all image data
+      for (const si of savedImages) {
+        try {
+          if (Platform.OS === 'web') {
+            await idbDelete(`saved_image_${si.id}`);
+          } else {
+            await AsyncStorage.removeItem(`saved_image_${si.id}`);
+          }
+        } catch (deleteError) {
+          console.warn('Failed to delete image:', si.id, deleteError);
+        }
+      }
+      
+      // Clear the saved images list
+      setSavedImages([]);
+      
+      try {
+        await AsyncStorage.removeItem('savedImages');
+        console.log('All saved images cleared successfully');
+      } catch (metaError) {
+        console.error('Failed to clear saved images metadata:', metaError);
+        throw metaError;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to clear all saved images:', error);
+      return false;
+    }
+  }, [savedImages]);
 
   const getImageSize = useCallback(async (uri: string): Promise<{ width: number; height: number }> => {
     return new Promise((resolve, reject) => {
@@ -2043,64 +2124,6 @@ Deliver MAXIMUM QUALITY with EXCEPTIONAL CLARITY that reveals every intricate de
     });
   }, []);
 
-  const resizeToSpecificSize = useCallback(async (width: number, height: number): Promise<string | null> => {
-    try {
-      const imageToResize = editedImage || sourceImage;
-      if (!imageToResize) {
-        throw new Error('No image available to resize');
-      }
-
-      console.log(`🔄 Resizing image to ${width}x${height}...`);
-      
-      const fileUri = await ensureFileUri(imageToResize);
-      
-      const manipulated = await ImageManipulator.manipulateAsync(
-        fileUri,
-        [{ resize: { width, height } }],
-        { compress: 0.95, format: ImageManipulator.SaveFormat.PNG }
-      );
-
-      let resizedUri = manipulated.uri;
-      
-      if (Platform.OS === 'web') {
-        const response = await fetch(manipulated.uri);
-        const blob = await response.blob();
-        const base64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const result = reader.result as string;
-            resolve(result);
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-        resizedUri = base64;
-      }
-      
-      console.log(`✅ Image resized successfully to ${width}x${height}`);
-      
-      setEditedImage(resizedUri);
-      
-      const historyItem: EditHistory = {
-        id: Date.now().toString(),
-        originalImage: sourceImage!,
-        editedImage: resizedUri,
-        prompt: `Resized to ${width}×${height}`,
-        date: new Date().toISOString(),
-      };
-      addToHistory(historyItem);
-      
-      return resizedUri;
-    } catch (error) {
-      console.error('❌ Resize error:', error);
-      if (error instanceof Error) {
-        throw error;
-      } else {
-        throw new Error('Failed to resize image');
-      }
-    }
-  }, [sourceImage, editedImage, addToHistory, ensureFileUri]);
-
   return useMemo(() => ({
     sourceImage,
     setSourceImage,
@@ -2111,19 +2134,23 @@ Deliver MAXIMUM QUALITY with EXCEPTIONAL CLARITY that reveals every intricate de
     addReferenceImage,
     removeReferenceImage,
     resizeImageIfNeeded,
-    resizeToSpecificSize,
     history,
     historyCursor,
     addToHistory,
     clearHistory,
     recentProjects,
     currentProject,
+    savedImages,
     generateEdit,
     buildEnhancedPrompt,
     loadOriginalImage,
     resetToOriginal,
     startNewSourceImage,
     revertToInitialImage,
+    saveCurrentImage,
+    deleteSavedImage,
+    loadSavedImage,
+    clearAllSavedImages,
     upscaleImage,
     downloadImage,
     renderImageToVideoWeb,
@@ -2139,10 +2166,10 @@ Deliver MAXIMUM QUALITY with EXCEPTIONAL CLARITY that reveals every intricate de
     historyCursor,
     recentProjects,
     currentProject,
+    savedImages,
     addReferenceImage,
     removeReferenceImage,
     resizeImageIfNeeded,
-    resizeToSpecificSize,
     addToHistory,
     clearHistory,
     generateEdit,
@@ -2151,6 +2178,10 @@ Deliver MAXIMUM QUALITY with EXCEPTIONAL CLARITY that reveals every intricate de
     resetToOriginal,
     startNewSourceImage,
     revertToInitialImage,
+    saveCurrentImage,
+    deleteSavedImage,
+    loadSavedImage,
+    clearAllSavedImages,
     upscaleImage,
     downloadImage,
     renderImageToVideoWeb,
