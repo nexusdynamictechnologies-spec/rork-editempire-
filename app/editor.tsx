@@ -58,7 +58,7 @@ import { advertisingKnowledge } from '@/constants/advertising';
 
 // Slimmed down editor per request
 
-type ToolMode = 'prompt' | 'frames' | 'enlarge' | 'undo' | 'upscale' | 'logo';
+type ToolMode = 'prompt' | 'frames' | 'enlarge' | 'undo' | 'upscale';
 
 type SelectMode = 'none' | 'region';
 
@@ -232,11 +232,7 @@ export default function EditorScreen() {
   const [isAppActive, setIsAppActive] = useState<boolean>(true);
   const isRecordingRef = useRef<boolean>(false);
   
-  const [logoText, setLogoText] = useState<string>('');
-  const [logoStyle, setLogoStyle] = useState<string>('modern');
-  const [logoCustomPrompt, setLogoCustomPrompt] = useState<string>('');
-  const [isGeneratingLogo, setIsGeneratingLogo] = useState<boolean>(false);
-  const [generatedLogo, setGeneratedLogo] = useState<string | null>(null);
+  const [isLogoMode, setIsLogoMode] = useState<boolean>(false);
 
   useEffect(() => {
     isRecordingRef.current = isRecording;
@@ -893,6 +889,130 @@ export default function EditorScreen() {
       setStatusMessage('Failed to add reference images');
       setStatusType('error');
       setTimeout(() => setStatusMessage(null), 3000);
+    }
+  };
+
+  const handleGenerateLogo = async () => {
+    if (!editPrompt.trim()) {
+      Alert.alert('Missing Prompt', 'Please describe the logo you want to create');
+      return;
+    }
+
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
+    setIsGenerating(true);
+    setStatusMessage('Creating your logo...');
+    setStatusType('info');
+
+    try {
+      const enhancedPrompt = `🎯 PROFESSIONAL LOGO DESIGN - ULTRA-PRECISE TEXT RENDERING
+
+📋 USER REQUEST:
+${editPrompt}
+
+🎨 PRIMARY OBJECTIVE:
+Create a professional logo design based on the user's description with PIXEL-PERFECT accuracy. If the request includes specific text/letters/numbers, render them with absolute precision and clarity.
+
+✍️ TEXT RENDERING MASTERY (if text is requested):
+1️⃣ CHARACTER ACCURACY:
+- Render EXACTLY the text as requested
+- Each character must be PERFECTLY formed
+- Letters in the EXACT order specified
+- NO missing letters, NO extra letters, NO wrong letters
+
+2️⃣ TYPOGRAPHY EXCELLENCE:
+- Professional typography that matches the requested style
+- Balanced letter spacing and kerning
+- Proper baseline alignment
+
+3️⃣ READABILITY & CLARITY:
+- CRYSTAL CLEAR and instantly recognizable text
+- Sharp, clean edges on all letterforms
+- Perfect contrast between text and background
+- Text as the PRIMARY FOCUS
+
+5️⃣ PROFESSIONAL LOGO STANDARDS:
+- Centered, balanced layout
+- Professional color selection
+- High resolution, sharp rendering
+- Memorable and distinctive design
+- Versatile for multiple applications
+
+🚫 CRITICAL RESTRICTIONS:
+- DO NOT change or misspell any requested text
+- DO NOT make text illegible or obscured
+- DO NOT prioritize decoration over clarity
+
+✅ REQUIRED OUTPUT:
+- Professional logo design
+- High clarity and readability
+- Commercial-quality result
+- Clean, balanced composition
+
+💎 QUALITY ASSURANCE:
+The final logo must be professional, where any text is PERFECTLY readable, ACCURATELY spelled, and BEAUTIFULLY styled. This is a precision task where accuracy is paramount.`;
+
+      console.log('🎨 Generating logo with AI...');
+      const response = await fetch('https://toolkit.rork.com/images/generate/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: enhancedPrompt,
+          size: '1024x1024',
+        }),
+      });
+
+      console.log('📡 Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        console.error('❌ API Error:', response.status, errorText);
+        
+        if (response.status === 500) {
+          throw new Error('Image generation service temporarily unavailable. Please try again in a few minutes.');
+        } else if (response.status === 503 || response.status === 502) {
+          throw new Error('Service temporarily down. Please wait and try again.');
+        } else if (response.status === 429) {
+          throw new Error('Too many requests. Please wait 30 seconds.');
+        } else {
+          throw new Error(`Failed to generate logo (${response.status})`);
+        }
+      }
+
+      const result = await response.json();
+      console.log('✅ Response parsed successfully');
+      
+      if (!result || !result.image || !result.image.base64Data) {
+        console.error('❌ Invalid response structure');
+        throw new Error('Invalid response from logo generation service');
+      }
+
+      const logoDataUri = `data:${result.image.mimeType || 'image/png'};base64,${result.image.base64Data}`;
+      
+      // Set as source image
+      startNewSourceImage(logoDataUri);
+      
+      setStatusMessage('Logo created successfully!');
+      setStatusType('success');
+      setTimeout(() => setStatusMessage(null), 2000);
+
+      if (Platform.OS !== 'web') {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+
+      // Exit logo mode after creation
+      setIsLogoMode(false);
+      console.log('✅ Logo generated successfully!');
+    } catch (error) {
+      console.error('❌ Logo generation error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Failed to generate logo';
+      setStatusMessage(errorMsg);
+      setStatusType('error');
+      setTimeout(() => setStatusMessage(null), 4000);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
