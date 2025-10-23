@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,6 @@ import {
   ArrowLeft,
   Sparkles,
   Wand2,
-
   RotateCcw,
   ZoomIn,
   Mic,
@@ -27,6 +26,8 @@ import {
   Maximize2,
   Minimize2,
   Frame,
+  Image as ImageIcon,
+  Upload,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Audio } from 'expo-av';
@@ -34,6 +35,9 @@ import { router } from 'expo-router';
 import { useEditor } from '@/contexts/EditorContext';
 import { Image as ExpoImage } from 'expo-image';
 import ResizeModal from '@/components/ResizeModal';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
+import * as FileSystem from 'expo-file-system';
 
 export default function EditorScreen() {
   const {
@@ -41,9 +45,10 @@ export default function EditorScreen() {
     editedImage,
     generateEdit,
     undoOne,
-    saveCurrentImage,
     upscaleImage,
     resizeToSpecificSize,
+    startNewSourceImage,
+    setEditedImage,
   } = useEditor();
 
   const [editPrompt, setEditPrompt] = useState<string>('');
@@ -61,18 +66,9 @@ export default function EditorScreen() {
   const [showFullScreen, setShowFullScreen] = useState<boolean>(false);
   const [showFramesModal, setShowFramesModal] = useState<boolean>(false);
   const [selectedFrame, setSelectedFrame] = useState<string | null>(null);
+  const [showImagePicker, setShowImagePicker] = useState<boolean>(false);
 
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-    });
 
-    return () => {
-      keyboardDidShowListener?.remove();
-    };
-  }, []);
 
   const cleanupRecording = async () => {
     console.log('🧹 Cleaning up recording...');
@@ -457,45 +453,58 @@ export default function EditorScreen() {
     }
   };
 
-  const frames = [
-    { id: 'none', name: 'No Frame', color: 'transparent', borderWidth: 0 },
-    { id: 'classic-black', name: 'Classic Black', color: '#000000', borderWidth: 20 },
-    { id: 'elegant-white', name: 'Elegant White', color: '#FFFFFF', borderWidth: 20 },
-    { id: 'gold', name: 'Gold Luxury', color: '#FFD700', borderWidth: 15 },
-    { id: 'wood', name: 'Wooden Frame', color: '#8B4513', borderWidth: 25 },
-    { id: 'modern-gray', name: 'Modern Gray', color: '#808080', borderWidth: 15 },
-    { id: 'thin-black', name: 'Thin Black', color: '#000000', borderWidth: 5 },
-    { id: 'thick-white', name: 'Thick White', color: '#FFFFFF', borderWidth: 30 },
-    { id: 'silver', name: 'Silver', color: '#C0C0C0', borderWidth: 18 },
+  const aspectRatioFrames = [
+    { id: '1:1', name: 'Square', ratio: 1 / 1, width: 1080, height: 1080, description: 'Instagram post' },
+    { id: '4:5', name: 'Portrait', ratio: 4 / 5, width: 1080, height: 1350, description: 'Instagram portrait' },
+    { id: '16:9', name: 'Landscape', ratio: 16 / 9, width: 1920, height: 1080, description: 'Widescreen' },
+    { id: '9:16', name: 'Vertical', ratio: 9 / 16, width: 1080, height: 1920, description: 'Story/Reel' },
+    { id: '4:3', name: 'Classic', ratio: 4 / 3, width: 1600, height: 1200, description: 'Standard photo' },
+    { id: '3:4', name: 'Classic Portrait', ratio: 3 / 4, width: 1200, height: 1600, description: 'Standard vertical' },
+    { id: '21:9', name: 'Ultrawide', ratio: 21 / 9, width: 2560, height: 1080, description: 'Cinematic' },
+    { id: '2:3', name: 'Portrait 2:3', ratio: 2 / 3, width: 1080, height: 1620, description: 'Classic portrait' },
   ];
 
-  const applyFrame = async (frameId: string) => {
-    const frame = frames.find(f => f.id === frameId);
+  const applyCropToAspectRatio = async (frameId: string) => {
+    const frame = aspectRatioFrames.find(f => f.id === frameId);
     if (!frame) return;
     
     setSelectedFrame(frameId);
     setShowFramesModal(false);
     
-    if (frameId === 'none') {
-      setStatusMessage('Frame removed');
-      setStatusType('success');
-      setTimeout(() => setStatusMessage(null), 2000);
-      return;
-    }
-    
     try {
-      setStatusMessage('Applying frame...');
+      setStatusMessage(`Cropping to ${frame.name} (${frame.id})...`);
       setStatusType('info');
       
-      await generateEdit({
-        prompt: `Add a professional ${frame.name.toLowerCase()} frame/border around the entire image. The frame should be ${frame.borderWidth}px wide with ${frame.color} color. Make it look like a professional photo frame or art gallery frame. Keep the main image content exactly the same, only add the decorative frame border around the edges.`,
-        strength: 0.3,
-        identityLock: true,
-        upscale: false,
-        watermark: false,
-      });
+      if (!currentImage) {
+        throw new Error('No image available');
+      }
+
+      const manipulated = await ImageManipulator.manipulateAsync(
+        await ensureFileUri(currentImage),
+        [{ resize: { width: frame.width, height: frame.height } }],
+        { compress: 0.95, format: ImageManipulator.SaveFormat.PNG }
+      );
+
+      let croppedUri = manipulated.uri;
       
-      setStatusMessage('Frame applied!');
+      if (Platform.OS === 'web') {
+        const response = await fetch(manipulated.uri);
+        const blob = await response.blob();
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            resolve(result);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        croppedUri = base64;
+      }
+      
+      setEditedImage(croppedUri);
+      
+      setStatusMessage(`Cropped to ${frame.name}!`);
       setStatusType('success');
       setTimeout(() => setStatusMessage(null), 2000);
       
@@ -503,10 +512,28 @@ export default function EditorScreen() {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     } catch (error) {
-      console.error('Frame error:', error);
-      setStatusMessage('Failed to apply frame');
+      console.error('Crop error:', error);
+      setStatusMessage('Failed to crop image');
       setStatusType('error');
       setTimeout(() => setStatusMessage(null), 3000);
+    }
+  };
+
+  const ensureFileUri = async (uri: string): Promise<string> => {
+    try {
+      if (uri.startsWith('data:')) {
+        const [header, data] = uri.split(',');
+        const mime = (header.split(';')[0] || '').replace('data:', '') || 'image/png';
+        const ext = mime.includes('png') ? 'png' : (mime.includes('jpeg') || mime.includes('jpg')) ? 'jpg' : 'png';
+        const filename = `img_${Date.now()}.${ext}`;
+        const fileUri = `${FileSystem.cacheDirectory ?? ''}${filename}`;
+        await FileSystem.writeAsStringAsync(fileUri, data ?? '', { encoding: FileSystem.EncodingType.Base64 });
+        return fileUri;
+      }
+      return uri;
+    } catch (e) {
+      console.error('ensureFileUri error:', e);
+      throw new Error('Failed to prepare image');
     }
   };
 
@@ -691,7 +718,7 @@ export default function EditorScreen() {
                   activeOpacity={0.7}
                 >
                   <Frame size={18} color="#FFD700" />
-                  <Text style={styles.secondaryButtonText}>Frames</Text>
+                  <Text style={styles.secondaryButtonText}>Crop</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -706,6 +733,27 @@ export default function EditorScreen() {
                 >
                   <RotateCcw size={18} color="#FFD700" />
                   <Text style={styles.secondaryButtonText}>Undo</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.secondaryButtons}>
+                <TouchableOpacity
+                  style={[styles.primaryButton, { marginTop: 0 }]}
+                  onPress={async () => {
+                    if (Platform.OS !== 'web') {
+                      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    }
+                    setShowImagePicker(true);
+                  }}
+                  activeOpacity={0.9}
+                >
+                  <LinearGradient
+                    colors={['#FF6B6B', '#FF4444']}
+                    style={styles.buttonGradient}
+                  >
+                    <Upload size={20} color="#FFFFFF" />
+                    <Text style={[styles.primaryButtonText, { color: '#FFFFFF' }]}>Replace Image</Text>
+                  </LinearGradient>
                 </TouchableOpacity>
               </View>
             </View>
@@ -784,7 +832,7 @@ export default function EditorScreen() {
               <View style={styles.framesHeader}>
                 <View style={styles.framesHeaderLeft}>
                   <Frame size={24} color="#FFD700" strokeWidth={2.5} />
-                  <Text style={styles.framesHeaderTitle}>Select Frame</Text>
+                  <Text style={styles.framesHeaderTitle}>Crop to Aspect Ratio</Text>
                 </View>
                 <TouchableOpacity
                   style={styles.framesCloseButton}
@@ -800,32 +848,34 @@ export default function EditorScreen() {
                 contentContainerStyle={styles.framesScrollContent}
                 showsVerticalScrollIndicator={true}
               >
-                {frames.map((frame) => (
+                {aspectRatioFrames.map((frame) => (
                   <TouchableOpacity
                     key={frame.id}
                     style={[
                       styles.frameCard,
                       selectedFrame === frame.id && styles.frameCardSelected,
                     ]}
-                    onPress={() => applyFrame(frame.id)}
+                    onPress={() => applyCropToAspectRatio(frame.id)}
                     activeOpacity={0.8}
                   >
-                    <View
-                      style={[
-                        styles.framePreview,
-                        {
-                          borderWidth: frame.borderWidth / 3,
-                          borderColor: frame.color === 'transparent' ? '#333' : frame.color,
-                        },
-                      ]}
-                    >
-                      <View style={styles.framePreviewInner} />
+                    <View style={styles.framePreview}>
+                      <View
+                        style={[
+                          styles.framePreviewInner,
+                          {
+                            aspectRatio: frame.ratio,
+                            width: frame.ratio >= 1 ? 50 : 50 * frame.ratio,
+                            height: frame.ratio < 1 ? 50 : 50 / frame.ratio,
+                            backgroundColor: '#FFD700',
+                            borderRadius: 4,
+                          },
+                        ]}
+                      />
                     </View>
                     <View style={styles.frameCardContent}>
                       <Text style={styles.frameName}>{frame.name}</Text>
-                      <Text style={styles.frameDetails}>
-                        {frame.borderWidth === 0 ? 'Original' : `${frame.borderWidth}px border`}
-                      </Text>
+                      <Text style={styles.frameDetails}>{frame.id} • {frame.description}</Text>
+                      <Text style={styles.frameDimensions}>{frame.width}×{frame.height}px</Text>
                     </View>
                     {selectedFrame === frame.id && (
                       <View style={styles.frameSelectedIndicator}>
@@ -835,6 +885,72 @@ export default function EditorScreen() {
                   </TouchableOpacity>
                 ))}
               </ScrollView>
+            </LinearGradient>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Image Picker Modal */}
+      <Modal
+        visible={showImagePicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowImagePicker(false)}
+      >
+        <View style={styles.imagePickerOverlay}>
+          <View style={styles.imagePickerContainer}>
+            <LinearGradient
+              colors={['#1A1A1A', '#2A2A2A']}
+              style={styles.imagePickerGradient}
+            >
+              <Text style={styles.imagePickerTitle}>Replace Image</Text>
+              <Text style={styles.imagePickerDescription}>
+                Choose a new image to replace the current one
+              </Text>
+
+              <TouchableOpacity
+                style={styles.imagePickerButton}
+                onPress={async () => {
+                  try {
+                    const result = await ImagePicker.launchImageLibraryAsync({
+                      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                      allowsEditing: false,
+                      quality: 1,
+                    });
+
+                    if (!result.canceled && result.assets[0]) {
+                      startNewSourceImage(result.assets[0].uri);
+                      setShowImagePicker(false);
+                      setStatusMessage('Image replaced successfully!');
+                      setStatusType('success');
+                      setTimeout(() => setStatusMessage(null), 2000);
+                      if (Platform.OS !== 'web') {
+                        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Image picker error:', error);
+                    Alert.alert('Error', 'Failed to pick image');
+                  }
+                }}
+                activeOpacity={0.9}
+              >
+                <LinearGradient
+                  colors={['#FFD700', '#FFA500']}
+                  style={styles.imagePickerButtonGradient}
+                >
+                  <ImageIcon size={24} color="#1A1A1A" />
+                  <Text style={styles.imagePickerButtonText}>Choose from Gallery</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.imagePickerCancelButton}
+                onPress={() => setShowImagePicker(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.imagePickerCancelText}>Cancel</Text>
+              </TouchableOpacity>
             </LinearGradient>
           </View>
         </View>
@@ -1165,6 +1281,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#999',
   },
+  frameDimensions: {
+    fontSize: 11,
+    color: '#666',
+    marginTop: 2,
+  },
   frameSelectedIndicator: {
     width: 32,
     height: 32,
@@ -1172,5 +1293,64 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 215, 0, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  imagePickerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  imagePickerContainer: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+  imagePickerGradient: {
+    padding: 32,
+    alignItems: 'center',
+    gap: 20,
+  },
+  imagePickerTitle: {
+    fontSize: 24,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  imagePickerDescription: {
+    fontSize: 15,
+    color: '#999',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  imagePickerButton: {
+    width: '100%',
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginTop: 8,
+  },
+  imagePickerButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+  },
+  imagePickerButtonText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#1A1A1A',
+  },
+  imagePickerCancelButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  imagePickerCancelText: {
+    fontSize: 16,
+    fontWeight: '500' as const,
+    color: '#999',
+    textAlign: 'center',
   },
 });
