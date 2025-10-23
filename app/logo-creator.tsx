@@ -267,6 +267,8 @@ Create a stunning professional logo that showcases "${logoText}" with perfect ty
       console.log('📝 Logo text:', logoText);
       console.log('🎭 Style:', selectedStyleObj?.name);
 
+      // Use the direct POST API to generate images
+      console.log('🎨 Generating image via API...');
       const response = await fetch('https://toolkit.rork.com/images/generate/', {
         method: 'POST',
         headers: {
@@ -278,15 +280,29 @@ Create a stunning professional logo that showcases "${logoText}" with perfect ty
         }),
       });
 
+      console.log('📡 Response status:', response.status);
+      
       if (!response.ok) {
         const errorText = await response.text().catch(() => '');
         console.error('❌ API Error:', response.status, errorText);
-        throw new Error(`Failed to generate logo (${response.status})`);
+        
+        // Provide more helpful error messages
+        if (response.status === 500) {
+          throw new Error('🚨 Image Generation Service Temporarily Unavailable\n\n⚠️ The AI image generation service is experiencing issues.\n\n💡 This usually resolves within 5-10 minutes.\n\n🔄 Please try again shortly.');
+        } else if (response.status === 503 || response.status === 502) {
+          throw new Error('⚠️ Service Temporarily Down\n\n🔄 The image generation service is under maintenance or experiencing high load.\n\n💡 Please wait a few minutes and try again.');
+        } else if (response.status === 429) {
+          throw new Error('⏸️ Too Many Requests\n\n💡 Please wait 30 seconds and try again.');
+        } else {
+          throw new Error(`Failed to generate logo (${response.status}${errorText ? ': ' + errorText.substring(0, 100) : ''})`);
+        }
       }
 
       const result = await response.json();
+      console.log('✅ Response parsed, checking data...');
       
       if (!result || !result.image || !result.image.base64Data) {
+        console.error('❌ Invalid response structure:', JSON.stringify(result).substring(0, 200));
         throw new Error('Invalid response from logo generation service');
       }
 
