@@ -28,6 +28,7 @@ import {
   Frame,
   Image as ImageIcon,
   Upload,
+  X,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Audio } from 'expo-av';
@@ -714,6 +715,20 @@ Enhanced: "Replace the background with a beautiful beach scene: golden sand, tur
                       <Mic size={18} color="#FFD700" />
                     )}
                   </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.clearButton}
+                    onPress={() => {
+                      setEditPrompt('');
+                      if (Platform.OS !== 'web') {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }
+                    }}
+                    disabled={!editPrompt.trim()}
+                    activeOpacity={0.7}
+                  >
+                    <X size={18} color="#FF4444" />
+                  </TouchableOpacity>
                 </View>
               </View>
 
@@ -1155,6 +1170,14 @@ const styles = StyleSheet.create({
   },
   micButtonRecording: {
     backgroundColor: 'rgba(255, 68, 68, 0.2)',
+  },
+  clearButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 68, 68, 0.1)',
+    borderRadius: 8,
   },
   promptInput: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
