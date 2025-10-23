@@ -36,7 +36,7 @@ import { Audio } from 'expo-av';
 import { router } from 'expo-router';
 import { useEditor } from '@/contexts/EditorContext';
 import { Image as ExpoImage } from 'expo-image';
-import ResizeModal from '@/components/ResizeModal';
+
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as FileSystem from 'expo-file-system';
@@ -48,7 +48,6 @@ export default function EditorScreen() {
     generateEdit,
     undoOne,
     upscaleImage,
-    resizeToSpecificSize,
     startNewSourceImage,
     setEditedImage,
   } = useEditor();
@@ -64,7 +63,7 @@ export default function EditorScreen() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const scrollViewRef = useRef<ScrollView>(null);
-  const [showResizeModal, setShowResizeModal] = useState<boolean>(false);
+
   const [showFullScreen, setShowFullScreen] = useState<boolean>(false);
   const [showFramesModal, setShowFramesModal] = useState<boolean>(false);
   const [selectedFrame, setSelectedFrame] = useState<string | null>(null);
@@ -495,25 +494,7 @@ Enhanced: "Replace the background with a beautiful beach scene: golden sand, tur
 
   const currentImage = editedImage || sourceImage;
 
-  const handleResize = async (width: number, height: number) => {
-    try {
-      setStatusMessage(`Resizing to ${width}×${height}...`);
-      setStatusType('info');
-      await resizeToSpecificSize(width, height);
-      setStatusMessage('Image resized successfully!');
-      setStatusType('success');
-      setTimeout(() => setStatusMessage(null), 2000);
-      if (Platform.OS !== 'web') {
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-    } catch (error) {
-      console.error('Resize error:', error);
-      const errorMsg = error instanceof Error ? error.message : 'Failed to resize';
-      setStatusMessage(errorMsg);
-      setStatusType('error');
-      setTimeout(() => setStatusMessage(null), 3000);
-    }
-  };
+
 
   const aspectRatioFrames = [
     { id: '1:1', name: 'Square', ratio: 1 / 1, width: 1080, height: 1080, description: 'Instagram post' },
@@ -766,20 +747,6 @@ Enhanced: "Replace the background with a beautiful beach scene: golden sand, tur
                     </>
                   )}
                 </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.secondaryButton}
-                  onPress={() => {
-                    setShowResizeModal(true);
-                    if (Platform.OS !== 'web') {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Maximize2 size={18} color="#FFD700" />
-                  <Text style={styles.secondaryButtonText}>Resize</Text>
-                </TouchableOpacity>
               </View>
 
               <View style={styles.secondaryButtons}>
@@ -845,12 +812,7 @@ Enhanced: "Replace the background with a beautiful beach scene: golden sand, tur
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-      {/* Resize Modal */}
-      <ResizeModal
-        visible={showResizeModal}
-        onClose={() => setShowResizeModal(false)}
-        onResize={handleResize}
-      />
+
 
       {/* Full Screen Modal */}
       <Modal
