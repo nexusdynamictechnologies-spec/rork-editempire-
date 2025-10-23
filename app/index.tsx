@@ -117,29 +117,12 @@ export default function HomeScreen() {
           <View style={styles.header}>
             <View style={styles.headerTop}>
               <View style={styles.logoContainer}>
-                <View style={styles.logoWrapper}>
-                  <ExpoImage
-                    source={{ uri: 'https://r2-pub.rork.com/generated-images/422e1139-1fa1-45ef-8c7b-4bacd4ad22e2.png' }}
-                    style={[styles.logo3DWrapper, styles.logoImageStyle]}
-                    contentFit="contain"
-                    testID="app-logo"
-                  />
-                  <View style={styles.diamondOverlay} pointerEvents="none">
-                    {Array.from({ length: 8 }).map((_, rowIndex) => (
-                      <View key={rowIndex} style={styles.diamondRow}>
-                        {Array.from({ length: 8 }).map((_, colIndex) => (
-                          <View
-                            key={colIndex}
-                            style={[
-                              styles.diamondCell,
-                              (rowIndex + colIndex) % 2 === 0 ? styles.diamondLight : styles.diamondDark,
-                            ]}
-                          />
-                        ))}
-                      </View>
-                    ))}
-                  </View>
-                </View>
+                <ExpoImage
+                  source={{ uri: 'https://r2-pub.rork.com/generated-images/2d41db25-7684-41d0-8ec7-9da871956186.png' }}
+                  style={styles.fullLogo}
+                  contentFit="contain"
+                  testID="app-logo"
+                />
               </View>
 
             </View>
@@ -557,44 +540,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoWrapper: {
-    position: 'relative',
-  },
-  diamondOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: 140,
-    height: 140,
-    opacity: 0.25,
-    overflow: 'hidden',
-    borderRadius: 8,
-  },
-  diamondRow: {
-    flexDirection: 'row',
-    flex: 1,
-  },
-  diamondCell: {
-    flex: 1,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-  },
-  diamondLight: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  diamondDark: {
-    backgroundColor: 'rgba(255, 215, 0, 0.15)',
-  },
-  logo3DWrapper: {
-    width: 140,
-    height: 140,
-    marginRight: 0,
-  },
-  logoImageStyle: {
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.6,
-    shadowRadius: 12,
+  fullLogo: {
+    width: '100%',
+    height: 450,
+    marginBottom: 20,
   },
   logoEmoji: {
     fontSize: 28,
