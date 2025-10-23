@@ -65,6 +65,7 @@ export default function EditorScreen() {
   }, []);
 
   const cleanupRecording = async () => {
+    console.log('🧹 Cleaning up recording...');
     if (Platform.OS === 'web') {
       if (mediaRecorderRef.current) {
         try {
@@ -84,9 +85,20 @@ export default function EditorScreen() {
           const status = await recordingInstance.getStatusAsync();
           if (status.isRecording) {
             await recordingInstance.stopAndUnloadAsync();
+          } else {
+            try {
+              await recordingInstance.stopAndUnloadAsync();
+            } catch (e) {
+              console.warn('Recording already stopped:', e);
+            }
           }
         } catch (e) {
           console.warn('Error stopping recording:', e);
+          try {
+            await recordingInstance.stopAndUnloadAsync();
+          } catch (stopError) {
+            console.warn('Could not force stop recording:', stopError);
+          }
         }
         setRecordingInstance(null);
       }
@@ -97,12 +109,20 @@ export default function EditorScreen() {
       }
     }
     setIsRecording(false);
+    console.log('✅ Recording cleanup complete');
   };
 
   const startRecording = async () => {
     try {
-      if (isRecording) return;
+      console.log('🎤 Starting recording...', { isRecording, hasRecordingInstance: !!recordingInstance });
+      
+      if (isRecording) {
+        console.log('⚠️ Already recording, ignoring start request');
+        return;
+      }
+
       await cleanupRecording();
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       if (Platform.OS === 'web') {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -123,6 +143,7 @@ export default function EditorScreen() {
         mediaRecorder.start();
         mediaRecorderRef.current = mediaRecorder;
         setIsRecording(true);
+        console.log('✅ Web recording started');
       } else {
         const { status } = await Audio.requestPermissionsAsync();
         if (status !== 'granted') {
@@ -130,12 +151,16 @@ export default function EditorScreen() {
           return;
         }
 
+        console.log('🔧 Setting audio mode...');
         await Audio.setAudioModeAsync({
           allowsRecordingIOS: true,
           playsInSilentModeIOS: true,
         });
 
+        console.log('📱 Creating new recording instance...');
         const recording = new Audio.Recording();
+        
+        console.log('⚙️ Preparing to record...');
         await recording.prepareToRecordAsync({
           android: {
             extension: '.m4a',
@@ -153,18 +178,25 @@ export default function EditorScreen() {
           web: {},
         });
 
+        console.log('▶️ Starting recording...');
         await recording.startAsync();
         setRecordingInstance(recording);
         setIsRecording(true);
+        console.log('✅ Mobile recording started successfully');
 
         if (Platform.OS === 'ios' || Platform.OS === 'android') {
           await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
       }
     } catch (error: unknown) {
-      console.error('Failed to start recording:', error);
+      console.error('❌ Failed to start recording:', error);
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+        console.error('Error stack:', error.stack);
+      }
       await cleanupRecording();
-      Alert.alert('Error', 'Failed to start recording. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      Alert.alert('Recording Error', `Failed to start recording: ${errorMessage}\n\nPlease try again.`);
     }
   };
 
