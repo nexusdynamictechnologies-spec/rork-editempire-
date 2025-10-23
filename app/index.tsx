@@ -22,9 +22,8 @@ import { Image as ExpoImage } from 'expo-image';
 
 
 export default function HomeScreen() {
-  const { setSourceImage, recentProjects, loadOriginalImage, savedImages, loadSavedImage, addReferenceImage, resizeImageIfNeeded } = useEditor();
+  const { setSourceImage, recentProjects, loadOriginalImage, addReferenceImage, resizeImageIfNeeded } = useEditor();
   const [loading, setLoading] = useState(false);
-  const [enlargedImage, setEnlargedImage] = useState<{ uri: string; date: string; isEdited: boolean } | null>(null);
 
 
   const processAndNavigate = async (uri: string) => {
@@ -253,58 +252,7 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* Saved Images */}
-          {savedImages.length > 0 && (
-            <View style={styles.recentSection}>
-              <Text style={styles.sectionTitle}>Saved Images ({savedImages.length})</Text>
-              <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.recentScroll}
-              >
-                {savedImages.slice(0, 10).map((savedImage) => (
-                  <TouchableOpacity
-                    key={savedImage.id}
-                    style={styles.recentCard}
-                    onPress={async () => {
-                      if (Platform.OS !== 'web') {
-                        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      }
-                      
-                      // Enlarge the image instead of navigating to editor
-                      const imageUri = await loadSavedImage(savedImage.id);
-                      setEnlargedImage({
-                        uri: imageUri || savedImage.thumbnail || savedImage.imageUri,
-                        date: savedImage.date,
-                        isEdited: savedImage.isEdited
-                      });
-                    }}
-                  >
-                    <ExpoImage
-                      source={{ uri: savedImage.thumbnail || savedImage.imageUri }}
-                      style={styles.recentImage}
-                      contentFit="cover"
-                    />
-                    <LinearGradient
-                      colors={['transparent', 'rgba(0,0,0,0.8)']}
-                      style={styles.recentOverlay}
-                    >
-                      <View style={styles.savedImageOverlayContent}>
-                        {savedImage.isEdited && (
-                          <View style={styles.editedIndicator}>
-                            <Sparkles size={12} color="#FFD700" />
-                          </View>
-                        )}
-                        <Text style={styles.recentDate}>
-                          {new Date(savedImage.date).toLocaleDateString()}
-                        </Text>
-                      </View>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          )}
+
 
 
 
@@ -388,94 +336,7 @@ export default function HomeScreen() {
         </ScrollView>
       </SafeAreaView>
 
-      {/* Enlarged Image Modal */}
-      <Modal
-        visible={!!enlargedImage}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setEnlargedImage(null)}
-      >
-        <View style={styles.modalOverlay}>
-          <SafeAreaView style={styles.modalSafeArea}>
-            {/* Header */}
-            <View style={styles.modalHeader}>
-              <TouchableOpacity
-                style={styles.modalCloseButton}
-                onPress={() => setEnlargedImage(null)}
-                activeOpacity={0.7}
-              >
-                <LinearGradient
-                  colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.6)']}
-                  style={styles.modalCloseGradient}
-                >
-                  <X size={24} color="#FFFFFF" strokeWidth={2} />
-                </LinearGradient>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={styles.modalEditButton}
-                onPress={async () => {
-                  if (enlargedImage) {
-                    setLoading(true);
-                    setSourceImage(enlargedImage.uri);
-                    setEnlargedImage(null);
-                    setTimeout(() => {
-                      setLoading(false);
-                      router.push('/editor');
-                    }, 300);
-                  }
-                }}
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={['#FFD700', '#FFA500']}
-                  style={styles.modalEditGradient}
-                >
-                  <Text style={styles.modalEditText}>Edit</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
 
-            {/* Image */}
-            <View style={styles.modalImageContainer}>
-              {enlargedImage && (
-                <ExpoImage
-                  source={{ uri: enlargedImage.uri }}
-                  style={styles.modalImage}
-                  contentFit="contain"
-                  transition={200}
-                />
-              )}
-            </View>
-
-            {/* Footer Info */}
-            <View style={styles.modalFooter}>
-              <LinearGradient
-                colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.6)']}
-                style={styles.modalFooterGradient}
-              >
-                <View style={styles.modalInfoContainer}>
-                  {enlargedImage?.isEdited && (
-                    <View style={styles.modalEditedBadge}>
-                      <Sparkles size={16} color="#FFD700" strokeWidth={2} />
-                      <Text style={styles.modalEditedText}>AI Edited</Text>
-                    </View>
-                  )}
-                  <Text style={styles.modalDateText}>
-                    {enlargedImage ? new Date(enlargedImage.date).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    }) : ''}
-                  </Text>
-                </View>
-              </LinearGradient>
-            </View>
-          </SafeAreaView>
-        </View>
-      </Modal>
 
 
     </View>
@@ -743,20 +604,6 @@ const styles = StyleSheet.create({
     color: '#CCCCCC',
     fontStyle: 'italic' as const,
   },
-  savedImageOverlayContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  editedIndicator: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   instructionsSection: {
     paddingHorizontal: 20,
     marginBottom: 30,
@@ -819,91 +666,6 @@ const styles = StyleSheet.create({
   footerSubtext: {
     fontSize: 12,
     color: '#666',
-    textAlign: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.95)',
-  },
-  modalSafeArea: {
-    flex: 1,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    zIndex: 10,
-  },
-  modalCloseButton: {
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  modalCloseGradient: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalEditButton: {
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  modalEditGradient: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalEditText: {
-    fontSize: 16,
-    fontWeight: '700' as const,
-    color: '#1A1A1A',
-  },
-  modalImageContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  modalImage: {
-    width: '100%',
-    maxWidth: 400,
-    aspectRatio: 1,
-    borderRadius: 16,
-  },
-  modalFooter: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  modalFooterGradient: {
-    borderRadius: 16,
-    padding: 16,
-  },
-  modalInfoContainer: {
-    alignItems: 'center',
-  },
-  modalEditedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 215, 0, 0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  modalEditedText: {
-    fontSize: 14,
-    fontWeight: '600' as const,
-    color: '#FFD700',
-    marginLeft: 6,
-  },
-  modalDateText: {
-    fontSize: 14,
-    color: '#CCCCCC',
     textAlign: 'center',
   },
 });

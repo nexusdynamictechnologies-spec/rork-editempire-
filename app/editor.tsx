@@ -19,7 +19,7 @@ import {
   ArrowLeft,
   Sparkles,
   Wand2,
-  Download,
+
   RotateCcw,
   ZoomIn,
   Mic,
@@ -433,29 +433,7 @@ export default function EditorScreen() {
     }
   };
 
-  const handleSave = async () => {
-    if (Platform.OS !== 'web') {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
 
-    try {
-      const success = await saveCurrentImage();
-      if (success) {
-        setStatusMessage('Image saved successfully!');
-        setStatusType('success');
-        setTimeout(() => setStatusMessage(null), 2000);
-        if (Platform.OS !== 'web') {
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        }
-      } else {
-        throw new Error('Failed to save image');
-      }
-    } catch {
-      setStatusMessage('Failed to save image');
-      setStatusType('error');
-      setTimeout(() => setStatusMessage(null), 3000);
-    }
-  };
 
   const currentImage = editedImage || sourceImage;
 
@@ -562,13 +540,6 @@ export default function EditorScreen() {
               activeOpacity={0.7}
             >
               <Maximize2 size={22} color="#FFD700" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={handleSave}
-              activeOpacity={0.7}
-            >
-              <Download size={22} color="#FFD700" />
             </TouchableOpacity>
           </View>
         </View>

@@ -80,7 +80,7 @@ export const [EditorProvider, useEditor] = createContextHook(() => {
   const [historyCursor, setHistoryCursor] = useState<number>(-1);
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>([]);
   const [currentProject, setCurrentProject] = useState<EditHistory | null>(null);
-  const [savedImages, setSavedImages] = useState<SavedImage[]>([]);
+
 
   const [isEditLoading, setIsEditLoading] = useState(false);
   const [isUpscaleLoading, setIsUpscaleLoading] = useState(false);
@@ -88,7 +88,6 @@ export const [EditorProvider, useEditor] = createContextHook(() => {
 
   useEffect(() => {
     loadRecentProjects();
-    loadSavedImages();
   }, []);
 
   const loadRecentProjects = async () => {
@@ -102,16 +101,7 @@ export const [EditorProvider, useEditor] = createContextHook(() => {
     }
   };
 
-  const loadSavedImages = async () => {
-    try {
-      const stored = await AsyncStorage.getItem('savedImages');
-      if (stored) {
-        setSavedImages(JSON.parse(stored));
-      }
-    } catch (error) {
-      console.error('Failed to load saved images:', error);
-    }
-  };
+
 
   const createThumbnail = useCallback(async (imageUri: string): Promise<string> => {
     try {
@@ -1530,186 +1520,13 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
     }
   }, [initialSourceImage]);
 
-  const saveCurrentImage = useCallback(async (): Promise<boolean> => {
-    try {
-      const imageToSave = editedImage || sourceImage;
-      if (!imageToSave) {
-        console.error('No image to save');
-        throw new Error('No image to save');
-      }
-      
-      console.log('Creating saved image object...');
-      const savedImage: SavedImage = {
-        id: Date.now().toString(),
-        imageUri: imageToSave,
-        originalImageUri: sourceImage || undefined,
-        prompt: currentProject?.prompt,
-        date: new Date().toISOString(),
-        isEdited: !!editedImage,
-      };
-      
-      console.log('Creating thumbnail...');
-      const thumbnail = await createThumbnail(imageToSave);
-      const savedImageWithThumbnail: SavedImage = { ...savedImage, thumbnail };
-      
-      console.log('Storing image data...');
-      const imageKey = `saved_image_${savedImage.id}`;
-      try {
-        if (Platform.OS === 'web') {
-          await idbSet(imageKey, imageToSave);
-        } else {
-          await AsyncStorage.setItem(imageKey, imageToSave);
-        }
-        console.log('Image data stored successfully');
-      } catch (storageError) {
-        console.error('Failed to store image data:', storageError);
-        // Continue anyway, we'll use the thumbnail
-      }
-      
-      console.log('Updating saved images list...');
-      const updatedSavedImages = [savedImageWithThumbnail, ...savedImages].slice(0, 50);
-      setSavedImages(updatedSavedImages);
-      
-      try {
-        await AsyncStorage.setItem('savedImages', JSON.stringify(updatedSavedImages));
-        console.log('Saved images list updated successfully');
-      } catch (metaError) {
-        console.error('Failed to update saved images metadata:', metaError);
-        throw metaError;
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Save current image error:', error);
-      
-      if (error instanceof Error && (((error.message ?? '').toLowerCase().includes('quota')) || error.name === 'QuotaExceededError')) {
-        console.log('Storage quota exceeded, cleaning up old images...');
-        try {
-          const oldestImages = savedImages.slice(30);
-          for (const oldImage of oldestImages) {
-            try {
-              if (Platform.OS === 'web') {
-                await idbDelete(`saved_image_${oldImage.id}`);
-              } else {
-                await AsyncStorage.removeItem(`saved_image_${oldImage.id}`);
-              }
-            } catch {}
-          }
-          const cleanedSavedImages = savedImages.slice(0, 30);
-          setSavedImages(cleanedSavedImages);
-          await AsyncStorage.setItem('savedImages', JSON.stringify(cleanedSavedImages));
-          console.log('Cleaned up old images, retrying save...');
-          return await saveCurrentImage();
-        } catch (cleanupError) {
-          console.error('Cleanup failed:', cleanupError);
-          return false;
-        }
-      }
-      return false;
-    }
-  }, [editedImage, sourceImage, currentProject, savedImages, createThumbnail]);
 
-  const deleteSavedImage = useCallback(async (imageId: string): Promise<boolean> => {
-    try {
-      console.log('Deleting saved image:', imageId);
-      
-      // Delete the actual image data
-      try {
-        if (Platform.OS === 'web') {
-          await idbDelete(`saved_image_${imageId}`);
-        } else {
-          await AsyncStorage.removeItem(`saved_image_${imageId}`);
-        }
-        console.log('Image data deleted successfully');
-      } catch (imageDeleteError) {
-        console.warn('Failed to delete image data (continuing anyway):', imageDeleteError);
-      }
-      
-      // Update the saved images list
-      const updatedSavedImages = savedImages.filter(img => img.id !== imageId);
-      console.log('Updated saved images count:', updatedSavedImages.length);
-      
-      setSavedImages(updatedSavedImages);
-      
-      try {
-        await AsyncStorage.setItem('savedImages', JSON.stringify(updatedSavedImages));
-        console.log('Saved images metadata updated successfully');
-      } catch (metaError) {
-        console.error('Failed to update saved images metadata:', metaError);
-        throw metaError;
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Failed to delete saved image:', error);
-      return false;
-    }
-  }, [savedImages]);
 
-  const loadSavedImage = useCallback(async (imageId: string): Promise<string | null> => {
-    try {
-      console.log('Loading saved image:', imageId);
-      const imageKey = `saved_image_${imageId}`;
-      
-      const storedImage = Platform.OS === 'web' ? await idbGet<string>(imageKey) : await AsyncStorage.getItem(imageKey);
-      
-      if (storedImage) {
-        console.log('Saved image loaded successfully');
-        return storedImage;
-      } else {
-        console.warn('No stored image found, trying to use thumbnail');
-        // Fallback to thumbnail if full image not available
-        const savedImageMeta = savedImages.find(img => img.id === imageId);
-        if (savedImageMeta?.thumbnail) {
-          console.log('Using thumbnail as fallback');
-          return savedImageMeta.thumbnail;
-        } else if (savedImageMeta?.imageUri) {
-          console.log('Using imageUri as fallback');
-          return savedImageMeta.imageUri;
-        }
-        console.error('No image data available for ID:', imageId);
-        return null;
-      }
-    } catch (error) {
-      console.error('Failed to load saved image:', error);
-      return null;
-    }
-  }, [savedImages]);
 
-  const clearAllSavedImages = useCallback(async (): Promise<boolean> => {
-    try {
-      console.log('Clearing all saved images...');
-      
-      // Delete all image data
-      for (const si of savedImages) {
-        try {
-          if (Platform.OS === 'web') {
-            await idbDelete(`saved_image_${si.id}`);
-          } else {
-            await AsyncStorage.removeItem(`saved_image_${si.id}`);
-          }
-        } catch (deleteError) {
-          console.warn('Failed to delete image:', si.id, deleteError);
-        }
-      }
-      
-      // Clear the saved images list
-      setSavedImages([]);
-      
-      try {
-        await AsyncStorage.removeItem('savedImages');
-        console.log('All saved images cleared successfully');
-      } catch (metaError) {
-        console.error('Failed to clear saved images metadata:', metaError);
-        throw metaError;
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Failed to clear all saved images:', error);
-      return false;
-    }
-  }, [savedImages]);
+
+
+
+
 
   const getImageSize = useCallback(async (uri: string): Promise<{ width: number; height: number }> => {
     return new Promise((resolve, reject) => {
@@ -2199,17 +2016,12 @@ Deliver MAXIMUM QUALITY with EXCEPTIONAL CLARITY that reveals every intricate de
     clearHistory,
     recentProjects,
     currentProject,
-    savedImages,
     generateEdit,
     buildEnhancedPrompt,
     loadOriginalImage,
     resetToOriginal,
     startNewSourceImage,
     revertToInitialImage,
-    saveCurrentImage,
-    deleteSavedImage,
-    loadSavedImage,
-    clearAllSavedImages,
     upscaleImage,
     downloadImage,
     renderImageToVideoWeb,
@@ -2225,7 +2037,6 @@ Deliver MAXIMUM QUALITY with EXCEPTIONAL CLARITY that reveals every intricate de
     historyCursor,
     recentProjects,
     currentProject,
-    savedImages,
     addReferenceImage,
     removeReferenceImage,
     resizeImageIfNeeded,
@@ -2238,10 +2049,6 @@ Deliver MAXIMUM QUALITY with EXCEPTIONAL CLARITY that reveals every intricate de
     resetToOriginal,
     startNewSourceImage,
     revertToInitialImage,
-    saveCurrentImage,
-    deleteSavedImage,
-    loadSavedImage,
-    clearAllSavedImages,
     upscaleImage,
     downloadImage,
     renderImageToVideoWeb,
