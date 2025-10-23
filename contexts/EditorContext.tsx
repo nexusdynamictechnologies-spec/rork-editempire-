@@ -501,14 +501,35 @@ ${intent.targetElements.map(el => `- ${el.toUpperCase()}: Apply requested change
 5. Ensure seamless integration of changes
 `;
     
+    // CRITICAL DIMENSION AND CONTENT LOCK - MUST BE FIRST
+    const dimensionLock = `🚨 CRITICAL IMAGE EDITING RULES - MANDATORY:
+
+⚡ DIMENSION & SIZE LOCK:
+- Keep EXACT same image dimensions (width × height)
+- Keep EXACT same aspect ratio
+- DO NOT resize, crop, zoom, or change framing
+- DO NOT add padding or borders
+- The output must be pixel-for-pixel the same size as input
+
+🔒 CONTENT PRESERVATION:
+- ONLY modify what is explicitly mentioned in the prompt
+- Keep ALL other elements in their EXACT positions
+- DO NOT move, shift, or reposition anything
+- DO NOT change elements that aren't mentioned
+- DO NOT regenerate the entire image
+- DO NOT add new elements unless explicitly requested
+
+✨ EDITING APPROACH:
+- Make TARGETED changes ONLY to requested elements
+- Preserve everything else with 100% accuracy
+- Think of this as "painting over" specific parts, not regenerating the whole image
+
+---
+
+`;
+
     // PRECISION-FOCUSED PROMPT FOR EXACT ACCURACY
-    prompt = `🎯 ULTRA-PRECISION IMAGE EDITING - SURGICAL ACCURACY PROTOCOL
-
-⚡ CORE DIRECTIVE: Execute ONLY what is explicitly requested. Maintain ABSOLUTE FIDELITY to the original image for all unmodified elements. Zero tolerance for unintended changes, drift, or repositioning.
-
-${consistencyInstructions}
-
-${prompt}
+    prompt = `${dimensionLock}${prompt}
 
 🎯 CRITICAL POSITIONING & SPATIAL ACCURACY MANDATE:
 
@@ -1302,37 +1323,14 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
 - Create this scene with natural lighting, realistic positioning, and authentic environmental details`;
         }
         
-        // Add dimension preservation instruction if we have original dimensions
+        // Simplified dimension instruction - redundant with the lock at the start
         let dimensionInstruction = '';
         if (originalWidth > 0 && originalHeight > 0) {
-          dimensionInstruction = `\n\n🔒 ABSOLUTE DIMENSION & COMPOSITION LOCK - CRITICAL:
-
-📐 EXACT DIMENSIONS REQUIRED:
-- INPUT: ${originalWidth}×${originalHeight} pixels
-- OUTPUT: MUST BE EXACTLY ${originalWidth}×${originalHeight} pixels
-- ASPECT RATIO: MUST BE ${originalAspectRatio.toFixed(6)}
-
-🎯 MANDATORY PRESERVATION RULES:
-1. ✅ DIMENSIONS: Output MUST be ${originalWidth}×${originalHeight} - NO changes allowed
-2. ✅ COMPOSITION: Keep EXACT framing, cropping, and image bounds
-3. ✅ CANVAS SIZE: Locked at ${originalWidth}×${originalHeight} - cannot change
-4. ✅ ASPECT RATIO: Must remain ${originalAspectRatio.toFixed(6)} - no stretching
-5. ✅ NO ZOOM: Do not zoom in/out or change magnification
-6. ✅ NO CROP: Do not crop or trim any edges
-7. ✅ NO PADDING: Do not add borders, margins, or padding
-8. ✅ NO RESIZE: Do not upscale, downscale, or modify resolution
-
-⚠️ CRITICAL: This means:
-- The image bounds stay identical
-- All elements maintain their EXACT positions in the frame
-- The view/framing stays the same
-- Nothing gets closer or further from camera
-- No "zooming effect" or magnification changes
-- The canvas is a fixed ${originalWidth}×${originalHeight} window that cannot move or resize`;
+          dimensionInstruction = `\n\n📐 REMINDER: Output dimensions must be ${originalWidth}×${originalHeight} pixels (same as input).`;
         }
         
         const requestBody = { 
-          prompt: sanitizedPrompt + dimensionInstruction + '\n\n⚡ DIMENSION ENFORCEMENT REMINDER:\nThe output image dimensions MUST be EXACTLY ${originalWidth}×${originalHeight} pixels. Do NOT change the size, crop, zoom, or framing in any way. Keep the exact same view and composition.' + '\n\n🎯 QUALITY OUTPUT: Apply professional-grade quality with crystal-clear detail enhancement, ultra-sharp textures, and stunning visual clarity. Maintain the exact original dimensions and composition.', 
+          prompt: sanitizedPrompt + dimensionInstruction, 
           images 
         } as const;
         console.log('🚀 Calling image edit API with 4K resolution request');
