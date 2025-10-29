@@ -1,23 +1,27 @@
 {
   "expo": {
     "name": "Edit Empire",
-    "slug": "editempire",
+    "slug": "edit-empire-cindvn7hnzvkwnj5nyuzr",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "editempire",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+
     "owner": "waynejen",
+
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.editempire.app"
     },
+
     "android": {
       "package": "com.editempire.app",
       "versionCode": 2,
@@ -35,9 +39,11 @@
         "READ_MEDIA_AUDIO"
       ]
     },
+
     "web": {
       "favicon": "./assets/images/favicon.png"
     },
+
     "plugins": [
       "expo-router",
       "expo-image-picker",
@@ -45,9 +51,11 @@
       "expo-camera",
       "expo-av"
     ],
+
     "experiments": {
       "typedRoutes": true
     },
+
     "extra": {
       "eas": {
         "projectId": "db9526e3-b52c-425a-bf7d-9c711fa7d9a9"
