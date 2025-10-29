@@ -25,7 +25,7 @@
           "audio"
         ]
       }
-    "android": {
+   "android": {
   "package": "com.editempire.app",
   "versionCode": 2,
   "adaptiveIcon": {
@@ -34,16 +34,15 @@
   },
   "permissions": [
     "CAMERA",
-    "READ_EXTERNAL_STORAGE",
-    "WRITE_EXTERNAL_STORAGE",
-    "android.permission.VIBRATE",
+    "RECORD_AUDIO",
     "INTERNET",
+    "VIBRATE",
     "READ_MEDIA_IMAGES",
     "READ_MEDIA_VIDEO",
-    "READ_MEDIA_AUDIO",
-    "READ_MEDIA_VISUAL_USER_SELECTED",
-    "ACCESS_MEDIA_LOCATION",
-    "RECORD_AUDIO"
+    "READ_MEDIA_AUDIO"
+  ]
+}
+
   ]
 }
 
