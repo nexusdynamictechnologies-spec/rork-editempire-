@@ -52,6 +52,14 @@
       "expo-av"
     ],
 
-    "experiments": { "typedRoutes": true }
+    "experiments": {
+    "typedRoutes": true
+  },
+  "extra": {
+    "eas": {
+      "projectId": "YOUR_PROJECT_ID_HERE"
+    },
+    "router": {}
   }
 }
+
