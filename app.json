@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Nano Banana Style Prompt Editor",
-    "slug": "nano-banana-style-prompt-editor",
+    "name": "Edit Empire",
+    "slug": "editempire",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "editempire",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
 
@@ -15,16 +15,11 @@
       "backgroundColor": "#ffffff"
     },
 
+    "owner": "waynejen",
+
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.rork.nano-banana-style-prompt-editor",
-      "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "Allow ${PRODUCT_NAME} to access your photos.",
-        "NSCameraUsageDescription": "Allow ${PRODUCT_NAME} to access your camera",
-        "NSMicrophoneUsageDescription": "Allow ${PRODUCT_NAME} to access your microphone.",
-        "NSPhotoLibraryAddUsageDescription": "Allow ${PRODUCT_NAME} to save photos.",
-        "UIBackgroundModes": ["audio"]
-      }
+      "bundleIdentifier": "com.editempire.app"
     },
 
     "android": {
@@ -35,10 +30,10 @@
         "backgroundColor": "#ffffff"
       },
       "permissions": [
-        "CAMERA",
-        "RECORD_AUDIO",
         "INTERNET",
         "VIBRATE",
+        "CAMERA",
+        "RECORD_AUDIO",
         "READ_MEDIA_IMAGES",
         "READ_MEDIA_VIDEO",
         "READ_MEDIA_AUDIO"
@@ -50,30 +45,11 @@
     },
 
     "plugins": [
-      ["expo-router", { "origin": "https://rork.com/" }],
+      "expo-router",
       "expo-image-picker",
-      [
-        "expo-media-library",
-        {
-          "photosPermission": "Allow ${PRODUCT_NAME} to access your photos.",
-          "savePhotosPermission": "Allow ${PRODUCT_NAME} to save photos.",
-          "isAccessMediaLocationEnabled": true
-        }
-      ],
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "Allow ${PRODUCT_NAME} to access your camera",
-          "microphonePermission": "Allow ${PRODUCT_NAME} to access your microphone",
-          "recordAudioAndroid": true
-        }
-      ],
-      [
-        "expo-av",
-        {
-          "microphonePermission": "Allow ${PRODUCT_NAME} to access your microphone"
-        }
-      ]
+      "expo-media-library",
+      "expo-camera",
+      "expo-av"
     ],
 
     "experiments": { "typedRoutes": true }
