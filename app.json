@@ -13,7 +13,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "owner": "wayneiden",
+    "owner": "waynejen",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.editempire.app"
@@ -50,7 +50,7 @@
     },
     "extra": {
       "eas": {
-        "projectId":  "db9526e3-b52c-425a-bf7d-9c711fa7d9a9"
+        "projectId": "db9526e3-b52c-425a-bf7d-9c711fa7d9a9"
       }
     }
   }
