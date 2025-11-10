@@ -118,32 +118,14 @@ export default function HomeScreen() {
             <View style={styles.headerTop}>
               <View style={styles.logoContainer}>
                 <View style={styles.logoContent}>
-                  {/* Diamond Effect Hand Icon */}
+                  {/* Diamond Hand Icon */}
                   <View style={styles.diamondIconWrapper}>
-                    <LinearGradient
-                      colors={['#FFE55C', '#FFD700', '#FFA500', '#FFD700', '#FFFACD']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.diamondIconGradient}
-                    >
-                      <Text style={styles.logoIcon}>✍️</Text>
-                    </LinearGradient>
-                    <View style={styles.diamondReflection1} />
-                    <View style={styles.diamondReflection2} />
+                    <Text style={styles.logoIcon}>✍️</Text>
                   </View>
                   
-                  {/* Diamond Effect Text */}
+                  {/* Diamond Text */}
                   <View style={styles.diamondTextWrapper}>
-                    <LinearGradient
-                      colors={['#FFE55C', '#FFD700', '#FFA500', '#FFD700', '#FFFACD']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.diamondTextGradient}
-                    >
-                      <Text style={styles.logoText}>EDIT EMPIRE</Text>
-                    </LinearGradient>
-                    <View style={styles.diamondTextReflection1} />
-                    <View style={styles.diamondTextReflection2} />
+                    <Text style={styles.logoText}>EDIT EMPIRE</Text>
                   </View>
                 </View>
               </View>
@@ -533,90 +515,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   diamondIconWrapper: {
-    position: 'relative' as const,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
-  diamondIconGradient: {
-    borderRadius: 20,
-    padding: 8,
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 30,
-    elevation: 10,
-  },
-  diamondReflection1: {
-    position: 'absolute' as const,
-    top: 0,
-    left: 0,
-    width: 40,
-    height: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-    borderRadius: 20,
-    transform: [{ rotate: '45deg' }],
-  },
-  diamondReflection2: {
-    position: 'absolute' as const,
-    bottom: 10,
-    right: 10,
-    width: 25,
-    height: 25,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderRadius: 12,
-    transform: [{ rotate: '-30deg' }],
-  },
   diamondTextWrapper: {
-    position: 'relative' as const,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  diamondTextGradient: {
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 25,
-    elevation: 10,
-  },
-  diamondTextReflection1: {
-    position: 'absolute' as const,
-    top: 0,
-    left: 10,
-    width: 30,
-    height: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.35)',
-    borderRadius: 15,
-    transform: [{ rotate: '25deg' }],
-  },
-  diamondTextReflection2: {
-    position: 'absolute' as const,
-    bottom: 5,
-    right: 15,
-    width: 20,
-    height: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    borderRadius: 10,
-    transform: [{ rotate: '-45deg' }],
   },
   logoIcon: {
     fontSize: 80,
-    marginBottom: 12,
-    textShadowColor: 'rgba(255, 255, 255, 1)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 20,
+    textShadowColor: '#FFFFFF',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 8,
   },
   logoText: {
     fontSize: 32,
     fontWeight: '900' as const,
     color: '#FFD700',
     letterSpacing: 2,
-    textShadowColor: 'rgba(255, 255, 255, 1)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 15,
+    textShadowColor: '#FFFFFF',
+    textShadowOffset: { width: 3, height: 3 },
+    textShadowRadius: 12,
   },
   logoEmoji: {
     fontSize: 28,
