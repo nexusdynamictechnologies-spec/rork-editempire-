@@ -946,14 +946,18 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
 
     if (Platform.OS !== 'web' && (sanitizedUri.startsWith('file://') || sanitizedUri.startsWith('content://'))) {
       try {
-        const base64 = await FileSystem.readAsStringAsync(sanitizedUri, { encoding: EncodingType.Base64 });
-        if (!base64 || base64.length === 0) {
-          throw new Error('Empty file data');
+        if (!FileSystem || !FileSystem.readAsStringAsync || !EncodingType || !EncodingType.Base64) {
+          console.warn('FileSystem Base64 not available, falling back to fetch');
+        } else {
+          const base64 = await FileSystem.readAsStringAsync(sanitizedUri, { encoding: EncodingType.Base64 });
+          if (!base64 || base64.length === 0) {
+            throw new Error('Empty file data');
+          }
+          if (base64.length > 50 * 1024 * 1024) {
+            console.warn('Large base64 data:', base64.length);
+          }
+          return base64;
         }
-        if (base64.length > 50 * 1024 * 1024) {
-          console.warn('Large base64 data:', base64.length);
-        }
-        return base64;
       } catch (e) {
         console.error('readAsStringAsync failed, falling back to fetch:', e);
       }
@@ -1400,6 +1404,10 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
   const ensureFileUri = useCallback(async (uri: string): Promise<string> => {
     try {
       if (uri.startsWith('data:')) {
+        if (Platform.OS === 'web') {
+          return uri;
+        }
+        
         const parts = uri.split(',');
         if (parts.length !== 2) {
           throw new Error('Invalid data URI format');
@@ -1411,11 +1419,8 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
         const mime = (header.split(';')[0] || '').replace('data:', '') || 'image/png';
         const ext = mime.includes('png') ? 'png' : (mime.includes('jpeg') || mime.includes('jpg')) ? 'jpg' : 'png';
         const filename = `img_${Date.now()}.${ext}`;
-        const fileUri = `${FileSystem.cacheDirectory ?? ''}${filename}`;
-        
-        if (!EncodingType || !EncodingType.Base64) {
-          throw new Error('FileSystem EncodingType.Base64 is not available');
-        }
+        const cacheDir = FileSystem.cacheDirectory || FileSystem.documentDirectory || '';
+        const fileUri = `${cacheDir}${filename}`;
         
         await FileSystem.writeAsStringAsync(fileUri, data, { encoding: EncodingType.Base64 });
         return fileUri;
