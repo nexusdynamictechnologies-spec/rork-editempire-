@@ -120,7 +120,11 @@ export default function HomeScreen() {
                 <View style={styles.logoContent}>
                   {/* Diamond Hand Icon */}
                   <View style={styles.diamondIconWrapper}>
-                    <Text style={styles.logoIcon}>✍️</Text>
+                    <ExpoImage
+                      source={{ uri: 'https://rork.app/pa/kl09oq492bs30tldkppiy/edit_empire_hand_1' }}
+                      style={styles.logoIconImage}
+                      contentFit="contain"
+                    />
                   </View>
                   
                   {/* Diamond Text */}
@@ -547,6 +551,11 @@ const styles = StyleSheet.create({
     textShadowColor: '#FFFFFF',
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 8,
+  },
+  logoIconImage: {
+    width: 120,
+    height: 120,
+    tintColor: '#FFD700',
   },
   logoText: {
     fontSize: 32,
