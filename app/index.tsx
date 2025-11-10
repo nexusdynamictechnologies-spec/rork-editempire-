@@ -155,6 +155,14 @@ export default function HomeScreen() {
                   <Text style={styles.instructionBullet}>•</Text>
                   <Text style={styles.instructionText}>Smart understanding of any prompt - just describe what you want</Text>
                 </View>
+                <View style={styles.instructionItem}>
+                  <Text style={styles.instructionBullet}>•</Text>
+                  <Text style={styles.instructionText}>Generate multiple character poses - front view, side profiles, back view, and action poses with preserved backgrounds</Text>
+                </View>
+                <View style={styles.instructionItem}>
+                  <Text style={styles.instructionBullet}>•</Text>
+                  <Text style={styles.instructionText}>Try different hairstyles - visualize any haircut or hair color on your character instantly</Text>
+                </View>
               </View>
             </View>
             
