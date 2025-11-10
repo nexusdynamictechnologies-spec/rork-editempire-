@@ -1367,10 +1367,10 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                       console.log('📸 Generating 4 angle views: front, left side, right side, back');
                       
                       const angles = [
-                        { name: 'Front View', prompt: 'front-facing view showing full face and hairstyle from the front' },
-                        { name: 'Left Side View', prompt: 'left side profile view at 90° angle showing left side of face and hair' },
-                        { name: 'Right Side View', prompt: 'right side profile view at 90° angle showing right side of face and hair' },
-                        { name: 'Back View', prompt: 'back view showing the back of the head and hairstyle from behind' }
+                        { name: 'Front View', prompt: 'FRONT VIEW: Camera directly facing the character showing full face, both eyes visible, head-on forward-facing angle. The hairstyle frames the face from the front.' },
+                        { name: 'Left Side View', prompt: 'LEFT SIDE VIEW: Camera positioned at the LEFT side of the character at exactly 90° angle. Shows the LEFT profile - left ear, left side of face, left side of hairstyle. The character is turned to show their left side to the camera.' },
+                        { name: 'Right Side View', prompt: 'RIGHT SIDE VIEW: Camera positioned at the RIGHT side of the character at exactly 90° angle. Shows the RIGHT profile - right ear, right side of face, right side of hairstyle. The character is turned to show their right side to the camera.' },
+                        { name: 'Back View', prompt: 'BACK VIEW: Camera behind the character showing the back of the head, back of hairstyle, and shoulders from behind. No face visible, only the back of the head and hair.' }
                       ];
                       
                       const generatedImages: string[] = [];
@@ -1382,7 +1382,7 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                         setStatusType('info');
                         
                         const angleSpecificPrompt = PRECISION_HAIRSTYLE_SYSTEM_PROMPT + '\n\n' + selectedHairstyle.prompt + 
-                          `\n\n🎯 CRITICAL CAMERA ANGLE SPECIFICATION:\nGenerate a ${angle.prompt}. The character must be rotated to show this specific angle while maintaining the EXACT same hairstyle. DO NOT alter the original image's direction - CREATE A NEW VIEW at this angle showing the same person with the new hairstyle from this perspective. Keep the character's identity, clothing, and background lighting consistent.`;
+                          `\n\n🎯 CRITICAL CAMERA ANGLE & BACKGROUND PRESERVATION:\n${angle.prompt}\n\n📸 ANGLE REQUIREMENTS:\n- Rotate ONLY the character to show this specific viewing angle\n- Keep camera and perspective locked - the character turns, not the camera\n- Generate distinct and accurate angle views - left side must show LEFT, right side must show RIGHT\n\n🎨 PRESERVATION REQUIREMENTS:\n- Background: Preserve the EXACT same background from original image. Extend or adapt the background naturally and intelligently to fit the new character angle. Match lighting, colors, and atmosphere precisely.\n- Character: Maintain identical facial features, skin tone, body proportions, clothing, and accessories\n- Hairstyle: Apply the new hairstyle consistently across all angles while keeping texture, color, and style uniform\n- Lighting: Keep the same lighting direction, intensity, color temperature, and shadow patterns\n- Quality: Professional photo-realistic quality with natural integration`;
                         
                         try {
                           const result = await generateEdit({
