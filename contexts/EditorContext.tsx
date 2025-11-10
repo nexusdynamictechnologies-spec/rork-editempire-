@@ -16,7 +16,6 @@ import { enhancePromptWithMaterialsKnowledge } from '@/constants/materials';
 import { enhancePromptWithShoeKnowledge } from '@/constants/shoes';
 import { enhancePromptWithVehicleKnowledge } from '@/constants/vehicles';
 import * as FileSystem from 'expo-file-system';
-import { EncodingType } from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as MediaLibrary from 'expo-media-library';
 
@@ -946,10 +945,10 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
 
     if (Platform.OS !== 'web' && (sanitizedUri.startsWith('file://') || sanitizedUri.startsWith('content://'))) {
       try {
-        if (!FileSystem || !FileSystem.readAsStringAsync || !EncodingType || !EncodingType.Base64) {
+        if (!FileSystem || !FileSystem.readAsStringAsync || !FileSystem.EncodingType || !FileSystem.EncodingType.Base64) {
           console.warn('FileSystem Base64 not available, falling back to fetch');
         } else {
-          const base64 = await FileSystem.readAsStringAsync(sanitizedUri, { encoding: EncodingType.Base64 });
+          const base64 = await FileSystem.readAsStringAsync(sanitizedUri, { encoding: FileSystem.EncodingType.Base64 });
           if (!base64 || base64.length === 0) {
             throw new Error('Empty file data');
           }
@@ -1422,7 +1421,7 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
         const cacheDir = FileSystem.cacheDirectory || FileSystem.documentDirectory || '';
         const fileUri = `${cacheDir}${filename}`;
         
-        await FileSystem.writeAsStringAsync(fileUri, data, { encoding: EncodingType.Base64 });
+        await FileSystem.writeAsStringAsync(fileUri, data, { encoding: FileSystem.EncodingType.Base64 });
         return fileUri;
       }
       return uri;
