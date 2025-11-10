@@ -945,7 +945,7 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
 
     if (Platform.OS !== 'web' && (sanitizedUri.startsWith('file://') || sanitizedUri.startsWith('content://'))) {
       try {
-        if (!FileSystem || !FileSystem.readAsStringAsync || typeof FileSystem.EncodingType !== 'object' || !FileSystem.EncodingType || !FileSystem.EncodingType.Base64) {
+        if (!FileSystem || !FileSystem.readAsStringAsync || !FileSystem.EncodingType || typeof FileSystem.EncodingType !== 'object' || typeof FileSystem.EncodingType.Base64 === 'undefined') {
           console.warn('FileSystem Base64 not available, falling back to fetch');
           throw new Error('FileSystem not available');
         }
@@ -1407,7 +1407,7 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
           return uri;
         }
         
-        if (!FileSystem || typeof FileSystem.EncodingType !== 'object' || !FileSystem.EncodingType || !FileSystem.EncodingType.Base64) {
+        if (!FileSystem || !FileSystem.EncodingType || typeof FileSystem.EncodingType !== 'object' || typeof FileSystem.EncodingType.Base64 === 'undefined') {
           console.warn('FileSystem not available on this platform, returning data URI as-is');
           return uri;
         }
