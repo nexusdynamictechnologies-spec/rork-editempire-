@@ -117,23 +117,11 @@ export default function HomeScreen() {
           <View style={styles.header}>
             <View style={styles.headerTop}>
               <View style={styles.logoContainer}>
-                <LinearGradient
-                  colors={['#FFD700', '#FFA500', '#FFD700']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={{
-                    paddingHorizontal: 32,
-                    paddingVertical: 20,
-                    borderRadius: 20,
-                    shadowColor: '#FFD700',
-                    shadowOffset: { width: 0, height: 8 },
-                    shadowOpacity: 0.6,
-                    shadowRadius: 24,
-                    elevation: 12,
-                  }}
-                >
-                  <Text style={styles.logoText}>✦ EDIT EMPIRE ✦</Text>
-                </LinearGradient>
+                <ExpoImage
+                  source={{ uri: 'https://r2-pub.rork.com/generated-images/a4c03717-83d6-40cb-ab3c-b165d7f1db43.png' }}
+                  style={styles.logoImage}
+                  contentFit="contain"
+                />
               </View>
             </View>
             
@@ -522,6 +510,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
+    width: '100%',
+  },
+  logoImage: {
+    width: 280,
+    height: 200,
   },
   logoContent: {
     alignItems: 'center',
