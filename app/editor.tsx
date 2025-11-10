@@ -54,11 +54,12 @@ import { frameSizePresets } from '@/constants/stylePresets';
 import WebSlider from '@/components/WebSlider';
 import { advertisingKnowledge } from '@/constants/advertising';
 import { hairstylePresets, HairstyleCategoryKey, PRECISION_HAIRSTYLE_SYSTEM_PROMPT } from '@/constants/hairstyles';
+import { posePresets, PoseCategoryKey, PRECISION_POSE_SYSTEM_PROMPT } from '@/constants/poses';
 
 
 // Slimmed down editor per request
 
-type ToolMode = 'prompt' | 'hairstyles' | 'frames' | 'enlarge' | 'undo' | 'upscale';
+type ToolMode = 'prompt' | 'hairstyles' | 'poses' | 'frames' | 'enlarge' | 'undo' | 'upscale';
 
 type SelectMode = 'none' | 'region';
 
@@ -203,6 +204,12 @@ export default function EditorScreen() {
   const [hairstyleGeneratedImages, setHairstyleGeneratedImages] = useState<string[]>([]);
   const [selectedHairstyleImageIndex, setSelectedHairstyleImageIndex] = useState<number>(0);
   const [showHairstyleGallery, setShowHairstyleGallery] = useState<boolean>(false);
+  
+  const [poseCategory, setPoseCategory] = useState<PoseCategoryKey>('Standing');
+  const [selectedPoseKey, setSelectedPoseKey] = useState<string | null>(null);
+  const [poseGeneratedImages, setPoseGeneratedImages] = useState<string[]>([]);
+  const [selectedPoseImageIndex, setSelectedPoseImageIndex] = useState<number>(0);
+  const [showPoseGallery, setShowPoseGallery] = useState<boolean>(false);
   const selectedFrame = useMemo(() => {
     if (!selectedFrameKey) return null;
     const cat = frameSizePresets[frameCategory];
@@ -1486,6 +1493,217 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
           </View>
         );
 
+      case 'poses':
+        const selectedPose = selectedPoseKey 
+          ? posePresets[poseCategory].items.find(item => item.key === selectedPoseKey)
+          : null;
+        
+        return (
+          <View style={styles.toolContent}>
+            <Text style={styles.toolTitle}>🧘 Pose Generator</Text>
+            <Text style={styles.toolSubtitle}>Select a pose to generate multi-angle views of your character</Text>
+            
+            <View style={styles.frameCategoriesRow}>
+              {(Object.keys(posePresets) as PoseCategoryKey[]).map((cat) => (
+                <TouchableOpacity 
+                  key={cat} 
+                  style={[styles.frameCategoryChip, poseCategory === cat && styles.frameCategoryChipActive]} 
+                  onPress={() => {
+                    setPoseCategory(cat);
+                    setSelectedPoseKey(null);
+                  }} 
+                  testID={`pose-category-${cat}`}
+                >
+                  <Text style={[styles.frameCategoryText, poseCategory === cat && styles.frameCategoryTextActive]}>
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            
+            <ScrollView 
+              style={styles.presetItemsScroll} 
+              showsVerticalScrollIndicator={true}
+              nestedScrollEnabled={true}
+            >
+              <View style={styles.framesGrid}>
+                {posePresets[poseCategory].items.map((item) => (
+                  <TouchableOpacity 
+                    key={item.key} 
+                    style={[styles.hairstyleChip, selectedPoseKey === item.key && styles.frameChipActive]} 
+                    onPress={() => setSelectedPoseKey(item.key)} 
+                    testID={`pose-${item.key}`}
+                  >
+                    <Text style={styles.hairstyleEmoji}>{item.emoji}</Text>
+                    <Text style={[styles.frameChipText, selectedPoseKey === item.key && styles.frameChipTextActive]}>
+                      {item.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+            
+            {selectedPose && (
+              <View style={styles.hairstyleApplySection}>
+                <View style={styles.hairstyleInfoBox}>
+                  <Text style={styles.hairstyleInfoTitle}>✨ Selected: {selectedPose.label}</Text>
+                  <Text style={styles.hairstyleInfoText}>
+                    This will generate your character in this pose from 4 different camera angles: Front, Left Side, Right Side, and Back views. All full-body images!
+                  </Text>
+                </View>
+                
+                {isGenerating && (
+                  <View style={styles.progressIndicatorContainer}>
+                    <ActivityIndicator size="large" color="#FFD700" />
+                    <Text style={styles.progressText}>🎨 Generating pose views...</Text>
+                    <Text style={styles.progressSubtext}>This may take 30-60 seconds for all angles</Text>
+                  </View>
+                )}
+                
+                <TouchableOpacity
+                  style={[styles.generateButton, (!sourceImage || isGenerating) && styles.generateButtonDisabled]}
+                  disabled={!sourceImage || isGenerating}
+                  onPress={async () => {
+                    if (!sourceImage || !selectedPose) return;
+                    
+                    try {
+                      setStatusMessage(null);
+                      setIsGenerating(true);
+                      setPoseGeneratedImages([]);
+                      setSelectedPoseImageIndex(0);
+                      if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      
+                      console.log('🚀 Starting multi-angle pose generation...');
+                      console.log('🧘 Selected pose:', selectedPose.label);
+                      console.log('📸 Generating 4 angle views: front, left side, right side, back');
+                      
+                      const angles = [
+                        { name: 'Front View', prompt: 'front-facing view showing full face and front of body in the pose, camera at character eye level' },
+                        { name: 'Left Side View', prompt: 'left side profile view at 90° angle showing left side of face and body in the pose, full side profile' },
+                        { name: 'Right Side View', prompt: 'right side profile view at 90° angle showing right side of face and body in the pose, full side profile' },
+                        { name: 'Back View', prompt: 'back view showing the back of the head and back of body in the pose from behind' }
+                      ];
+                      
+                      const generatedImages: string[] = [];
+                      
+                      for (let i = 0; i < angles.length; i++) {
+                        const angle = angles[i];
+                        console.log(`📸 Generating ${angle.name} (${i + 1}/${angles.length})...`);
+                        setStatusMessage(`🎨 Generating ${angle.name} (${i + 1}/${angles.length})...`);
+                        setStatusType('info');
+                        
+                        const angleSpecificPrompt = PRECISION_POSE_SYSTEM_PROMPT + '\n\n' + selectedPose.prompt + 
+                          `\n\n🎯 CRITICAL CAMERA ANGLE SPECIFICATION:\nGenerate a ${angle.prompt}. Show the character in the specified pose from this camera angle. The pose must remain EXACTLY the same - only the camera viewing angle changes. Maintain full body composition showing head to toe. Keep character identity, clothing, hairstyle, and background IDENTICAL across all views.`;
+                        
+                        try {
+                          const result = await generateEdit({
+                            prompt: angleSpecificPrompt,
+                            strength: 0.8,
+                            identityLock: true,
+                            upscale: false,
+                            watermark: false,
+                            additionsLock: true,
+                          });
+                          
+                          if (result) {
+                            generatedImages.push(result);
+                            setPoseGeneratedImages([...generatedImages]);
+                            console.log(`✅ ${angle.name} generated successfully`);
+                          } else {
+                            console.warn(`⚠️ ${angle.name} generation returned null`);
+                          }
+                        } catch (angleError) {
+                          console.error(`❌ Failed to generate ${angle.name}:`, angleError);
+                        }
+                      }
+                      
+                      setIsGenerating(false);
+                      
+                      if (generatedImages.length > 0) {
+                        setStatusType('success');
+                        setStatusMessage(`✨ Pose generated successfully! Created ${generatedImages.length} angle views. Tap images to view full size.`);
+                        if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        setTimeout(() => setStatusMessage(null), 5000);
+                      } else {
+                        setStatusType('error');
+                        setStatusMessage('🚨 Generation failed for all angles.\n\nPlease wait 5-10 minutes and try again.');
+                        setTimeout(() => setStatusMessage(null), 8000);
+                      }
+                    } catch (e) {
+                      setIsGenerating(false);
+                      const msg = e instanceof Error ? e.message : 'Failed to generate pose';
+                      console.error('❌ Pose generation error:', e);
+                      setStatusType('error');
+                      setStatusMessage(msg);
+                      const displayDuration = msg.includes('\n') ? 12000 : 6000;
+                      setTimeout(() => setStatusMessage(null), displayDuration);
+                    }
+                  }}
+                  testID="generate-pose"
+                >
+                  {isGenerating ? (
+                    <ActivityIndicator size="small" color="#1A1A1A" />
+                  ) : (
+                    <>
+                      <Sparkles size={16} color="#1A1A1A" />
+                      <Text style={styles.generateButtonText}>Generate Multi-Angle Pose</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+            
+            {poseGeneratedImages.length > 0 && (
+              <View style={styles.hairstyleGallerySection}>
+                <Text style={styles.hairstyleGalleryTitle}>🎨 Generated Angle Views ({poseGeneratedImages.length})</Text>
+                <Text style={styles.hairstyleGallerySubtitle}>Tap any image to view in full size</Text>
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.hairstyleGalleryScroll}
+                  contentContainerStyle={styles.hairstyleGalleryContent}
+                >
+                  {poseGeneratedImages.map((imgUri, idx) => (
+                    <TouchableOpacity
+                      key={`pose-${idx}`}
+                      style={styles.hairstyleGalleryItem}
+                      onPress={() => {
+                        setSelectedPoseImageIndex(idx);
+                        setShowPoseGallery(true);
+                        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <ExpoImage
+                        source={{ uri: imgUri }}
+                        style={styles.hairstyleGalleryImage}
+                        contentFit="cover"
+                      />
+                      <View style={styles.hairstyleGalleryLabel}>
+                        <Text style={styles.hairstyleGalleryLabelText}>
+                          {['Front', 'Left Side', 'Right Side', 'Back'][idx] || `View ${idx + 1}`}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+            
+            {!selectedPose && (
+              <View style={styles.hairstyleInfoBox}>
+                <Text style={styles.hairstyleInfoTitle}>ℹ️ How it works</Text>
+                <Text style={styles.hairstyleInfoText}>
+                  1. Select a pose category (Standing, Action, Sitting, etc.)\n
+                  2. Choose a pose from the grid\n
+                  3. Tap "Generate" to create 4 camera angles\n\n
+                  Your character will be shown in the selected pose from Front, Left Side, Right Side, and Back views - perfect for reference, character sheets, or showcasing poses!
+                </Text>
+              </View>
+            )}
+          </View>
+        );
+
       case 'enlarge':
         return (
           <View style={styles.toolContent}>
@@ -1928,6 +2146,7 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
             {([
               { key: 'prompt' as ToolMode, label: 'Prompt', icon: Sparkles },
               { key: 'hairstyles' as ToolMode, label: 'Hair', icon: Wand2 },
+              { key: 'poses' as ToolMode, label: 'Poses', icon: Brain },
               { key: 'frames' as ToolMode, label: 'Frame', icon: Crop },
               { key: 'undo' as ToolMode, label: 'Undo', icon: RotateCcw },
               { key: 'upscale' as ToolMode, label: 'Enhance', icon: Maximize2 },
@@ -2134,6 +2353,119 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                   style={[styles.modalThumbnail, selectedHairstyleImageIndex === idx && styles.modalThumbnailActive]}
                   onPress={() => {
                     setSelectedHairstyleImageIndex(idx);
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                >
+                  <ExpoImage
+                    source={{ uri: imgUri }}
+                    style={styles.modalThumbnailImage}
+                    contentFit="cover"
+                  />
+                  <Text style={styles.modalThumbnailLabel}>
+                    {['Front', 'Left', 'Right', 'Back'][idx] || `${idx + 1}`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </SafeAreaView>
+        </View>
+      </Modal>
+
+      {/* Pose Gallery Modal */}
+      <Modal
+        visible={showPoseGallery}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowPoseGallery(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <SafeAreaView style={styles.modalSafeArea}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setShowPoseGallery(false)}
+                activeOpacity={0.7}
+              >
+                <LinearGradient
+                  colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.6)']}
+                  style={styles.modalCloseGradient}
+                >
+                  <X size={24} color="#FFFFFF" strokeWidth={2} />
+                </LinearGradient>
+              </TouchableOpacity>
+              
+              <Text style={styles.modalAngleTitle}>
+                {['Front View', 'Left Side View', 'Right Side View', 'Back View'][selectedPoseImageIndex] || `View ${selectedPoseImageIndex + 1}`}
+              </Text>
+              
+              <View style={styles.modalHeaderSpacer} />
+            </View>
+
+            <View style={styles.modalImageContainer}>
+              {poseGeneratedImages[selectedPoseImageIndex] && (
+                <ExpoImage
+                  source={{ uri: poseGeneratedImages[selectedPoseImageIndex] }}
+                  style={styles.modalHairstyleImage}
+                  contentFit="contain"
+                  transition={200}
+                />
+              )}
+            </View>
+
+            <View style={styles.modalHairstyleNavigation}>
+              <TouchableOpacity
+                style={[styles.modalNavButton, selectedPoseImageIndex === 0 && styles.modalNavButtonDisabled]}
+                onPress={() => {
+                  if (selectedPoseImageIndex > 0) {
+                    setSelectedPoseImageIndex(selectedPoseImageIndex - 1);
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                }}
+                disabled={selectedPoseImageIndex === 0}
+              >
+                <LinearGradient
+                  colors={selectedPoseImageIndex === 0 ? ['rgba(100,100,100,0.3)', 'rgba(80,80,80,0.3)'] : ['#FFD700', '#FFA500']}
+                  style={styles.modalNavGradient}
+                >
+                  <Text style={[styles.modalNavText, selectedPoseImageIndex === 0 && styles.modalNavTextDisabled]}>← Previous</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              
+              <Text style={styles.modalNavCounter}>
+                {selectedPoseImageIndex + 1} / {poseGeneratedImages.length}
+              </Text>
+              
+              <TouchableOpacity
+                style={[styles.modalNavButton, selectedPoseImageIndex === poseGeneratedImages.length - 1 && styles.modalNavButtonDisabled]}
+                onPress={() => {
+                  if (selectedPoseImageIndex < poseGeneratedImages.length - 1) {
+                    setSelectedPoseImageIndex(selectedPoseImageIndex + 1);
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                }}
+                disabled={selectedPoseImageIndex === poseGeneratedImages.length - 1}
+              >
+                <LinearGradient
+                  colors={selectedPoseImageIndex === poseGeneratedImages.length - 1 ? ['rgba(100,100,100,0.3)', 'rgba(80,80,80,0.3)'] : ['#FFD700', '#FFA500']}
+                  style={styles.modalNavGradient}
+                >
+                  <Text style={[styles.modalNavText, selectedPoseImageIndex === poseGeneratedImages.length - 1 && styles.modalNavTextDisabled]}>Next →</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              style={styles.modalThumbnailScroll}
+              contentContainerStyle={styles.modalThumbnailContent}
+            >
+              {poseGeneratedImages.map((imgUri, idx) => (
+                <TouchableOpacity
+                  key={`thumb-${idx}`}
+                  style={[styles.modalThumbnail, selectedPoseImageIndex === idx && styles.modalThumbnailActive]}
+                  onPress={() => {
+                    setSelectedPoseImageIndex(idx);
                     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
                 >
@@ -2613,6 +2945,30 @@ const styles = StyleSheet.create({
   },
   modalSafeArea: {
     flex: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  modalCloseButton: {
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  modalCloseGradient: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalImageContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
   modalAngleTitle: {
     fontSize: 16,
