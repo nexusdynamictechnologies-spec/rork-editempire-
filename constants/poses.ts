@@ -1,4 +1,4 @@
-export type PoseCategoryKey = 'Standing' | 'Action' | 'Seated' | 'Dynamic' | 'Model';
+export type PoseCategoryKey = 'Standing' | 'Action' | 'Seated' | 'Dynamic' | 'Model' | 'Gangster';
 
 export interface PosePresetItem {
   key: string;
@@ -216,6 +216,71 @@ export const posePresets: Record<PoseCategoryKey, PoseCategory> = {
         label: 'Profile Shot',
         emoji: '📸',
         prompt: 'Strong profile stance: body in profile, chin up, elongated neck, elegant posture, confident silhouette',
+      },
+    ],
+  },
+  Gangster: {
+    label: 'Gangster',
+    items: [
+      {
+        key: 'gangster-boss-lean',
+        label: 'Boss Lean',
+        emoji: '🕴️',
+        prompt: 'Classic mob boss stance: leaning slightly back, weight on one leg, hands in pockets or arms crossed, chin up with commanding presence, confident smirk, shoulders relaxed but powerful',
+      },
+      {
+        key: 'gangster-wall-lean',
+        label: 'Wall Lean',
+        emoji: '🧱',
+        prompt: 'Street gangster wall lean: shoulder or back against wall, one foot up on wall, arms crossed or hands in pockets, head tilted with cool demeanor, street-smart attitude',
+      },
+      {
+        key: 'gangster-hands-behind',
+        label: 'Authority Stance',
+        emoji: '🎩',
+        prompt: 'Authoritative mob stance: standing tall, hands clasped behind back, chest forward, legs shoulder-width apart, serious expression, commanding presence like a don or boss',
+      },
+      {
+        key: 'gangster-suit-adjust',
+        label: 'Suit Adjust',
+        emoji: '🤵',
+        prompt: 'Confident suit adjustment: straightening tie or adjusting suit jacket lapels, head slightly tilted, slight smirk, one hand on tie/collar, sophisticated mob elegance',
+      },
+      {
+        key: 'gangster-pointing',
+        label: 'The Point',
+        emoji: '☝️',
+        prompt: 'Assertive pointing gesture: arm extended forward, index finger pointing, intense eye contact, other hand in pocket or at side, commanding body language, making a statement',
+      },
+      {
+        key: 'gangster-seated-boss',
+        label: 'Seated Boss',
+        emoji: '💼',
+        prompt: 'Seated mob boss pose: sitting in chair with authority, legs spread confidently, arms on armrests or hands clasped, leaning back slightly, serious expression, throne-like presence',
+      },
+      {
+        key: 'gangster-cigar-hold',
+        label: 'Cigar Pose',
+        emoji: '🚬',
+        prompt: 'Classic cigar-holding stance: standing relaxed, hand raised holding imaginary cigar near face, other hand in pocket, head tilted back slightly, cool sophisticated demeanor',
+      },
+      {
+        key: 'gangster-arms-crossed',
+        label: 'Enforcer Cross',
+        emoji: '💪',
+        prompt: 'Intimidating enforcer stance: arms crossed firmly over chest, feet wide apart, shoulders broad, serious or stern expression, immovable presence, bodyguard energy',
+      },
+      {
+        key: 'gangster-side-glance',
+        label: 'Side Glance',
+        emoji: '👁️',
+        prompt: 'Suspicious side glance: body facing forward or to side, head turned to look sideways with intense gaze, arms relaxed at sides or in pockets, cautious street-smart attitude',
+      },
+      {
+        key: 'gangster-walk-swagger',
+        label: 'Swagger Walk',
+        emoji: '🚶',
+        prompt: 'Confident gangster walk: mid-stride with swagger, shoulders back, head high, arms swinging naturally with attitude, one foot forward, dominant street presence',
       },
     ],
   },
