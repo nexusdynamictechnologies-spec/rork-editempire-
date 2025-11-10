@@ -508,7 +508,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 450,
     marginBottom: 20,
-    backgroundColor: 'transparent',
   },
   logoEmoji: {
     fontSize: 28,
