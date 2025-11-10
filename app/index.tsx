@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Upload, Sparkles, Zap, Palette, Film, BookOpen, Heart, X, Type } from 'lucide-react-native';
+import { Upload, Sparkles, Zap, Palette, Film, BookOpen, Heart, X } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 
@@ -317,39 +317,6 @@ export default function HomeScreen() {
                 <View style={styles.instructionsTextContainer}>
                   <Text style={styles.instructionsTitle}>How to Use Edit Empire</Text>
                   <Text style={styles.instructionsSubtitle}>Get the best results with our complete guide</Text>
-                </View>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-
-          {/* Logo Creator Section - Featured */}
-          <View style={styles.logoCreatorSection}>
-            <Text style={styles.logoCreatorLabel}>✨ NEW FEATURE</Text>
-            <TouchableOpacity
-              style={styles.logoCreatorButton}
-              onPress={async () => {
-                if (Platform.OS !== 'web') {
-                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                }
-                router.push('/logo-creator');
-              }}
-              activeOpacity={0.85}
-            >
-              <LinearGradient
-                colors={['#FFD700', '#FFA500', '#FF8C00']}
-                style={styles.logoCreatorGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <View style={styles.logoCreatorContent}>
-                  <View style={styles.logoCreatorIconContainer}>
-                    <Type size={32} color="#1A1A1A" strokeWidth={3} />
-                  </View>
-                  <View style={styles.logoCreatorTextContainer}>
-                    <Text style={styles.logoCreatorTitle}>Professional Logo Creator</Text>
-                    <Text style={styles.logoCreatorSubtitle}>Create custom logos with AI - No image upload needed!</Text>
-                    <Text style={styles.logoCreatorFeatures}>• Exact text rendering • Multiple styles • 100% accurate</Text>
-                  </View>
                 </View>
               </LinearGradient>
             </TouchableOpacity>
@@ -934,66 +901,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#CCCCCC',
     textAlign: 'center',
-  },
-  logoCreatorSection: {
-    paddingHorizontal: 20,
-    marginBottom: 35,
-  },
-  logoCreatorLabel: {
-    fontSize: 12,
-    fontWeight: '800' as const,
-    color: '#FFD700',
-    textAlign: 'center',
-    marginBottom: 12,
-    letterSpacing: 1.5,
-  },
-  logoCreatorButton: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 12,
-  },
-  logoCreatorGradient: {
-    padding: 24,
-    borderRadius: 20,
-  },
-  logoCreatorContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logoCreatorIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    backgroundColor: 'rgba(26, 26, 26, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  logoCreatorTextContainer: {
-    flex: 1,
-  },
-  logoCreatorTitle: {
-    fontSize: 18,
-    fontWeight: '800' as const,
-    color: '#1A1A1A',
-    marginBottom: 6,
-  },
-  logoCreatorSubtitle: {
-    fontSize: 14,
-    fontWeight: '600' as const,
-    color: '#1A1A1A',
-    opacity: 0.8,
-    marginBottom: 6,
-    lineHeight: 18,
-  },
-  logoCreatorFeatures: {
-    fontSize: 11,
-    fontWeight: '600' as const,
-    color: '#1A1A1A',
-    opacity: 0.7,
   },
 });
