@@ -23,6 +23,8 @@ import {
   Heart,
   Shield,
   Info,
+  Scissors,
+  Edit3,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { Image as ExpoImage } from 'expo-image';
@@ -150,6 +152,48 @@ export default function InstructionsScreen() {
         '🎨 Artistic Transformations: Convert to any art style or animation type',
         '💡 Smart Object Interaction: Characters holding items, using objects naturally',
         '🌟 Professional Results: All tabs organized on the left for better workflow',
+      ]
+    },
+    {
+      icon: Scissors,
+      title: '💇 Hairstyle Tab - Complete Guide',
+      color: '#FF1493',
+      tips: [
+        'Step 1: Upload your base image with a clear view of the person\'s face',
+        'Step 2: Tap on the "Hairstyle" tab in the left sidebar',
+        'Step 3: Browse through hairstyle options and tap to select your desired style',
+        'Step 4: Click the "Generate" button to create multiple angle views',
+        'Multiple Views: The AI automatically generates 4 angles - front, left side, right side, and back view',
+        'All views maintain the SAME person and appearance - only the camera angle changes',
+        'Original image dimensions and orientation are preserved - no unwanted rotations',
+        'Tap any generated image to view it in full-size detail',
+        'Swipe between the 4 angle views to see the complete hairstyle transformation',
+        'Pro Tip: Use well-lit, front-facing photos for the best multi-angle results',
+        'The character\'s face, body, and clothing remain consistent across all angles',
+        'Perfect for visualizing how a hairstyle looks from every direction',
+      ]
+    },
+    {
+      icon: Edit3,
+      title: '✏️ Edit Button - Precision Editing Guide',
+      color: '#00CED1',
+      tips: [
+        'Step 1: Upload your image and wait for it to load in the editor',
+        'Step 2: Locate and tap the "Edit" button on the editing screen',
+        'Step 3: The button turns GREEN when active - you\'re now in selection mode',
+        'Step 4: Use your finger (mobile) or mouse (desktop) to draw a box around the area you want to edit',
+        'Drawing the Box: Touch and drag to create a rectangular selection around your target area',
+        'Step 5: After drawing the box, the selected area is highlighted',
+        'Step 6: Type your prompt describing what you want to change in that specific area',
+        'Step 7: Tap "Generate" to apply changes ONLY to the selected region',
+        'Example Uses: "remove this object", "change color to blue", "add a tattoo here"',
+        'Mobile: Use one finger to draw smooth, controlled selection boxes',
+        'Desktop: Click and drag with your mouse for precise rectangular selections',
+        'Multiple Edits: After one edit completes, tap Edit button again for another selection',
+        'Cancel Selection: Tap the Edit button again to deactivate and start over',
+        'This gives you surgical precision - only edit exactly what you want',
+        'Perfect for: removing objects, changing specific clothing items, adding details to one area',
+        'The rest of your image remains completely untouched and unaltered',
       ]
     },
   ];
