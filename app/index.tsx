@@ -117,21 +117,23 @@ export default function HomeScreen() {
           <View style={styles.header}>
             <View style={styles.headerTop}>
               <View style={styles.logoContainer}>
-                <View style={styles.logoContent}>
-                  {/* Diamond Hand Icon */}
-                  <View style={styles.diamondIconWrapper}>
-                    <ExpoImage
-                      source={{ uri: 'https://rork.app/pa/kl09oq492bs30tldkppiy/edit_empire_hand_1' }}
-                      style={styles.logoIconImage}
-                      contentFit="contain"
-                    />
-                  </View>
-                  
-                  {/* Diamond Text */}
-                  <View style={styles.diamondTextWrapper}>
-                    <Text style={styles.logoText}>EDIT EMPIRE</Text>
-                  </View>
-                </View>
+                <LinearGradient
+                  colors={['#FFD700', '#FFA500', '#FFD700']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{
+                    paddingHorizontal: 32,
+                    paddingVertical: 20,
+                    borderRadius: 20,
+                    shadowColor: '#FFD700',
+                    shadowOffset: { width: 0, height: 8 },
+                    shadowOpacity: 0.6,
+                    shadowRadius: 24,
+                    elevation: 12,
+                  }}
+                >
+                  <Text style={styles.logoText}>✦ EDIT EMPIRE ✦</Text>
+                </LinearGradient>
               </View>
             </View>
             
@@ -519,8 +521,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'transparent',
-    marginBottom: 30,
+    marginBottom: 24,
   },
   logoContent: {
     alignItems: 'center',
@@ -534,17 +535,6 @@ const styles = StyleSheet.create({
   diamondTextWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
-    borderRadius: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 228, 77, 0.3)',
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 20,
-    elevation: 10,
   },
   logoIcon: {
     fontSize: 80,
@@ -558,13 +548,13 @@ const styles = StyleSheet.create({
     tintColor: '#FFD700',
   },
   logoText: {
-    fontSize: 32,
+    fontSize: 48,
     fontWeight: '900' as const,
-    color: '#FFE44D',
-    letterSpacing: 2,
-    textShadowColor: '#FFFFFF',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 20,
+    color: '#FFFFFF',
+    letterSpacing: 4,
+    textShadowColor: 'rgba(255, 215, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 12,
   },
   logoEmoji: {
     fontSize: 28,
