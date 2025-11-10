@@ -1592,8 +1592,32 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                         setStatusMessage(`🎨 Generating ${angle.name} (${i + 1}/${angles.length})...`);
                         setStatusType('info');
                         
-                        const angleSpecificPrompt = PRECISION_POSE_SYSTEM_PROMPT + '\n\n' + selectedPose.prompt + 
-                          `\n\n🎯 CRITICAL CAMERA ANGLE SPECIFICATION:\nGenerate a ${angle.prompt}. Show the character in the specified pose from this camera angle. The pose must remain EXACTLY the same - only the camera viewing angle changes. Maintain full body composition showing head to toe. Keep character identity, clothing, hairstyle, and background IDENTICAL across all views.`;
+                        // SIMPLIFIED POSE PROMPT - Keep under 2000 characters total
+                        // Only include essential instructions, skip massive enhancement protocols
+                        const angleSpecificPrompt = `🎯 POSE TRANSFORMATION: Generate the character in this specific pose and camera angle.
+
+📸 CAMERA ANGLE: ${angle.prompt}
+
+🧘 POSE: ${selectedPose.prompt}
+
+✨ CRITICAL REQUIREMENTS:
+- Show FULL BODY from head to toe in the specified pose
+- Keep character IDENTITY identical (same face, body, clothing, hair)
+- Keep BACKGROUND and lighting identical
+- Only change: body position/pose + camera viewing angle
+- Maintain photorealistic quality
+- Preserve all character details perfectly
+
+🔒 MUST PRESERVE:
+- Facial features and identity
+- Clothing and accessories
+- Hairstyle (adjust for angle)
+- Background environment
+- Lighting conditions
+- Body proportions
+
+⚡ EXECUTION:
+Transform ONLY the character's body position and camera perspective. Everything else stays EXACTLY the same. Generate a natural, anatomically correct pose that flows smoothly from the reference image.`;
                         
                         try {
                           const result = await generateEdit({
