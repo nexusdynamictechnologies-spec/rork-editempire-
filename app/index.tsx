@@ -117,12 +117,10 @@ export default function HomeScreen() {
           <View style={styles.header}>
             <View style={styles.headerTop}>
               <View style={styles.logoContainer}>
-                <ExpoImage
-                  source={{ uri: 'https://r2-pub.rork.com/generated-images/2d41db25-7684-41d0-8ec7-9da871956186.png' }}
-                  style={styles.fullLogo}
-                  contentFit="contain"
-                  testID="app-logo"
-                />
+                <View style={styles.logoContent}>
+                  <Text style={styles.logoIcon}>✍️</Text>
+                  <Text style={styles.logoText}>EDIT EMPIRE</Text>
+                </View>
               </View>
             </View>
             
@@ -503,11 +501,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
+    marginBottom: 30,
   },
-  fullLogo: {
-    width: '100%',
-    height: 450,
-    marginBottom: 20,
+  logoContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoIcon: {
+    fontSize: 80,
+    marginBottom: 12,
+  },
+  logoText: {
+    fontSize: 32,
+    fontWeight: '900' as const,
+    color: '#FFD700',
+    letterSpacing: 2,
+    textShadowColor: 'rgba(255, 215, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
   logoEmoji: {
     fontSize: 28,
