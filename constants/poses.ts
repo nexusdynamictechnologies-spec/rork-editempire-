@@ -1,4 +1,4 @@
-export type PoseCategoryKey = 'Standing' | 'Action' | 'Seated' | 'Dynamic';
+export type PoseCategoryKey = 'Standing' | 'Action' | 'Seated' | 'Dynamic' | 'Model';
 
 export interface PosePresetItem {
   key: string;
@@ -163,6 +163,59 @@ export const posePresets: Record<PoseCategoryKey, PoseCategory> = {
         label: 'Looking Back',
         emoji: '👀',
         prompt: 'Looking back over shoulder: body facing away, head turned back',
+      },
+    ],
+  },
+  Model: {
+    label: 'Model',
+    items: [
+      {
+        key: 'model-power-stance',
+        label: 'Power Stance',
+        emoji: '💃',
+        prompt: 'Confident power stance: feet apart, one hip forward, chin up, strong eye contact, commanding presence',
+      },
+      {
+        key: 'model-over-shoulder',
+        label: 'Over Shoulder',
+        emoji: '💋',
+        prompt: 'Sultry over-shoulder look: body angled away, head turned back, intense gaze over shoulder, graceful neck line',
+      },
+      {
+        key: 'model-s-curve',
+        label: 'S-Curve',
+        emoji: '🎀',
+        prompt: 'Classic S-curve pose: weight on one leg, opposite hip out, torso curved, arms positioned elegantly',
+      },
+      {
+        key: 'model-runway-walk',
+        label: 'Runway Walk',
+        emoji: '👠',
+        prompt: 'Confident runway walk: one foot forward, straight posture, head high, powerful stride, fierce expression',
+      },
+      {
+        key: 'model-hand-on-hip',
+        label: 'Hand on Hip',
+        emoji: '💅',
+        prompt: 'Confident hand-on-hip pose: one hand on hip, body angled, head tilted, strong eye contact, poised stance',
+      },
+      {
+        key: 'model-seated-cross',
+        label: 'Seated Cross',
+        emoji: '💺',
+        prompt: 'Elegant seated pose: legs crossed gracefully, back arched, one arm draped, confident gaze, refined posture',
+      },
+      {
+        key: 'model-leaning',
+        label: 'Leaning Pose',
+        emoji: '🌟',
+        prompt: 'Casual leaning pose: body weight shifted, relaxed confidence, head tilted, alluring expression',
+      },
+      {
+        key: 'model-profile',
+        label: 'Profile Shot',
+        emoji: '📸',
+        prompt: 'Strong profile stance: body in profile, chin up, elongated neck, elegant posture, confident silhouette',
       },
     ],
   },

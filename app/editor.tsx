@@ -1592,8 +1592,7 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                         setStatusMessage(`🎨 Generating ${angle.name} (${i + 1}/${angles.length})...`);
                         setStatusType('info');
                         
-                        // SIMPLIFIED POSE PROMPT - Keep under 2000 characters total
-                        // Only include essential instructions, skip massive enhancement protocols
+                        // SIMPLIFIED POSE PROMPT WITH BACKGROUND PRESERVATION
                         const angleSpecificPrompt = `🎯 POSE TRANSFORMATION: Generate the character in this specific pose and camera angle.
 
 📸 CAMERA ANGLE: ${angle.prompt}
@@ -1603,8 +1602,6 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
 ✨ CRITICAL REQUIREMENTS:
 - Show FULL BODY from head to toe in the specified pose
 - Keep character IDENTITY identical (same face, body, clothing, hair)
-- Keep BACKGROUND and lighting identical
-- Only change: body position/pose + camera viewing angle
 - Maintain photorealistic quality
 - Preserve all character details perfectly
 
@@ -1612,12 +1609,20 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
 - Facial features and identity
 - Clothing and accessories
 - Hairstyle (adjust for angle)
-- Background environment
-- Lighting conditions
 - Body proportions
 
+🌄 BACKGROUND CONSISTENCY PROTOCOL:
+- CRITICAL: Keep the EXACT SAME background from the original image
+- Maintain the same environment, setting, and scenery
+- Preserve all background elements, colors, and details
+- Keep the same lighting direction and quality
+- Maintain the same atmospheric conditions
+- DO NOT change or generate new backgrounds
+- The background should be IDENTICAL across all pose angles
+- Only the character's body position and camera angle change - background stays EXACTLY the same
+
 ⚡ EXECUTION:
-Transform ONLY the character's body position and camera perspective. Everything else stays EXACTLY the same. Generate a natural, anatomically correct pose that flows smoothly from the reference image.`;
+Transform ONLY the character's body position and camera perspective. The background, lighting, and all environmental elements must remain PIXEL-PERFECT identical to the original image. Generate a natural, anatomically correct pose that flows smoothly from the reference image.`;
                         
                         try {
                           const result = await generateEdit({
@@ -1718,10 +1723,10 @@ Transform ONLY the character's body position and camera perspective. Everything 
               <View style={styles.hairstyleInfoBox}>
                 <Text style={styles.hairstyleInfoTitle}>ℹ️ How it works</Text>
                 <Text style={styles.hairstyleInfoText}>
-                  1. Select a pose category (Standing, Action, Sitting, etc.)\n
+                  1. Select a pose category (Standing, Action, Seated, Model, etc.)\n
                   2. Choose a pose from the grid\n
                   3. Tap "Generate" to create 4 camera angles\n\n
-                  Your character will be shown in the selected pose from Front, Left Side, Right Side, and Back views - perfect for reference, character sheets, or showcasing poses!
+                  Your character will be shown in the selected pose from Front, Left Side, Right Side, and Back views with the SAME BACKGROUND across all angles - perfect for reference, character sheets, or showcasing poses!
                 </Text>
               </View>
             )}
