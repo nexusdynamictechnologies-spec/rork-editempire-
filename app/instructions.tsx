@@ -24,7 +24,7 @@ import {
   Shield,
   Info,
   Scissors,
-  Edit3,
+  Users,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { Image as ExpoImage } from 'expo-image';
@@ -171,6 +171,28 @@ export default function InstructionsScreen() {
         'Pro Tip: Use well-lit, front-facing photos for the best multi-angle results',
         'The character\'s face, body, and clothing remain consistent across all angles',
         'Perfect for visualizing how a hairstyle looks from every direction',
+      ]
+    },
+    {
+      icon: Users,
+      title: '🎭 Pose Tab - Complete Guide',
+      color: '#9D4EDD',
+      tips: [
+        'Step 1: Upload your full-body character image with clear visibility',
+        'Step 2: Tap on the "Pose" tab in the left sidebar to access pose options',
+        'Step 3: Choose from 5 pose categories: Full Body View, Character Angles, Sitting Down, Modeling Poses, or Model (Feminine)',
+        'Full Body View: Generates front, back, left side, and right side views of the character',
+        'Character Angles: Multiple 360-degree rotation angles showing different perspectives',
+        'Sitting Down: Creates views of the character in various seated positions',
+        'Modeling Poses: Standard fashion and casual model poses',
+        'Model (Feminine): Confident, elegant, and alluring poses within content guidelines',
+        'Step 4: Click the "Generate" button to create multiple pose views',
+        'Background Consistency: The AI intelligently maintains the same background across all generated poses',
+        'Character Preservation: Face, body type, clothing, and overall appearance remain consistent',
+        'Tap any generated pose image to view it in full-screen detail with an X button to close',
+        'Swipe between generated poses to compare different angles and positions',
+        'Pro Tip: Use well-lit, front-facing full-body photos for the best results',
+        'Perfect for character reference sheets, model portfolios, and creative visualization',
       ]
     },
   ];
