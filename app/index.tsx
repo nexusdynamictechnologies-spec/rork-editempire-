@@ -530,6 +530,17 @@ const styles = StyleSheet.create({
   diamondTextWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 228, 77, 0.3)',
+    shadowColor: '#FFD700',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 20,
+    elevation: 10,
   },
   logoIcon: {
     fontSize: 80,
@@ -540,11 +551,11 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 32,
     fontWeight: '900' as const,
-    color: '#FFD700',
+    color: '#FFE44D',
     letterSpacing: 2,
     textShadowColor: '#FFFFFF',
-    textShadowOffset: { width: 3, height: 3 },
-    textShadowRadius: 12,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 20,
   },
   logoEmoji: {
     fontSize: 28,
