@@ -196,6 +196,7 @@ export default function EditorScreen() {
   const [showCamera, setShowCamera] = useState(false);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const cameraRef = useRef<any>(null);
+  const [isEditBoxMode, setIsEditBoxMode] = useState<boolean>(false);
 
   const [frameCategory, setFrameCategory] = useState<keyof typeof frameSizePresets>('Social');
   const [selectedFrameKey, setSelectedFrameKey] = useState<string | null>(null);
@@ -1186,6 +1187,63 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
               </View>
             )}
             
+            <View style={styles.editBoxSection}>
+              <TouchableOpacity
+                style={[styles.editBoxButton, isEditBoxMode && styles.editBoxButtonActive]}
+                onPress={() => {
+                  setIsEditBoxMode(!isEditBoxMode);
+                  if (!isEditBoxMode) {
+                    setSelectionRect(null);
+                    setSelectMode('region');
+                    setStatusMessage('Draw a box around the area you want to edit');
+                    setStatusType('info');
+                    setTimeout(() => setStatusMessage(null), 3000);
+                  } else {
+                    setSelectMode('none');
+                    setSelectionRect(null);
+                  }
+                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+                testID="toggle-edit-box"
+              >
+                <Crop size={16} color="#1A1A1A" />
+                <Text style={styles.editBoxButtonText}>
+                  {isEditBoxMode ? 'Cancel Selection' : 'Edit Area'}
+                </Text>
+              </TouchableOpacity>
+              {isEditBoxMode && selectionRect && selectionRect.width > 0.01 && selectionRect.height > 0.01 && (
+                <TouchableOpacity
+                  style={styles.clearSelectionButton}
+                  onPress={() => {
+                    setSelectionRect(null);
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                  testID="clear-selection"
+                >
+                  <X size={14} color="#FF6B6B" />
+                  <Text style={styles.clearSelectionText}>Clear Box</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {isEditBoxMode && (
+              <View style={styles.editBoxInstructions}>
+                <Text style={styles.editBoxInstructionsTitle}>✋ How to Use Edit Area:</Text>
+                <Text style={styles.editBoxInstructionsText}>
+                  {Platform.OS === 'web' 
+                    ? '🖱️ Click and drag on the image to draw a selection box around the area you want to edit'
+                    : '👆 Touch and drag on the image to draw a selection box around the area you want to edit'
+                  }
+                </Text>
+                <Text style={styles.editBoxInstructionsText}>
+                  💡 Once you've selected an area, describe what changes you want in that region, then tap Generate
+                </Text>
+                <Text style={styles.editBoxInstructionsText}>
+                  🎯 The AI will focus edits only within your selected box
+                </Text>
+              </View>
+            )}
+
             <TouchableOpacity
               testID="generate-quality-image"
               accessibilityLabel="Generate quality image"
@@ -1206,7 +1264,14 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                   setIsGenerating(true);
                   if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   
-                  const region = selectMode === 'region' && selectionRect ? { x: selectionRect.x, y: selectionRect.y, width: selectionRect.width, height: selectionRect.height } : undefined;
+                  const region = selectMode === 'region' && selectionRect && selectionRect.width > 0.01 && selectionRect.height > 0.01 ? { x: selectionRect.x, y: selectionRect.y, width: selectionRect.width, height: selectionRect.height } : undefined;
+                  
+                  if (isEditBoxMode && !region) {
+                    setStatusMessage('Please draw a selection box on the image first');
+                    setStatusType('error');
+                    setTimeout(() => setStatusMessage(null), 3000);
+                    return;
+                  }
                   
                   console.log('📤 Calling generateEdit...');
                   const result = await generateEdit({
@@ -1231,6 +1296,12 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                     setStatusMessage('Image generated successfully');
                     if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                     setTimeout(() => setStatusMessage(null), 3500);
+                    
+                    if (isEditBoxMode) {
+                      setIsEditBoxMode(false);
+                      setSelectMode('none');
+                      setSelectionRect(null);
+                    }
                   } else {
                     console.error('❌ ========================================');
                     console.error('❌ GENERATION FAILED - NULL RESULT');
@@ -2572,6 +2643,68 @@ const styles = StyleSheet.create({
     fontWeight: '600' as const,
     color: '#FFD700',
     textAlign: 'center' as const,
+  },
+  editBoxSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  editBoxButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#9D4EDD',
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  editBoxButtonActive: {
+    backgroundColor: '#00FF88',
+  },
+  editBoxButtonText: {
+    color: '#1A1A1A',
+    fontSize: 14,
+    fontWeight: '700' as const,
+  },
+  clearSelectionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 107, 107, 0.3)',
+  },
+  clearSelectionText: {
+    fontSize: 12,
+    fontWeight: '600' as const,
+    color: '#FF6B6B',
+  },
+  editBoxInstructions: {
+    backgroundColor: 'rgba(157, 78, 221, 0.1)',
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(157, 78, 221, 0.3)',
+  },
+  editBoxInstructionsTitle: {
+    fontSize: 13,
+    fontWeight: '700' as const,
+    color: '#9D4EDD',
+    marginBottom: 8,
+  },
+  editBoxInstructionsText: {
+    fontSize: 11,
+    color: '#CCCCCC',
+    lineHeight: 18,
+    marginBottom: 4,
   },
   modalOverlay: {
     flex: 1,
