@@ -1175,6 +1175,14 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
               </View>
             </View>
 
+            {isGenerating && (
+              <View style={styles.progressIndicatorContainer}>
+                <ActivityIndicator size="large" color="#FFD700" />
+                <Text style={styles.progressText}>🎨 Creating your image...</Text>
+                <Text style={styles.progressSubtext}>This may take 15-30 seconds</Text>
+              </View>
+            )}
+            
             <TouchableOpacity
               testID="generate-quality-image"
               accessibilityLabel="Generate quality image"
@@ -1342,6 +1350,14 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                   </Text>
                 </View>
                 
+                {isGenerating && (
+                  <View style={styles.progressIndicatorContainer}>
+                    <ActivityIndicator size="large" color="#FFD700" />
+                    <Text style={styles.progressText}>🎨 Generating hairstyle transformation...</Text>
+                    <Text style={styles.progressSubtext}>This may take 15-30 seconds</Text>
+                  </View>
+                )}
+                
                 <TouchableOpacity
                   style={[styles.generateButton, (!sourceImage || isGenerating) && styles.generateButtonDisabled]}
                   disabled={!sourceImage || isGenerating}
@@ -1396,7 +1412,7 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                   ) : (
                     <>
                       <Sparkles size={16} color="#1A1A1A" />
-                      <Text style={styles.generateButtonText}>Apply Hairstyle</Text>
+                      <Text style={styles.generateButtonText}>Generate Hairstyle</Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -2163,6 +2179,27 @@ const styles = StyleSheet.create({
   hairstyleInfoBox: { backgroundColor: 'rgba(255, 215, 0, 0.08)', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.2)' },
   hairstyleInfoTitle: { fontSize: 13, fontWeight: '700' as const, color: '#FFD700', marginBottom: 8 },
   hairstyleInfoText: { fontSize: 11, color: '#CCCCCC', lineHeight: 18 },
+  progressIndicatorContainer: {
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    borderRadius: 12,
+    padding: 20,
+    marginVertical: 16,
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+  },
+  progressText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#FFD700',
+    textAlign: 'center' as const,
+  },
+  progressSubtext: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center' as const,
+  },
   panControlsTitle: { fontSize: 12, fontWeight: '600' as const, color: '#FFD700', marginBottom: 8, textAlign: 'center' as const },
   panButtonsGrid: { alignItems: 'center', gap: 6 },
   panButtonRow: { flexDirection: 'row', gap: 6 },

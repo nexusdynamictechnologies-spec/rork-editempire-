@@ -510,15 +510,18 @@ const styles = StyleSheet.create({
   logoIcon: {
     fontSize: 80,
     marginBottom: 12,
+    textShadowColor: 'rgba(255, 215, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 12,
   },
   logoText: {
     fontSize: 32,
     fontWeight: '900' as const,
     color: '#FFD700',
     letterSpacing: 2,
-    textShadowColor: 'rgba(255, 215, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 8,
+    textShadowColor: 'rgba(255, 255, 255, 0.9)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   logoEmoji: {
     fontSize: 28,
