@@ -186,8 +186,6 @@ export default function EditorScreen() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [statusType, setStatusType] = useState<'info' | 'error' | 'success'>('info');
-  const [selectMode, setSelectMode] = useState<SelectMode>('none');
-  const [selectionRect, setSelectionRect] = useState<Rect | null>(null);
   const [imageBoxSize, setImageBoxSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
 
   const [isUpscaling, setIsUpscaling] = useState<boolean>(false);
@@ -196,7 +194,6 @@ export default function EditorScreen() {
   const [showCamera, setShowCamera] = useState(false);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const cameraRef = useRef<any>(null);
-  const [isEditBoxMode, setIsEditBoxMode] = useState<boolean>(false);
 
   const [frameCategory, setFrameCategory] = useState<keyof typeof frameSizePresets>('Social');
   const [selectedFrameKey, setSelectedFrameKey] = useState<string | null>(null);
@@ -1064,25 +1061,13 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
 
   const panResponder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: (e) => {
-      console.log('🎯 onStartShouldSetPanResponder - isEditBoxMode:', isEditBoxMode, 'selectMode:', selectMode, 'selectedFrameKey:', selectedFrameKey);
-      return isEditBoxMode || selectMode === 'region' || !!selectedFrameKey;
+      return !!selectedFrameKey;
     },
     onMoveShouldSetPanResponder: (e) => {
-      console.log('🎯 onMoveShouldSetPanResponder - isEditBoxMode:', isEditBoxMode, 'selectMode:', selectMode, 'selectedFrameKey:', selectedFrameKey);
-      return isEditBoxMode || selectMode === 'region' || !!selectedFrameKey;
+      return !!selectedFrameKey;
     },
     onPanResponderGrant: (e: GestureResponderEvent) => {
-      console.log('🎯 onPanResponderGrant - isEditBoxMode:', isEditBoxMode, 'selectMode:', selectMode);
-      if (isEditBoxMode || selectMode === 'region') {
-        const { locationX, locationY } = e.nativeEvent;
-        console.log('🎯 Touch location:', locationX, locationY, 'Image box size:', imageBoxSize);
-        if (imageBoxSize.width > 0 && imageBoxSize.height > 0) {
-          const nx = Math.min(Math.max(locationX / imageBoxSize.width, 0), 1);
-          const ny = Math.min(Math.max(locationY / imageBoxSize.height, 0), 1);
-          console.log('🎯 Starting selection at normalized coords:', nx, ny);
-          setSelectionRect({ x: nx, y: ny, width: 0.001, height: 0.001 });
-        }
-      } else if (selectedFrameKey && e.nativeEvent.touches.length >= 2) {
+      if (selectedFrameKey && e.nativeEvent.touches.length >= 2) {
         isPinching.current = true;
         initialTouchDistance.current = getDistance(e.nativeEvent.touches);
         initialScale.current = imageScale;
@@ -1094,20 +1079,7 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
       }
     },
     onPanResponderMove: (e: GestureResponderEvent, gestureState: PanResponderGestureState) => {
-      if ((isEditBoxMode || selectMode === 'region') && selectionRect) {
-        const { locationX, locationY } = e.nativeEvent;
-        console.log('🎯 Touch move:', locationX, locationY);
-        if (imageBoxSize.width > 0 && imageBoxSize.height > 0) {
-          const nx = Math.min(Math.max(locationX / imageBoxSize.width, 0), 1);
-          const ny = Math.min(Math.max(locationY / imageBoxSize.height, 0), 1);
-          const x = Math.min(selectionRect.x, nx);
-          const y = Math.min(selectionRect.y, ny);
-          const w = Math.abs(nx - selectionRect.x);
-          const h = Math.abs(ny - selectionRect.y);
-          console.log('🎯 Updating selection rect:', { x, y, width: w, height: h });
-          setSelectionRect({ x, y, width: Math.max(0.01, w), height: Math.max(0.01, h) });
-        }
-      } else if (selectedFrameKey) {
+      if (selectedFrameKey) {
         if (e.nativeEvent.touches.length >= 2) {
           isPinching.current = true;
           const currentDistance = getDistance(e.nativeEvent.touches);
@@ -1133,20 +1105,13 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
       }
     },
     onPanResponderRelease: () => {
-      console.log('🎯 onPanResponderRelease - selection completed');
-      if (selectionRect && (isEditBoxMode || selectMode === 'region')) {
-        console.log('🎯 Final selection rect:', selectionRect);
-        if (Platform.OS !== 'web') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
-      }
       if (isPinching.current && Platform.OS !== 'web') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
       isPinching.current = false;
       initialTouchDistance.current = 0;
     },
-  }), [imageBoxSize.width, imageBoxSize.height, selectMode, selectionRect, selectedFrameKey, imageScale, imagePositionX, imagePositionY, constrainPosition, isEditBoxMode]);
+  }), [imageBoxSize.width, imageBoxSize.height, selectedFrameKey, imageScale, imagePositionX, imagePositionY, constrainPosition]);
 
   const renderToolContent = () => {
     switch (toolMode) {
@@ -1204,63 +1169,6 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                 <Text style={styles.progressSubtext}>This may take 15-30 seconds</Text>
               </View>
             )}
-            
-            <View style={styles.editBoxSection}>
-              <TouchableOpacity
-                style={[styles.editBoxButton, isEditBoxMode && styles.editBoxButtonActive]}
-                onPress={() => {
-                  setIsEditBoxMode(!isEditBoxMode);
-                  if (!isEditBoxMode) {
-                    setSelectionRect(null);
-                    setSelectMode('region');
-                    setStatusMessage('Draw a box around the area you want to edit');
-                    setStatusType('info');
-                    setTimeout(() => setStatusMessage(null), 3000);
-                  } else {
-                    setSelectMode('none');
-                    setSelectionRect(null);
-                  }
-                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }}
-                testID="toggle-edit-box"
-              >
-                <Crop size={16} color="#1A1A1A" />
-                <Text style={styles.editBoxButtonText}>
-                  {isEditBoxMode ? 'Cancel Selection' : 'Edit Area'}
-                </Text>
-              </TouchableOpacity>
-              {isEditBoxMode && selectionRect && selectionRect.width > 0.01 && selectionRect.height > 0.01 && (
-                <TouchableOpacity
-                  style={styles.clearSelectionButton}
-                  onPress={() => {
-                    setSelectionRect(null);
-                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }}
-                  testID="clear-selection"
-                >
-                  <X size={14} color="#FF6B6B" />
-                  <Text style={styles.clearSelectionText}>Clear Box</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-
-            {isEditBoxMode && (
-              <View style={styles.editBoxInstructions}>
-                <Text style={styles.editBoxInstructionsTitle}>✋ How to Use Edit Area:</Text>
-                <Text style={styles.editBoxInstructionsText}>
-                  {Platform.OS === 'web' 
-                    ? '🖱️ Click and drag on the image to draw a selection box around the area you want to edit'
-                    : '👆 Touch and drag on the image to draw a selection box around the area you want to edit'
-                  }
-                </Text>
-                <Text style={styles.editBoxInstructionsText}>
-                  💡 Once you've selected an area, describe what changes you want in that region, then tap Generate
-                </Text>
-                <Text style={styles.editBoxInstructionsText}>
-                  🎯 The AI will focus edits only within your selected box
-                </Text>
-              </View>
-            )}
 
             <TouchableOpacity
               testID="generate-quality-image"
@@ -1282,15 +1190,6 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                   setIsGenerating(true);
                   if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   
-                  const region = selectMode === 'region' && selectionRect && selectionRect.width > 0.01 && selectionRect.height > 0.01 ? { x: selectionRect.x, y: selectionRect.y, width: selectionRect.width, height: selectionRect.height } : undefined;
-                  
-                  if (isEditBoxMode && !region) {
-                    setStatusMessage('Please draw a selection box on the image first');
-                    setStatusType('error');
-                    setTimeout(() => setStatusMessage(null), 3000);
-                    return;
-                  }
-                  
                   console.log('📤 Calling generateEdit...');
                   const result = await generateEdit({
                     prompt: editPrompt,
@@ -1299,7 +1198,6 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                     upscale: false,
                     watermark: false,
                     additionsLock: true,
-                    region: region as any,
                   });
                   
                   console.log('✅ ========================================');
@@ -1314,12 +1212,6 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                     setStatusMessage('Image generated successfully');
                     if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                     setTimeout(() => setStatusMessage(null), 3500);
-                    
-                    if (isEditBoxMode) {
-                      setIsEditBoxMode(false);
-                      setSelectMode('none');
-                      setSelectionRect(null);
-                    }
                   } else {
                     console.error('❌ ========================================');
                     console.error('❌ GENERATION FAILED - NULL RESULT');
@@ -1966,7 +1858,7 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                 setImageBoxSize({ width, height });
               }}
               style={StyleSheet.absoluteFill}
-              pointerEvents={isEditBoxMode ? 'auto' : selectedFrameKey ? 'auto' : 'none'}
+              pointerEvents={selectedFrameKey ? 'auto' : 'none'}
               {...panResponder.panHandlers}
             />
             {selectedFrame ? (
@@ -2003,16 +1895,6 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
             ) : (
               <ExpoImage source={{ uri: editedImage || sourceImage }} style={styles.canvasImage} contentFit="contain" />
             )}
-
-            {selectionRect && selectMode === 'region' && (
-              <View pointerEvents="none" style={[styles.selectionBox, {
-                left: imageBoxSize.width * selectionRect.x,
-                top: imageBoxSize.height * selectionRect.y,
-                width: imageBoxSize.width * selectionRect.width,
-                height: imageBoxSize.height * selectionRect.height,
-              }]} />
-            )}
-
 
           </View>
         ) : (

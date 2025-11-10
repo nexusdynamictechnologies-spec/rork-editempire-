@@ -173,29 +173,6 @@ export default function InstructionsScreen() {
         'Perfect for visualizing how a hairstyle looks from every direction',
       ]
     },
-    {
-      icon: Edit3,
-      title: '✏️ Edit Button - Precision Editing Guide',
-      color: '#00CED1',
-      tips: [
-        'Step 1: Upload your image and wait for it to load in the editor',
-        'Step 2: Locate and tap the "Edit" button on the editing screen',
-        'Step 3: The button turns GREEN when active - you\'re now in selection mode',
-        'Step 4: Use your finger (mobile) or mouse (desktop) to draw a box around the area you want to edit',
-        'Drawing the Box: Touch and drag to create a rectangular selection around your target area',
-        'Step 5: After drawing the box, the selected area is highlighted',
-        'Step 6: Type your prompt describing what you want to change in that specific area',
-        'Step 7: Tap "Generate" to apply changes ONLY to the selected region',
-        'Example Uses: "remove this object", "change color to blue", "add a tattoo here"',
-        'Mobile: Use one finger to draw smooth, controlled selection boxes',
-        'Desktop: Click and drag with your mouse for precise rectangular selections',
-        'Multiple Edits: After one edit completes, tap Edit button again for another selection',
-        'Cancel Selection: Tap the Edit button again to deactivate and start over',
-        'This gives you surgical precision - only edit exactly what you want',
-        'Perfect for: removing objects, changing specific clothing items, adding details to one area',
-        'The rest of your image remains completely untouched and unaltered',
-      ]
-    },
   ];
 
   return (
