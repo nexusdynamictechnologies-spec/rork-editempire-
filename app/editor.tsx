@@ -202,6 +202,9 @@ export default function EditorScreen() {
   
   const [hairstyleCategory, setHairstyleCategory] = useState<HairstyleCategoryKey>('Female');
   const [selectedHairstyleKey, setSelectedHairstyleKey] = useState<string | null>(null);
+  const [hairstyleGeneratedImages, setHairstyleGeneratedImages] = useState<string[]>([]);
+  const [selectedHairstyleImageIndex, setSelectedHairstyleImageIndex] = useState<number>(0);
+  const [showHairstyleGallery, setShowHairstyleGallery] = useState<boolean>(false);
   const selectedFrame = useMemo(() => {
     if (!selectedFrameKey) return null;
     const cat = frameSizePresets[frameCategory];
@@ -1367,32 +1370,64 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                     try {
                       setStatusMessage(null);
                       setIsGenerating(true);
+                      setHairstyleGeneratedImages([]);
+                      setSelectedHairstyleImageIndex(0);
                       if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       
-                      console.log('🚀 Starting hairstyle transformation...');
+                      console.log('🚀 Starting multi-angle hairstyle transformation...');
                       console.log('💇 Selected hairstyle:', selectedHairstyle.label);
+                      console.log('📸 Generating 4 angle views: front, left side, right side, back');
                       
-                      const hairstylePrompt = PRECISION_HAIRSTYLE_SYSTEM_PROMPT + '\n\n' + selectedHairstyle.prompt;
+                      const angles = [
+                        { name: 'Front View', prompt: 'front-facing view showing full face and hairstyle from the front' },
+                        { name: 'Left Side View', prompt: 'left side profile view at 90° angle showing left side of face and hair' },
+                        { name: 'Right Side View', prompt: 'right side profile view at 90° angle showing right side of face and hair' },
+                        { name: 'Back View', prompt: 'back view showing the back of the head and hairstyle from behind' }
+                      ];
                       
-                      const result = await generateEdit({
-                        prompt: hairstylePrompt,
-                        strength: 0.85,
-                        identityLock: true,
-                        upscale: false,
-                        watermark: false,
-                        additionsLock: true,
-                      });
+                      const generatedImages: string[] = [];
+                      
+                      for (let i = 0; i < angles.length; i++) {
+                        const angle = angles[i];
+                        console.log(`📸 Generating ${angle.name} (${i + 1}/${angles.length})...`);
+                        setStatusMessage(`🎨 Generating ${angle.name} (${i + 1}/${angles.length})...`);
+                        setStatusType('info');
+                        
+                        const angleSpecificPrompt = PRECISION_HAIRSTYLE_SYSTEM_PROMPT + '\n\n' + selectedHairstyle.prompt + 
+                          `\n\n🎯 CRITICAL CAMERA ANGLE SPECIFICATION:\nGenerate a ${angle.prompt}. The character must be rotated to show this specific angle while maintaining the EXACT same hairstyle. DO NOT alter the original image's direction - CREATE A NEW VIEW at this angle showing the same person with the new hairstyle from this perspective. Keep the character's identity, clothing, and background lighting consistent.`;
+                        
+                        try {
+                          const result = await generateEdit({
+                            prompt: angleSpecificPrompt,
+                            strength: 0.85,
+                            identityLock: true,
+                            upscale: false,
+                            watermark: false,
+                            additionsLock: true,
+                          });
+                          
+                          if (result) {
+                            generatedImages.push(result);
+                            setHairstyleGeneratedImages([...generatedImages]);
+                            console.log(`✅ ${angle.name} generated successfully`);
+                          } else {
+                            console.warn(`⚠️ ${angle.name} generation returned null`);
+                          }
+                        } catch (angleError) {
+                          console.error(`❌ Failed to generate ${angle.name}:`, angleError);
+                        }
+                      }
                       
                       setIsGenerating(false);
                       
-                      if (result) {
+                      if (generatedImages.length > 0) {
                         setStatusType('success');
-                        setStatusMessage('✨ Hairstyle applied successfully!');
+                        setStatusMessage(`✨ Hairstyle applied successfully! Generated ${generatedImages.length} angle views. Tap images to view in full size.`);
                         if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                        setTimeout(() => setStatusMessage(null), 3500);
+                        setTimeout(() => setStatusMessage(null), 5000);
                       } else {
                         setStatusType('error');
-                        setStatusMessage('🚨 Generation failed to return a result.\n\nPlease wait 5-10 minutes and try again.');
+                        setStatusMessage('🚨 Generation failed for all angles.\n\nPlease wait 5-10 minutes and try again.');
                         setTimeout(() => setStatusMessage(null), 8000);
                       }
                     } catch (e) {
@@ -1412,10 +1447,47 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                   ) : (
                     <>
                       <Sparkles size={16} color="#1A1A1A" />
-                      <Text style={styles.generateButtonText}>Generate Hairstyle</Text>
+                      <Text style={styles.generateButtonText}>Generate Multi-Angle Views</Text>
                     </>
                   )}
                 </TouchableOpacity>
+              </View>
+            )}
+            
+            {hairstyleGeneratedImages.length > 0 && (
+              <View style={styles.hairstyleGallerySection}>
+                <Text style={styles.hairstyleGalleryTitle}>🎨 Generated Angle Views ({hairstyleGeneratedImages.length})</Text>
+                <Text style={styles.hairstyleGallerySubtitle}>Tap any image to view in full size</Text>
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.hairstyleGalleryScroll}
+                  contentContainerStyle={styles.hairstyleGalleryContent}
+                >
+                  {hairstyleGeneratedImages.map((imgUri, idx) => (
+                    <TouchableOpacity
+                      key={`hairstyle-${idx}`}
+                      style={styles.hairstyleGalleryItem}
+                      onPress={() => {
+                        setSelectedHairstyleImageIndex(idx);
+                        setShowHairstyleGallery(true);
+                        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <ExpoImage
+                        source={{ uri: imgUri }}
+                        style={styles.hairstyleGalleryImage}
+                        contentFit="cover"
+                      />
+                      <View style={styles.hairstyleGalleryLabel}>
+                        <Text style={styles.hairstyleGalleryLabelText}>
+                          {['Front', 'Left Side', 'Right Side', 'Back'][idx] || `View ${idx + 1}`}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
               </View>
             )}
             
@@ -1994,6 +2066,119 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
           </CameraView>
         </View>
       </Modal>
+
+      {/* Hairstyle Gallery Modal */}
+      <Modal
+        visible={showHairstyleGallery}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowHairstyleGallery(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <SafeAreaView style={styles.modalSafeArea}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setShowHairstyleGallery(false)}
+                activeOpacity={0.7}
+              >
+                <LinearGradient
+                  colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.6)']}
+                  style={styles.modalCloseGradient}
+                >
+                  <X size={24} color="#FFFFFF" strokeWidth={2} />
+                </LinearGradient>
+              </TouchableOpacity>
+              
+              <Text style={styles.modalAngleTitle}>
+                {['Front View', 'Left Side View', 'Right Side View', 'Back View'][selectedHairstyleImageIndex] || `View ${selectedHairstyleImageIndex + 1}`}
+              </Text>
+              
+              <View style={styles.modalHeaderSpacer} />
+            </View>
+
+            <View style={styles.modalImageContainer}>
+              {hairstyleGeneratedImages[selectedHairstyleImageIndex] && (
+                <ExpoImage
+                  source={{ uri: hairstyleGeneratedImages[selectedHairstyleImageIndex] }}
+                  style={styles.modalHairstyleImage}
+                  contentFit="contain"
+                  transition={200}
+                />
+              )}
+            </View>
+
+            <View style={styles.modalHairstyleNavigation}>
+              <TouchableOpacity
+                style={[styles.modalNavButton, selectedHairstyleImageIndex === 0 && styles.modalNavButtonDisabled]}
+                onPress={() => {
+                  if (selectedHairstyleImageIndex > 0) {
+                    setSelectedHairstyleImageIndex(selectedHairstyleImageIndex - 1);
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                }}
+                disabled={selectedHairstyleImageIndex === 0}
+              >
+                <LinearGradient
+                  colors={selectedHairstyleImageIndex === 0 ? ['rgba(100,100,100,0.3)', 'rgba(80,80,80,0.3)'] : ['#FFD700', '#FFA500']}
+                  style={styles.modalNavGradient}
+                >
+                  <Text style={[styles.modalNavText, selectedHairstyleImageIndex === 0 && styles.modalNavTextDisabled]}>← Previous</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              
+              <Text style={styles.modalNavCounter}>
+                {selectedHairstyleImageIndex + 1} / {hairstyleGeneratedImages.length}
+              </Text>
+              
+              <TouchableOpacity
+                style={[styles.modalNavButton, selectedHairstyleImageIndex === hairstyleGeneratedImages.length - 1 && styles.modalNavButtonDisabled]}
+                onPress={() => {
+                  if (selectedHairstyleImageIndex < hairstyleGeneratedImages.length - 1) {
+                    setSelectedHairstyleImageIndex(selectedHairstyleImageIndex + 1);
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                }}
+                disabled={selectedHairstyleImageIndex === hairstyleGeneratedImages.length - 1}
+              >
+                <LinearGradient
+                  colors={selectedHairstyleImageIndex === hairstyleGeneratedImages.length - 1 ? ['rgba(100,100,100,0.3)', 'rgba(80,80,80,0.3)'] : ['#FFD700', '#FFA500']}
+                  style={styles.modalNavGradient}
+                >
+                  <Text style={[styles.modalNavText, selectedHairstyleImageIndex === hairstyleGeneratedImages.length - 1 && styles.modalNavTextDisabled]}>Next →</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              style={styles.modalThumbnailScroll}
+              contentContainerStyle={styles.modalThumbnailContent}
+            >
+              {hairstyleGeneratedImages.map((imgUri, idx) => (
+                <TouchableOpacity
+                  key={`thumb-${idx}`}
+                  style={[styles.modalThumbnail, selectedHairstyleImageIndex === idx && styles.modalThumbnailActive]}
+                  onPress={() => {
+                    setSelectedHairstyleImageIndex(idx);
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                >
+                  <ExpoImage
+                    source={{ uri: imgUri }}
+                    style={styles.modalThumbnailImage}
+                    contentFit="cover"
+                  />
+                  <Text style={styles.modalThumbnailLabel}>
+                    {['Front', 'Left', 'Right', 'Back'][idx] || `${idx + 1}`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </SafeAreaView>
+        </View>
+      </Modal>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -2337,5 +2522,147 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
+  },
+  hairstyleGallerySection: {
+    marginTop: 20,
+    marginBottom: 16,
+  },
+  hairstyleGalleryTitle: {
+    fontSize: 14,
+    fontWeight: '700' as const,
+    color: '#FFD700',
+    marginBottom: 4,
+  },
+  hairstyleGallerySubtitle: {
+    fontSize: 11,
+    color: '#999',
+    marginBottom: 12,
+  },
+  hairstyleGalleryScroll: {
+    marginTop: 8,
+  },
+  hairstyleGalleryContent: {
+    paddingRight: 12,
+  },
+  hairstyleGalleryItem: {
+    width: 140,
+    height: 180,
+    marginRight: 12,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.2)',
+  },
+  hairstyleGalleryImage: {
+    width: '100%',
+    height: '100%',
+  },
+  hairstyleGalleryLabel: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+  },
+  hairstyleGalleryLabelText: {
+    fontSize: 11,
+    fontWeight: '600' as const,
+    color: '#FFD700',
+    textAlign: 'center' as const,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+  },
+  modalSafeArea: {
+    flex: 1,
+  },
+  modalAngleTitle: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#FFD700',
+  },
+  modalHeaderSpacer: {
+    width: 40,
+  },
+  modalHairstyleImage: {
+    width: '100%',
+    height: '100%',
+  },
+  modalHairstyleNavigation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 16,
+  },
+  modalNavButton: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  modalNavButtonDisabled: {
+    opacity: 0.5,
+  },
+  modalNavGradient: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalNavText: {
+    fontSize: 14,
+    fontWeight: '700' as const,
+    color: '#1A1A1A',
+  },
+  modalNavTextDisabled: {
+    color: '#666',
+  },
+  modalNavCounter: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#FFFFFF',
+    minWidth: 60,
+    textAlign: 'center' as const,
+  },
+  modalThumbnailScroll: {
+    maxHeight: 100,
+    marginBottom: 20,
+  },
+  modalThumbnailContent: {
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  modalThumbnail: {
+    width: 70,
+    height: 70,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  modalThumbnailActive: {
+    borderColor: '#FFD700',
+    borderWidth: 3,
+  },
+  modalThumbnailImage: {
+    width: '100%',
+    height: '100%',
+  },
+  modalThumbnailLabel: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    paddingVertical: 2,
+    fontSize: 9,
+    fontWeight: '600' as const,
+    color: '#FFD700',
+    textAlign: 'center' as const,
   },
 });

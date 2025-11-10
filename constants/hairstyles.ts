@@ -18,9 +18,11 @@ export const PRECISION_HAIRSTYLE_SYSTEM_PROMPT = `
 
 ✅ PRESERVE WITH 100% FIDELITY:
 - Face: exact features, structure, skin tone, expression unchanged
-- Background, body, clothing, pose: completely unchanged
+- Body position, pose, stance: EXACT same position and orientation
+- Camera angle and viewing direction: DO NOT rotate or change perspective
+- Background, clothing: completely unchanged
 - Lighting direction, color temperature, shadows: maintain exactly
-- Image dimensions and quality: preserve exactly
+- Image dimensions and aspect ratio: preserve exactly
 
 💇 CHANGE ONLY THE HAIR:
 - Apply specified hairstyle to natural hairline and head shape
@@ -29,9 +31,15 @@ export const PRECISION_HAIRSTYLE_SYSTEM_PROMPT = `
 - Photorealistic strand detail and texture
 - Natural volume, physics, and environmental response
 
-❌ FORBIDDEN: Face changes, beautification, background changes, pose alterations, dimension changes, adding elements not related to hair
+❌ CRITICAL RESTRICTIONS:
+- DO NOT rotate the character's head or body
+- DO NOT change the camera angle or perspective
+- DO NOT turn the person to face a different direction
+- DO NOT change from front view to back view or side view unless EXPLICITLY requested
+- Face changes, beautification, background changes, pose alterations forbidden
+- Dimension changes, adding elements not related to hair forbidden
 
-🎨 EXECUTION: Analyze original → Lock all non-hair elements → Apply hairstyle with natural integration → Verify face unchanged and hairline seamless
+🎨 EXECUTION: Analyze original angle → Lock camera angle, body position, and all non-hair elements → Apply hairstyle with natural integration → Verify face unchanged, position unchanged, and hairline seamless
 `;
 
 export const hairstylePresets: Record<HairstyleCategoryKey, HairstyleCategory> = {
