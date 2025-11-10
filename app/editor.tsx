@@ -53,11 +53,12 @@ import { Image as ExpoImage } from 'expo-image';
 import { frameSizePresets } from '@/constants/stylePresets';
 import WebSlider from '@/components/WebSlider';
 import { advertisingKnowledge } from '@/constants/advertising';
+import { hairstylePresets, HairstyleCategoryKey, PRECISION_HAIRSTYLE_SYSTEM_PROMPT } from '@/constants/hairstyles';
 
 
 // Slimmed down editor per request
 
-type ToolMode = 'prompt' | 'frames' | 'enlarge' | 'undo' | 'upscale';
+type ToolMode = 'prompt' | 'hairstyles' | 'frames' | 'enlarge' | 'undo' | 'upscale';
 
 type SelectMode = 'none' | 'region';
 
@@ -198,6 +199,9 @@ export default function EditorScreen() {
 
   const [frameCategory, setFrameCategory] = useState<keyof typeof frameSizePresets>('Social');
   const [selectedFrameKey, setSelectedFrameKey] = useState<string | null>(null);
+  
+  const [hairstyleCategory, setHairstyleCategory] = useState<HairstyleCategoryKey>('Female');
+  const [selectedHairstyleKey, setSelectedHairstyleKey] = useState<string | null>(null);
   const selectedFrame = useMemo(() => {
     if (!selectedFrameKey) return null;
     const cat = frameSizePresets[frameCategory];
@@ -1279,6 +1283,140 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
 
 
 
+      case 'hairstyles':
+        const selectedHairstyle = selectedHairstyleKey 
+          ? hairstylePresets[hairstyleCategory].items.find(item => item.key === selectedHairstyleKey)
+          : null;
+        
+        return (
+          <View style={styles.toolContent}>
+            <Text style={styles.toolTitle}>💇 Hairstyle Try-On</Text>
+            <Text style={styles.toolSubtitle}>Select a hairstyle to preview how it looks on you</Text>
+            
+            <View style={styles.frameCategoriesRow}>
+              {(Object.keys(hairstylePresets) as HairstyleCategoryKey[]).map((cat) => (
+                <TouchableOpacity 
+                  key={cat} 
+                  style={[styles.frameCategoryChip, hairstyleCategory === cat && styles.frameCategoryChipActive]} 
+                  onPress={() => {
+                    setHairstyleCategory(cat);
+                    setSelectedHairstyleKey(null);
+                  }} 
+                  testID={`hairstyle-category-${cat}`}
+                >
+                  <Text style={[styles.frameCategoryText, hairstyleCategory === cat && styles.frameCategoryTextActive]}>
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            
+            <ScrollView 
+              style={styles.presetItemsScroll} 
+              showsVerticalScrollIndicator={true}
+              nestedScrollEnabled={true}
+            >
+              <View style={styles.framesGrid}>
+                {hairstylePresets[hairstyleCategory].items.map((item) => (
+                  <TouchableOpacity 
+                    key={item.key} 
+                    style={[styles.hairstyleChip, selectedHairstyleKey === item.key && styles.frameChipActive]} 
+                    onPress={() => setSelectedHairstyleKey(item.key)} 
+                    testID={`hairstyle-${item.key}`}
+                  >
+                    <Text style={styles.hairstyleEmoji}>{item.emoji || '💇'}</Text>
+                    <Text style={[styles.frameChipText, selectedHairstyleKey === item.key && styles.frameChipTextActive]}>
+                      {item.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+            
+            {selectedHairstyle && (
+              <View style={styles.hairstyleApplySection}>
+                <View style={styles.hairstyleInfoBox}>
+                  <Text style={styles.hairstyleInfoTitle}>✨ Selected: {selectedHairstyle.label}</Text>
+                  <Text style={styles.hairstyleInfoText}>
+                    This will change ONLY your hairstyle while keeping your face, expression, and background exactly the same.
+                  </Text>
+                </View>
+                
+                <TouchableOpacity
+                  style={[styles.generateButton, (!sourceImage || isGenerating) && styles.generateButtonDisabled]}
+                  disabled={!sourceImage || isGenerating}
+                  onPress={async () => {
+                    if (!sourceImage || !selectedHairstyle) return;
+                    
+                    try {
+                      setStatusMessage(null);
+                      setIsGenerating(true);
+                      if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      
+                      console.log('🚀 Starting hairstyle transformation...');
+                      console.log('💇 Selected hairstyle:', selectedHairstyle.label);
+                      
+                      const hairstylePrompt = PRECISION_HAIRSTYLE_SYSTEM_PROMPT + '\n\n' + selectedHairstyle.prompt;
+                      
+                      const result = await generateEdit({
+                        prompt: hairstylePrompt,
+                        strength: 0.85,
+                        identityLock: true,
+                        upscale: false,
+                        watermark: false,
+                        additionsLock: true,
+                      });
+                      
+                      setIsGenerating(false);
+                      
+                      if (result) {
+                        setStatusType('success');
+                        setStatusMessage('✨ Hairstyle applied successfully!');
+                        if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        setTimeout(() => setStatusMessage(null), 3500);
+                      } else {
+                        setStatusType('error');
+                        setStatusMessage('🚨 Generation failed to return a result.\n\nPlease wait 5-10 minutes and try again.');
+                        setTimeout(() => setStatusMessage(null), 8000);
+                      }
+                    } catch (e) {
+                      setIsGenerating(false);
+                      const msg = e instanceof Error ? e.message : 'Failed to apply hairstyle';
+                      console.error('❌ Hairstyle application error:', e);
+                      setStatusType('error');
+                      setStatusMessage(msg);
+                      const displayDuration = msg.includes('\n') ? 12000 : 6000;
+                      setTimeout(() => setStatusMessage(null), displayDuration);
+                    }
+                  }}
+                  testID="apply-hairstyle"
+                >
+                  {isGenerating ? (
+                    <ActivityIndicator size="small" color="#1A1A1A" />
+                  ) : (
+                    <>
+                      <Sparkles size={16} color="#1A1A1A" />
+                      <Text style={styles.generateButtonText}>Apply Hairstyle</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+            
+            {!selectedHairstyle && (
+              <View style={styles.hairstyleInfoBox}>
+                <Text style={styles.hairstyleInfoTitle}>ℹ️ How it works</Text>
+                <Text style={styles.hairstyleInfoText}>
+                  1. Select a hairstyle category (Female/Male)\n
+                  2. Choose a hairstyle from the grid\n
+                  3. Tap "Apply Hairstyle" to see the transformation\n\n
+                  Your face, expression, lighting, and background will remain exactly the same - only your hair will change!
+                </Text>
+              </View>
+            )}
+          </View>
+        );
+
       case 'enlarge':
         return (
           <View style={styles.toolContent}>
@@ -1729,6 +1867,7 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
           <View style={styles.toolTabs}>
             {([
               { key: 'prompt' as ToolMode, label: 'Prompt', icon: Sparkles },
+              { key: 'hairstyles' as ToolMode, label: 'Hair', icon: Wand2 },
               { key: 'frames' as ToolMode, label: 'Frame', icon: Crop },
               { key: 'undo' as ToolMode, label: 'Undo', icon: RotateCcw },
               { key: 'upscale' as ToolMode, label: 'Enhance', icon: Maximize2 },
@@ -2018,6 +2157,12 @@ const styles = StyleSheet.create({
   resetPositionButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: 'rgba(255, 215, 0, 0.1)', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.3)' },
   resetPositionText: { fontSize: 12, color: '#FFD700', fontWeight: '700' as const },
   panControlsContainer: { marginBottom: 12, backgroundColor: 'rgba(0, 0, 0, 0.3)', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.15)' },
+  hairstyleChip: { width: '48%', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)', alignItems: 'center', gap: 8, minHeight: 90 },
+  hairstyleEmoji: { fontSize: 32, textAlign: 'center' as const },
+  hairstyleApplySection: { marginTop: 12, gap: 12 },
+  hairstyleInfoBox: { backgroundColor: 'rgba(255, 215, 0, 0.08)', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.2)' },
+  hairstyleInfoTitle: { fontSize: 13, fontWeight: '700' as const, color: '#FFD700', marginBottom: 8 },
+  hairstyleInfoText: { fontSize: 11, color: '#CCCCCC', lineHeight: 18 },
   panControlsTitle: { fontSize: 12, fontWeight: '600' as const, color: '#FFD700', marginBottom: 8, textAlign: 'center' as const },
   panButtonsGrid: { alignItems: 'center', gap: 6 },
   panButtonRow: { flexDirection: 'row', gap: 6 },
