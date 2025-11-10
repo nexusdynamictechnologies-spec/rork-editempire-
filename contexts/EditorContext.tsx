@@ -13,6 +13,8 @@ import { enhancePromptWithProductMockup, enhancePromptWithTextIntelligence, enha
 import { enhancePromptWithNanoBananaFeatures } from '@/constants/nanoBananaFeatures';
 import { enhancePromptWithGMCVehicle } from '@/constants/gmcVehicles';
 import { enhancePromptWithMaterialsKnowledge } from '@/constants/materials';
+import { enhancePromptWithShoeKnowledge } from '@/constants/shoes';
+import { enhancePromptWithVehicleKnowledge } from '@/constants/vehicles';
 import * as FileSystem from 'expo-file-system';
 import { EncodingType } from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -397,6 +399,8 @@ export const [EditorProvider, useEditor] = createContextHook(() => {
     prompt = enhancePromptWithNanoBananaFeatures(prompt);
     prompt = enhancePromptWithGMCVehicle(prompt);
     prompt = enhancePromptWithMaterialsKnowledge(prompt);
+    prompt = enhancePromptWithShoeKnowledge(prompt);
+    prompt = enhancePromptWithVehicleKnowledge(prompt);
 
     const lower = prompt.toLowerCase();
 

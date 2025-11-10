@@ -1,7 +1,7 @@
 export interface CharacterDefinition {
   name: string;
   aliases: string[];
-  category: 'mortal_kombat' | 'poppy_playtime' | 'horror' | 'marvel' | 'dc' | 'gaming' | 'anime';
+  category: 'mortal_kombat' | 'poppy_playtime' | 'horror' | 'marvel' | 'dc' | 'gaming' | 'anime' | 'disney' | 'cartoon_network';
   detailedDescription: string;
   visualKeywords: string[];
   consistencyPrompt: string;
@@ -615,6 +615,350 @@ export const DC_CHARACTERS: CharacterDefinition[] = [
   }
 ];
 
+// EXPANDED MARVEL UNIVERSE
+export const EXPANDED_MARVEL_CHARACTERS: CharacterDefinition[] = [
+  {
+    name: "Miles Morales Spider-Man",
+    aliases: ["miles morales", "miles", "spider-man miles"],
+    category: "marvel",
+    detailedDescription: "Afro-Latino Spider-Man with red and black suit",
+    visualKeywords: ["red and black suit", "bio-electric powers", "spray paint", "Brooklyn", "Afro-Latino"],
+    consistencyPrompt: "Miles Morales Spider-Man: red and black costume with larger spider logo, black portions on red suit, bio-electric venom powers (yellow electricity), spray paint aesthetic, Afro-Latino features, Brooklyn style. LATEST STYLE: Animated movie design or comic-accurate suit with street art influences"
+  },
+  {
+    name: "Scarlet Witch",
+    aliases: ["scarlet witch", "wanda maximoff", "wanda"],
+    category: "marvel",
+    detailedDescription: "Reality-warping mutant with red chaos magic",
+    visualKeywords: ["red costume", "chaos magic", "headpiece", "red energy", "mutant"],
+    consistencyPrompt: "Scarlet Witch: red costume with cape and headpiece, red chaos magic energy effects, powerful stance, Wanda Maximoff appearance. LATEST STYLE: MCU Wandavision/Multiverse of Madness red leather suit with detailed stitching and flowing cape"
+  },
+  {
+    name: "Thanos",
+    aliases: ["thanos", "mad titan"],
+    category: "marvel",
+    detailedDescription: "Mad Titan with purple skin and Infinity Gauntlet",
+    visualKeywords: ["purple skin", "massive build", "gold armor", "Infinity Gauntlet", "ridged chin"],
+    consistencyPrompt: "Thanos: massive purple-skinned Titan, ridged chin, gold and blue armor, Infinity Gauntlet with colored stones. LATEST STYLE: MCU realistic appearance with detailed skin texture, battle-worn armor"
+  },
+  {
+    name: "Loki",
+    aliases: ["loki", "god of mischief"],
+    category: "marvel",
+    detailedDescription: "Asgardian trickster god",
+    visualKeywords: ["green and gold", "horned helmet", "trickster", "cape", "scepter"],
+    consistencyPrompt: "Loki: green and gold Asgardian armor, horned helmet, flowing cape, scepter. LATEST STYLE: MCU appearance with leather and metal details, Tom Hiddleston likeness"
+  },
+  {
+    name: "Black Widow",
+    aliases: ["black widow", "natasha romanoff"],
+    category: "marvel",
+    detailedDescription: "Super spy assassin",
+    visualKeywords: ["black suit", "red hair", "dual pistols", "tactical gear", "spy"],
+    consistencyPrompt: "Black Widow: black tactical suit with red hourglass symbol, red hair, dual batons/pistols (PROPS), athletic build, spy stance. LATEST STYLE: MCU tactical suit with armor panels"
+  },
+  {
+    name: "Moon Knight",
+    aliases: ["moon knight", "marc spector"],
+    category: "marvel",
+    detailedDescription: "Egyptian moon god avatar in white suit",
+    visualKeywords: ["white suit", "cape", "crescent darts", "Egyptian", "vigilante"],
+    consistencyPrompt: "Moon Knight: all-white suit with flowing white cape, crescent moon chest symbol, white mask, crescent darts (PROPS), Egyptian aesthetic. LATEST STYLE: MCU mummy-wrapped suit with glowing eyes"
+  }
+];
+
+// EXPANDED DC UNIVERSE
+export const EXPANDED_DC_CHARACTERS: CharacterDefinition[] = [
+  {
+    name: "Shazam",
+    aliases: ["shazam", "captain marvel", "billy batson"],
+    category: "dc",
+    detailedDescription: "Magical superhero with lightning bolt",
+    visualKeywords: ["red suit", "gold lightning bolt", "white cape", "lightning", "magic"],
+    consistencyPrompt: "Shazam: red suit with gold lightning bolt on chest, white cape with gold trim, superhero build, lightning effects. LATEST STYLE: DCEU movie suit with textured fabric and gold details"
+  },
+  {
+    name: "Cyborg",
+    aliases: ["cyborg", "victor stone"],
+    category: "dc",
+    detailedDescription: "Half-human half-machine hero",
+    visualKeywords: ["cybernetic body", "glowing eye", "robotic parts", "tech", "Justice League"],
+    consistencyPrompt: "Cyborg: half-human half-robot body, glowing red eye, silver and black cybernetic parts, tech integration. LATEST STYLE: DCEU design with detailed mechanical components"
+  },
+  {
+    name: "Green Lantern",
+    aliases: ["green lantern", "hal jordan", "john stewart"],
+    category: "dc",
+    detailedDescription: "Intergalactic cop with power ring",
+    visualKeywords: ["green suit", "power ring", "green energy", "lantern logo", "mask"],
+    consistencyPrompt: "Green Lantern: green and black suit with power ring, green lantern logo on chest, green energy constructs, mask. LATEST STYLE: Modern suit design with detailed texturing"
+  },
+  {
+    name: "Deathstroke",
+    aliases: ["deathstroke", "slade wilson"],
+    category: "dc",
+    detailedDescription: "Mercenary with orange and black armor",
+    visualKeywords: ["orange and black", "one-eyed mask", "sword", "tactical armor", "mercenary"],
+    consistencyPrompt: "Deathstroke: orange and black armor, half-mask showing one eye covered, sword and guns (PROPS), tactical mercenary design. LATEST STYLE: Modern armored design with plates and weaponry"
+  }
+];
+
+// DISNEY CHARACTERS
+export const DISNEY_CHARACTERS: CharacterDefinition[] = [
+  {
+    name: "Mickey Mouse",
+    aliases: ["mickey mouse", "mickey"],
+    category: "disney",
+    detailedDescription: "Iconic Disney mouse with red shorts",
+    visualKeywords: ["black ears", "red shorts", "yellow shoes", "white gloves", "mouse"],
+    consistencyPrompt: "Mickey Mouse: large round black ears, white face, black nose, red shorts with white buttons, yellow shoes, white gloves, cheerful expression, classic Disney cartoon mouse"
+  },
+  {
+    name: "Donald Duck",
+    aliases: ["donald duck", "donald"],
+    category: "disney",
+    detailedDescription: "Iconic Disney duck with sailor outfit",
+    visualKeywords: ["white duck", "blue sailor outfit", "sailor hat", "orange beak", "no pants"],
+    consistencyPrompt: "Donald Duck: white feathered duck, blue sailor outfit with bow tie, sailor hat, orange beak and feet, no pants, classic Disney duck design"
+  },
+  {
+    name: "Goofy",
+    aliases: ["goofy", "goofy goof"],
+    category: "disney",
+    detailedDescription: "Tall Disney dog with floppy ears",
+    visualKeywords: ["tall dog", "floppy ears", "vest", "hat", "goofy smile"],
+    consistencyPrompt: "Goofy: tall anthropomorphic dog, long floppy ears, orange vest, green hat, buck teeth, goofy smile, classic Disney character"
+  },
+  {
+    name: "Elsa",
+    aliases: ["elsa", "queen elsa", "frozen elsa"],
+    category: "disney",
+    detailedDescription: "Ice queen from Frozen",
+    visualKeywords: ["ice blue dress", "blonde braid", "ice powers", "snowflake", "queen"],
+    consistencyPrompt: "Elsa from Frozen: ice blue dress with crystalline details, long blonde hair in braid, ice and snow powers, snowflake patterns, elegant queen appearance, Disney princess style"
+  },
+  {
+    name: "Simba",
+    aliases: ["simba", "adult simba"],
+    category: "disney",
+    detailedDescription: "Lion King protagonist",
+    visualKeywords: ["lion", "red mane", "golden fur", "king", "pride rock"],
+    consistencyPrompt: "Simba from Lion King: adult male lion, red-orange mane, golden fur, powerful stance, Lion King Disney design, regal appearance"
+  },
+  {
+    name: "Stitch",
+    aliases: ["stitch", "experiment 626"],
+    category: "disney",
+    detailedDescription: "Blue alien experiment from Lilo & Stitch",
+    visualKeywords: ["blue fur", "big ears", "four arms", "alien", "mischievous"],
+    consistencyPrompt: "Stitch: blue fur, large black eyes, big ears, four arms, small alien creature, mischievous expression, Disney Lilo & Stitch design"
+  },
+  {
+    name: "Moana",
+    aliases: ["moana", "princess moana"],
+    category: "disney",
+    detailedDescription: "Polynesian wayfinder princess",
+    visualKeywords: ["Polynesian", "red outfit", "necklace", "black curly hair", "ocean"],
+    consistencyPrompt: "Moana: Polynesian features, long black curly hair, red traditional outfit with crop top, shell necklace, wayfinder appearance, Disney princess style"
+  },
+  {
+    name: "Buzz Lightyear",
+    aliases: ["buzz lightyear", "buzz"],
+    category: "disney",
+    detailedDescription: "Space ranger from Toy Story",
+    visualKeywords: ["space suit", "purple and green", "helmet", "wings", "space ranger"],
+    consistencyPrompt: "Buzz Lightyear: white, purple and green space ranger suit, clear helmet, retractable wings, space ranger appearance, Toy Story Disney-Pixar design"
+  },
+  {
+    name: "Woody",
+    aliases: ["woody", "sheriff woody"],
+    category: "disney",
+    detailedDescription: "Cowboy doll from Toy Story",
+    visualKeywords: ["cowboy hat", "vest", "sheriff badge", "pull string", "boots"],
+    consistencyPrompt: "Woody: brown cowboy hat, yellow shirt, cowhide vest with sheriff badge, blue jeans, cowboy boots, pull-string on back, Toy Story Disney-Pixar design"
+  },
+  {
+    name: "Lightning McQueen",
+    aliases: ["lightning mcqueen", "mcqueen", "lightning"],
+    category: "disney",
+    detailedDescription: "Race car from Cars",
+    visualKeywords: ["red race car", "95", "lightning bolt", "race car", "anthropomorphic"],
+    consistencyPrompt: "Lightning McQueen: red race car with number 95, lightning bolt logo, anthropomorphic car with eyes on windshield, Disney Cars design, racing style"
+  },
+  {
+    name: "Rapunzel",
+    aliases: ["rapunzel", "tangled"],
+    category: "disney",
+    detailedDescription: "Princess with magical long hair",
+    visualKeywords: ["long blonde hair", "purple dress", "flowers in hair", "frying pan", "princess"],
+    consistencyPrompt: "Rapunzel from Tangled: extremely long blonde hair (70 feet), purple dress, flowers in hair, green eyes, Disney princess appearance, magical golden hair glow"
+  },
+  {
+    name: "Ariel",
+    aliases: ["ariel", "little mermaid"],
+    category: "disney",
+    detailedDescription: "Mermaid princess with red hair",
+    visualKeywords: ["red hair", "purple seashell top", "green tail", "mermaid", "ocean"],
+    consistencyPrompt: "Ariel from Little Mermaid: long flowing red hair, purple seashell bra top, green mermaid tail with scales, Disney princess appearance, underwater princess"
+  }
+];
+
+// CARTOON NETWORK CHARACTERS
+export const CARTOON_NETWORK_CHARACTERS: CharacterDefinition[] = [
+  {
+    name: "Ben 10",
+    aliases: ["ben 10", "ben tennyson"],
+    category: "cartoon_network",
+    detailedDescription: "Boy hero with Omnitrix alien watch",
+    visualKeywords: ["Omnitrix watch", "green jacket", "brown hair", "teenager", "hero"],
+    consistencyPrompt: "Ben 10: brown hair, green jacket with white stripe, Omnitrix watch on wrist (green and black device), teenage appearance, Cartoon Network style"
+  },
+  {
+    name: "Four Arms",
+    aliases: ["four arms", "ben 10 four arms"],
+    category: "cartoon_network",
+    detailedDescription: "Ben 10's four-armed alien transformation",
+    visualKeywords: ["four arms", "red skin", "muscular", "black stripes", "alien"],
+    consistencyPrompt: "Four Arms from Ben 10: massive four-armed alien, red skin with black stripes, extremely muscular build, yellow eyes, powerful stance, Ben 10 alien design"
+  },
+  {
+    name: "Dexter",
+    aliases: ["dexter", "boy genius"],
+    category: "cartoon_network",
+    detailedDescription: "Boy genius with secret laboratory",
+    visualKeywords: ["lab coat", "glasses", "orange hair", "boy genius", "scientist"],
+    consistencyPrompt: "Dexter from Dexter's Laboratory: white lab coat, large glasses, orange hair, boy genius appearance, Cartoon Network style"
+  },
+  {
+    name: "Samurai Jack",
+    aliases: ["samurai jack", "jack"],
+    category: "cartoon_network",
+    detailedDescription: "Time-displaced samurai warrior",
+    visualKeywords: ["white gi", "topknot", "katana", "samurai", "martial artist"],
+    consistencyPrompt: "Samurai Jack: white samurai gi, black hair in topknot, katana sword (PROP), stoic expression, samurai warrior appearance, Cartoon Network style",
+    weaponGuidance: "Samurai Jack's katana is a PROP sword for animated character aesthetics."
+  },
+  {
+    name: "Finn the Human",
+    aliases: ["finn", "finn the human", "adventure time finn"],
+    category: "cartoon_network",
+    detailedDescription: "Human hero from Adventure Time",
+    visualKeywords: ["bear hat", "blue shirt", "shorts", "backpack", "sword"],
+    consistencyPrompt: "Finn from Adventure Time: white bear hat with ears, blue shirt, dark shorts, backpack, sword (PROP), adventure hero appearance, Cartoon Network style",
+    weaponGuidance: "Finn's sword is an animated PROP weapon."
+  },
+  {
+    name: "Jake the Dog",
+    aliases: ["jake", "jake the dog"],
+    category: "cartoon_network",
+    detailedDescription: "Shape-shifting dog from Adventure Time",
+    visualKeywords: ["yellow dog", "stretchy", "simple design", "friendly"],
+    consistencyPrompt: "Jake from Adventure Time: yellow bulldog appearance, simple rounded design, shape-shifting abilities, friendly expression, Cartoon Network style"
+  },
+  {
+    name: "Gumball",
+    aliases: ["gumball", "gumball watterson"],
+    category: "cartoon_network",
+    detailedDescription: "Blue cat from Amazing World of Gumball",
+    visualKeywords: ["blue cat", "simple design", "white eyes", "cartoon cat"],
+    consistencyPrompt: "Gumball Watterson: blue cat with simple rounded design, large white eyes with black pupils, cartoon cat appearance, Cartoon Network style"
+  },
+  {
+    name: "Steven Universe",
+    aliases: ["steven universe", "steven"],
+    category: "cartoon_network",
+    detailedDescription: "Half-human half-Gem hybrid",
+    visualKeywords: ["star shirt", "pink gem", "curly hair", "shield", "Crystal Gem"],
+    consistencyPrompt: "Steven Universe: red star shirt, curly black hair, pink gem on belly button, shield (PROP), Crystal Gem appearance, Cartoon Network style"
+  },
+  {
+    name: "Courage",
+    aliases: ["courage", "courage the cowardly dog"],
+    category: "cartoon_network",
+    detailedDescription: "Pink cowardly dog",
+    visualKeywords: ["pink dog", "nervous expression", "simple design", "cowardly"],
+    consistencyPrompt: "Courage the Cowardly Dog: pink dog with simple rounded design, large nervous eyes, cowardly scared expression, Cartoon Network style"
+  },
+  {
+    name: "Ed, Edd n Eddy",
+    aliases: ["ed edd n eddy", "ed", "edd", "eddy", "the eds"],
+    category: "cartoon_network",
+    detailedDescription: "Three friends from cul-de-sac",
+    visualKeywords: ["three kids", "jawbreakers", "scams", "neighborhood"],
+    consistencyPrompt: "Ed Edd n Eddy: Ed (tall, green jacket, unibrow), Edd/Double D (sock hat, organized), Eddy (yellow shirt, short, scheming), Cartoon Network style"
+  },
+  {
+    name: "Johnny Bravo",
+    aliases: ["johnny bravo", "johnny"],
+    category: "cartoon_network",
+    detailedDescription: "Muscular narcissistic character",
+    visualKeywords: ["blonde pompadour", "black shirt", "sunglasses", "muscular", "Elvis style"],
+    consistencyPrompt: "Johnny Bravo: tall blonde pompadour hairstyle, black shirt, sunglasses, extremely muscular build, Elvis-inspired appearance, Cartoon Network style"
+  },
+  {
+    name: "Powerpuff Girls",
+    aliases: ["powerpuff girls", "blossom", "bubbles", "buttercup"],
+    category: "cartoon_network",
+    detailedDescription: "Three superhero girls",
+    visualKeywords: ["big eyes", "dresses", "superpowers", "three girls", "Chemical X"],
+    consistencyPrompt: "Powerpuff Girls: Blossom (pink dress, red bow, leader), Bubbles (blue dress, blonde pigtails, sweet), Buttercup (green dress, black hair, tough), large eyes, tiny bodies, Cartoon Network style"
+  },
+  {
+    name: "Teen Titans",
+    aliases: ["teen titans", "robin", "starfire", "raven", "beast boy", "cyborg"],
+    category: "cartoon_network",
+    detailedDescription: "Young superhero team",
+    visualKeywords: ["superhero team", "teenagers", "colorful", "powers"],
+    consistencyPrompt: "Teen Titans: Robin (mask, cape, R symbol), Starfire (orange skin, purple hair, green eyes), Raven (purple hair, blue cloak), Beast Boy (green skin, pointy ears), Cyborg (half-robot), Cartoon Network style"
+  }
+];
+
+// ADDITIONAL HORROR CHARACTERS
+export const EXPANDED_HORROR_CHARACTERS: CharacterDefinition[] = [
+  {
+    name: "Art the Clown",
+    aliases: ["art the clown", "art", "terrifier"],
+    category: "horror",
+    detailedDescription: "Silent killer clown from Terrifier",
+    visualKeywords: ["black and white clown", "mime makeup", "top hat", "silent", "disturbing smile"],
+    consistencyPrompt: "Art the Clown: black and white clown costume, extreme mime face makeup, black top hat, disturbing wide smile, silent menacing presence, Terrifier horror aesthetic",
+    weaponGuidance: "Art the Clown's weapons are PROPS for horror movie aesthetics."
+  },
+  {
+    name: "Jigsaw",
+    aliases: ["jigsaw", "billy puppet", "saw"],
+    category: "horror",
+    detailedDescription: "Puppet from Saw franchise",
+    visualKeywords: ["white face", "red spirals", "tuxedo", "tricycle", "puppet"],
+    consistencyPrompt: "Jigsaw/Billy Puppet: white face with red spiral cheeks, black tuxedo with red bow tie, puppet appearance, Saw franchise horror design"
+  },
+  {
+    name: "Pyramid Head",
+    aliases: ["pyramid head", "red pyramid thing"],
+    category: "horror",
+    detailedDescription: "Silent Hill executioner",
+    visualKeywords: ["pyramid helmet", "butcher", "massive sword", "Silent Hill"],
+    consistencyPrompt: "Pyramid Head: massive triangular pyramid helmet, butcher apron, great knife (PROP), imposing build, Silent Hill horror design",
+    weaponGuidance: "Pyramid Head's great knife is a PROP for horror game aesthetics."
+  },
+  {
+    name: "Annabelle",
+    aliases: ["annabelle", "annabelle doll"],
+    category: "horror",
+    detailedDescription: "Possessed doll from Conjuring universe",
+    visualKeywords: ["porcelain doll", "vintage dress", "creepy smile", "possessed"],
+    consistencyPrompt: "Annabelle: vintage porcelain doll, white dress, curly hair, unsettling smile, Conjuring universe horror doll design"
+  },
+  {
+    name: "Valak",
+    aliases: ["valak", "the nun", "demon nun"],
+    category: "horror",
+    detailedDescription: "Demon nun from Conjuring universe",
+    visualKeywords: ["nun habit", "pale face", "yellow eyes", "demon", "crucifix"],
+    consistencyPrompt: "Valak The Nun: black nun habit, extremely pale face, yellow demonic eyes, sharp teeth, crucifixes, Conjuring universe demon design"
+  }
+];
+
 export const GAMING_CHARACTERS: CharacterDefinition[] = [
   {
     name: "Kratos",
@@ -646,9 +990,14 @@ export const ALL_CHARACTERS: CharacterDefinition[] = [
   ...MORTAL_KOMBAT_CHARACTERS,
   ...POPPY_PLAYTIME_CHARACTERS,
   ...HORROR_CHARACTERS,
+  ...EXPANDED_HORROR_CHARACTERS,
   ...MARVEL_CHARACTERS,
+  ...EXPANDED_MARVEL_CHARACTERS,
   ...DC_CHARACTERS,
-  ...GAMING_CHARACTERS
+  ...EXPANDED_DC_CHARACTERS,
+  ...GAMING_CHARACTERS,
+  ...DISNEY_CHARACTERS,
+  ...CARTOON_NETWORK_CHARACTERS
 ];
 
 export function findCharacterByName(input: string): CharacterDefinition | null {
@@ -700,7 +1049,9 @@ export function enhancePromptWithCharacter(prompt: string): string {
           'marvel': 'Marvel Comics/MCU',
           'dc': 'DC Comics/DCEU',
           'gaming': 'Video Games',
-          'anime': 'Anime'
+          'anime': 'Anime',
+          'disney': 'Disney',
+          'cartoon_network': 'Cartoon Network'
         }[character.category] || character.category;
         
         let weaponNote = '';
