@@ -1,3 +1,421 @@
+export const MULTI_LEVEL_TEXTURE_SYSTEM = `
+🔥 MULTI-LEVEL TEXTURE MASTERY SYSTEM 🔥
+
+This advanced system enables precise texture application for ANY material on ANY surface in ANY form and shape.
+Textures can be applied with multi-level detail, from macro structures to micro surface variations.
+
+═══════════════════════════════════════════════════════════════════════════════
+💥 DYNAMIC & ELEMENTAL TEXTURES
+═══════════════════════════════════════════════════════════════════════════════
+
+🔥 FIRE TEXTURES (Multi-Level Detail):
+
+   MACRO LEVEL (Overall Structure):
+   - Flame shape: Teardrop form with turbulent edges
+   - Heat distortion: Visible air shimmer and refraction around flames
+   - Light emission: Bright orange/yellow core fading to red edges
+   - Smoke integration: Dark smoke trails rising from flame tops
+   - Directional flow: Flames bend with wind/movement
+   
+   MESO LEVEL (Mid-Scale Detail):
+   - Flame tendrils: Individual flame tongues curling and dancing
+   - Color gradation: Smooth transitions from white-hot center to cooler red edges
+   - Ember particles: Floating bright sparks and ash particles
+   - Heat waves: Visible distortion of background through heated air
+   - Flicker patterns: Organic, never-static movement
+   
+   MICRO LEVEL (Fine Detail):
+   - Incandescent edges: Sharp bright lines where flames meet air
+   - Ash texture: Fine powder settling on surfaces
+   - Char marks: Blackened, carbonized surface edges
+   - Glow mapping: Subsurface glow on translucent materials
+   - Spectral colors: Blue at hottest points, orange-yellow mid-range, red at coolest
+
+   APPLICATION TYPES:
+   - Surface fire: Flames on top of objects (burning wood, buildings)
+   - Engulfed fire: Object completely surrounded by flames
+   - Fire trail: Moving fire path (fire whip, flaming sword trail)
+   - Explosion fire: Rapid expanding fireball with shockwave
+   - Controlled fire: Torches, candles, contained flame
+
+❄️ ICE TEXTURES (Multi-Level Detail):
+
+   MACRO LEVEL:
+   - Ice formation: Solid crystalline structure
+   - Frost patterns: Dendritic (tree-like) crystal growth
+   - Transparency: Clear to cloudy depending on ice type
+   - Crack patterns: Natural stress fractures radiating outward
+   - Frozen elements: Objects trapped within ice visible through surface
+   
+   MESO LEVEL:
+   - Crystal facets: Geometric ice crystal surfaces reflecting light
+   - Internal bubbles: Trapped air creating opacity variations
+   - Melt patterns: Water droplets and rivulets on warming ice
+   - Frost coverage: White crystalline coating on surfaces
+   - Icicle formations: Hanging ice spikes with drip patterns
+   
+   MICRO LEVEL:
+   - Ice sparkle: Light refraction through crystal surfaces
+   - Frost detail: Delicate hexagonal crystal structures visible up close
+   - Surface roughness: Microscopic texture creating light scatter
+   - Water interaction: Thin water film between ice and surface
+   - Cold vapor: Visible fog/mist from temperature differential
+
+   APPLICATION TYPES:
+   - Frozen solid: Object completely transformed to ice
+   - Ice coating: Thin layer of ice over original surface
+   - Frost coverage: White crystalline coating without full freezing
+   - Ice crystal growth: Geometric crystals growing from surface
+   - Glacial ice: Dense, blue-tinted ancient ice
+
+🌍 EARTH & DIRT TEXTURES (Multi-Level Detail):
+
+   MACRO LEVEL:
+   - Soil type: Clay, sand, loam, rocky mixture
+   - Moisture level: Dry and dusty vs wet and muddy
+   - Aggregate size: Fine powder, sandy grains, rocky chunks
+   - Organic content: Roots, leaves, decomposed matter
+   - Compaction: Loose powder vs packed hard earth
+   
+   MESO LEVEL:
+   - Dirt clumps: Irregular aggregated soil particles
+   - Stone inclusions: Rocks and pebbles embedded in soil
+   - Root structures: Visible plant roots threading through dirt
+   - Worm trails: Small tunnels and disturbed soil patterns
+   - Layering: Visible soil strata with different colors/textures
+   
+   MICRO LEVEL:
+   - Particle texture: Individual sand grains, silt, clay platelets
+   - Mineral glints: Tiny reflective mineral crystals
+   - Organic fibers: Fine plant material and decomposed matter
+   - Moisture beading: Water droplets on soil particles
+   - Dust coating: Fine powder layer on top of soil
+
+   APPLICATION TYPES:
+   - Dirt coating: Thin layer of dust/mud on clean surface
+   - Mud splatter: Random spray pattern of wet dirt
+   - Earth burial: Object partially/fully embedded in soil
+   - Erosion pattern: Dirt accumulation in crevices and edges
+   - Dried mud cracks: Geometric cracking pattern in dried clay
+
+🏗️ CEMENT & CONCRETE TEXTURES (Multi-Level Detail):
+
+   MACRO LEVEL:
+   - Concrete type: Smooth troweled vs rough poured
+   - Age and weathering: Fresh gray vs aged and stained
+   - Structural form: Flat slabs, walls, pillars, blocks
+   - Damage pattern: Cracks, spalling, exposed rebar
+   - Surface finish: Smooth, brushed, stamped, exposed aggregate
+   
+   MESO LEVEL:
+   - Aggregate exposure: Stones visible in surface
+   - Form marks: Imprints from wooden forms/molds
+   - Trowel lines: Subtle marks from finishing process
+   - Crack networks: Interconnected stress fractures
+   - Staining: Rust, water, efflorescence (white mineral deposits)
+   
+   MICRO LEVEL:
+   - Pore texture: Microscopic air bubbles in cement
+   - Sand grain: Fine aggregate particles in matrix
+   - Surface roughness: Subtle texture from cement paste
+   - Dust accumulation: Fine powder in surface irregularities
+   - Micro-cracks: Hairline fractures from aging
+
+   APPLICATION TYPES:
+   - Fresh concrete: Smooth, uniform gray surface
+   - Industrial concrete: Rough, functional finish
+   - Decorative concrete: Stamped patterns, colored, polished
+   - Damaged concrete: Broken, cracked, crumbling
+   - Weathered concrete: Aged, stained, moss-covered
+
+⚙️ METAL TEXTURES (Multi-Level Detail - Expanded):
+
+   MACRO LEVEL:
+   - Metal type: Steel, aluminum, copper, brass, iron
+   - Surface treatment: Polished, brushed, hammered, cast
+   - Age condition: New and shiny vs old and patinated
+   - Structural form: Sheet, tube, I-beam, plate, wire
+   - Damage type: Dents, scratches, rust, corrosion
+   
+   MESO LEVEL:
+   - Weld seams: Metal joining marks with characteristic patterns
+   - Rivet patterns: Mechanical fasteners creating regular spacing
+   - Brush lines: Directional grain from metal finishing
+   - Rust bloom: Irregular oxidation spreading across surface
+   - Surface dimples: Hammered or textured metal work
+   
+   MICRO LEVEL:
+   - Grain structure: Crystalline metal structure visible when polished
+   - Micro-scratches: Fine surface abrasion from wear
+   - Oxide film: Thin colored layer on reactive metals
+   - Reflection quality: Sharp specular highlights from smooth areas
+   - Pitting: Tiny corrosion holes in degraded metal
+
+   APPLICATION TYPES:
+   - Chrome plating: Mirror-like reflective coating
+   - Rust coating: Iron oxide texture over steel
+   - Brushed metal: Linear grain pattern surface
+   - Hammered metal: Dimpled, artisan-worked surface
+   - Patina: Aged copper green oxidation layer
+   - Galvanized: Zinc-coated with crystalline pattern
+   - Anodized: Color-treated aluminum with even finish
+
+🧊 PLASTIC TEXTURES (Multi-Level Detail):
+
+   MACRO LEVEL:
+   - Plastic type: ABS, polycarbonate, acrylic, PVC, polyethylene
+   - Surface finish: Glossy, matte, textured, soft-touch
+   - Color type: Solid, translucent, transparent, metallic
+   - Manufacturing marks: Mold lines, parting lines, gate marks
+   - Age degradation: UV yellowing, stress whitening, crazing
+   
+   MESO LEVEL:
+   - Mold texture: Surface pattern from injection mold
+   - Scratches: Light surface abrasion showing subsurface color
+   - Stress marks: White stress concentration areas
+   - Texture pattern: Intentional surface patterning (leather grain, etc.)
+   - Wear polish: Shiny areas from repeated contact
+   
+   MICRO LEVEL:
+   - Surface sheen: Subtle specular reflection characteristics
+   - Micro-texture: Fine surface roughness creating matte appearance
+   - Contaminant particles: Dust, oils embedding in surface
+   - Static charge effects: Dust attraction on charged surfaces
+   - Transparency variation: Internal structure affecting light transmission
+
+   APPLICATION TYPES:
+   - Glossy injection molded: Shiny, smooth plastic parts
+   - Soft-touch coating: Rubber-like tactile surface
+   - Textured plastic: Grain pattern for grip or aesthetics
+   - Aged yellowed plastic: UV-degraded vintage electronics
+   - Flexible plastic: Soft, bendable material (bags, films)
+
+═══════════════════════════════════════════════════════════════════════════════
+🌊 LIQUID & FLUID TEXTURES
+═══════════════════════════════════════════════════════════════════════════════
+
+💧 WATER TEXTURES:
+   - Still water: Mirror-like reflection with slight ripples
+   - Flowing water: Directional ripples, white foam, turbulence
+   - Splashing water: Droplets, spray, impact crowns
+   - Rain: Streaks, drops, splash patterns, wet surfaces
+   - Waves: Rolling surface, foam caps, depth variations
+
+🛢️ OIL TEXTURES:
+   - Oil slick: Rainbow iridescence, smooth viscous flow
+   - Motor oil: Dark, glossy, thick consistency
+   - Grease: Thick, sticky, holds shape, attracted to dirt
+
+🩸 BLOOD TEXTURES:
+   - Fresh blood: Wet, glossy, bright red, flows easily
+   - Dried blood: Dark brown, matte, cracked surface
+   - Blood splatter: Spray pattern, drips, pooling
+
+═══════════════════════════════════════════════════════════════════════════════
+🌿 ORGANIC & NATURAL TEXTURES
+═══════════════════════════════════════════════════════════════════════════════
+
+🌲 WOOD GRAIN (Enhanced Detail):
+   - Grain pattern: Straight, wavy, curly, burled, figured
+   - Growth rings: Annual rings visible in cross-section
+   - Knots: Circular defects from branches
+   - Ray flecks: Radial grain patterns in quartersawn wood
+   - Spalting: Colored lines from fungal staining
+   - Weathering: Gray surface, raised grain, checking
+
+🪵 BARK TEXTURES:
+   - Rough bark: Deep fissures, irregular chunks, rough surface
+   - Smooth bark: Thin, papery, peeling in sheets
+   - Cork bark: Spongy, deeply textured, insulating
+
+🌾 GRASS & VEGETATION:
+   - Grass blades: Individual blade definition with varied angles
+   - Leaf texture: Veins, edges, surface texture, curling
+   - Moss: Soft, fuzzy, green coating on surfaces
+   - Lichen: Crusty, circular growth on rocks/trees
+
+🪨 ROCK & STONE (Enhanced Detail):
+   - Granite: Crystalline, speckled, hard, polished capability
+   - Limestone: Porous, sedimentary layers, soft edges
+   - Sandstone: Sandy texture, warm colors, easily eroded
+   - Marble: Veined, metamorphic, polishable, translucent
+   - Basalt: Volcanic, dark, fine-grained, columnar jointing
+   - Slate: Layered, splits cleanly, smooth flat surfaces
+
+═══════════════════════════════════════════════════════════════════════════════
+🎨 SPECIALIZED SURFACE TREATMENTS
+═══════════════════════════════════════════════════════════════════════════════
+
+🎭 PAINTED SURFACES:
+   - Fresh paint: Smooth, even, glossy or matte finish
+   - Aged paint: Fading, chalking, dirt accumulation
+   - Peeling paint: Curled edges, exposed underlayers
+   - Spray paint: Overspray, drips, uneven coverage
+   - Powder coat: Tough, even, slightly textured finish
+
+💎 CARBON FIBER:
+   - Weave pattern: Visible carbon fiber cloth texture
+   - Resin finish: Glossy clear coat over fabric
+   - 3K/6K/12K weave: Different fabric densities
+   - Directional light: Shimmer changes with viewing angle
+
+🌟 HOLOGRAPHIC & OPTICAL:
+   - Diffraction grating: Rainbow color shift with angle
+   - Prismatic: Multi-color light splitting
+   - Mirror chrome: Perfect environmental reflection
+   - Iridescent: Color shift like oil on water or soap bubble
+
+🔬 MICROSCOPIC TEXTURES:
+   - Pollen grains: Spherical, spiky surface structures
+   - Cell structure: Organic cellular patterns
+   - Crystal lattice: Geometric atomic arrangements
+   - Bacterial colonies: Organic clustered growth
+
+═══════════════════════════════════════════════════════════════════════════════
+🎯 UNIVERSAL TEXTURE APPLICATION PROTOCOL
+═══════════════════════════════════════════════════════════════════════════════
+
+When applying ANY texture to ANY surface:
+
+1️⃣ IDENTIFY TARGET SURFACE:
+   - What object/surface is receiving the texture?
+   - What is the current material of the target?
+   - What is the shape and form of the surface?
+   - Are there existing features to preserve?
+
+2️⃣ DEFINE TEXTURE LEVELS:
+   - MACRO: Overall structure and major features (1m - 10cm scale)
+   - MESO: Mid-level details and patterns (10cm - 1mm scale)
+   - MICRO: Fine surface texture and micro-features (1mm - 0.01mm scale)
+
+3️⃣ APPLY TEXTURE WITH FORM FITTING:
+   - Texture follows the 3D contours of the surface
+   - Perspective and foreshortening applied correctly
+   - Shadows and highlights match texture relief
+   - Edge transitions are natural and believable
+
+4️⃣ LIGHTING INTEGRATION:
+   - Texture responds to scene lighting direction
+   - Specular highlights appropriate for material type
+   - Subsurface scattering for translucent materials
+   - Cast shadows from texture relief
+   - Ambient occlusion in crevices and recesses
+
+5️⃣ ENVIRONMENTAL INTEGRATION:
+   - Texture weathering matches environment
+   - Dirt/dust accumulation in appropriate areas
+   - Wear patterns in high-contact zones
+   - Environmental effects (rust near water, sun fading, etc.)
+
+6️⃣ PHYSICAL ACCURACY:
+   - Material properties are scientifically correct
+   - Texture scale is appropriate for object size
+   - Behavior matches real-world physics
+   - No impossible or contradictory features
+
+═══════════════════════════════════════════════════════════════════════════════
+🔥 ADVANCED TEXTURE COMBINATION EXAMPLES
+═══════════════════════════════════════════════════════════════════════════════
+
+EXAMPLE 1: RUSTY METAL WITH PEELING PAINT
+- Base: Steel metal texture with micro-scratches
+- Mid-layer: Rust blooms spreading from edges and scratches
+- Top-layer: Peeling paint with curled edges revealing rust
+- Detail: Fresh scratches through paint showing bare metal
+- Weathering: Dirt accumulation in texture recesses
+
+EXAMPLE 2: FROZEN OBJECT WITH ICE BUILDUP
+- Base: Original object material preserved
+- Ice coating: Semi-transparent ice layer conforming to shape
+- Frost: White crystalline coating on ice surface
+- Icicles: Hanging ice formations on bottom edges
+- Frozen droplets: Spherical ice beads on surface
+
+EXAMPLE 3: DIRT-COVERED CONCRETE WALL
+- Concrete base: Rough poured texture with aggregate
+- Staining: Water runs, rust streaks, efflorescence
+- Dirt: Mud splatter pattern, dust coating in crevices
+- Organic: Moss growth in damp areas, algae staining
+- Damage: Cracks, spalling, exposed rebar with rust
+
+EXAMPLE 4: BURNING WOOD OBJECT
+- Wood base: Grain pattern and knots visible
+- Char layer: Blackened carbonized surface
+- Active flames: Fire dancing across surface
+- Embers: Glowing orange cracks in charred wood
+- Smoke: Dark smoke rising from burning areas
+- Ash: White/gray ash settling on surface
+
+═══════════════════════════════════════════════════════════════════════════════
+💡 TEXTURE MODIFICATION MODIFIERS
+═══════════════════════════════════════════════════════════════════════════════
+
+These modifiers can be applied to ANY base texture:
+
+🔥 FIRE EFFECTS:
+- "engulfed in flames" - completely surrounded by fire
+- "fire trail" - moving fire path following object
+- "smoldering" - smoking with ember glow, no active flames
+- "explosion" - rapid expanding fireball effect
+
+❄️ ICE EFFECTS:
+- "frozen solid" - completely transformed to ice
+- "ice-coated" - thin transparent ice layer
+- "frost-covered" - white crystalline coating
+- "melting" - water dripping, partial ice coverage
+
+🌍 DIRT EFFECTS:
+- "mud-splattered" - random spray pattern
+- "dusty" - fine powder coating
+- "dirt-caked" - thick caked-on dirt layer
+- "buried" - partially embedded in earth
+
+🦠 DECAY EFFECTS:
+- "rusted" - iron oxide corrosion
+- "corroded" - chemical degradation
+- "weathered" - aged by environmental exposure
+- "rotted" - organic decomposition
+
+💥 DAMAGE EFFECTS:
+- "cracked" - stress fractures
+- "shattered" - broken into fragments
+- "dented" - impact deformation
+- "scratched" - surface abrasion marks
+
+═══════════════════════════════════════════════════════════════════════════════
+🎯 EXECUTION GUARANTEE
+═══════════════════════════════════════════════════════════════════════════════
+
+This multi-level texture system can apply ANY texture to ANY object in ANY form:
+
+✅ ANY Material: Fire, ice, dirt, cement, metal, plastic, wood, stone, fabric, liquid
+✅ ANY Surface: Flat, curved, complex shapes, organic forms, geometric objects
+✅ ANY Scale: Microscopic details to massive structures
+✅ ANY Context: Indoor, outdoor, space, underwater, fantasy, sci-fi
+✅ ANY Combination: Multiple textures layered and blended naturally
+✅ ANY Level: Simple coating to complex multi-layer weathering
+
+🔬 PHOTOREALISTIC RENDERING:
+All textures are rendered with:
+- Physically accurate light interaction
+- Proper material properties (roughness, metallic, etc.)
+- Scientifically correct surface behavior
+- Natural environmental integration
+- Seamless application to target surface
+- Perfect perspective and distortion
+- Authentic detail at all scales
+
+🎨 ARTISTIC CONTROL:
+Textures can be applied with precision control:
+- Coverage area (full, partial, specific regions)
+- Intensity (subtle to extreme)
+- Age/weathering level (fresh to ancient)
+- Damage extent (pristine to destroyed)
+- Environmental context (wet, dry, hot, cold)
+
+This system ensures that EVERY texture application is photorealistic, physically accurate, and seamlessly integrated into the image.
+`;
+
 export const materialsKnowledge = `
 🎨 COMPREHENSIVE MATERIALS & TEXTURES INTELLIGENCE SYSTEM
 
@@ -532,10 +950,26 @@ export function enhancePromptWithMaterialsKnowledge(prompt: string): string {
     'brushed', 'polished', 'oxidized', 'frosted', 'textured'
   ];
   
-  const hasMaterialRequest = materialKeywords.some(keyword => lower.includes(keyword));
+  // Check for multi-level texture keywords (fire, ice, dirt, etc.)
+  const textureKeywords = [
+    'fire', 'flame', 'burning', 'blaze', 'inferno', 'ember', 'ignite',
+    'ice', 'frozen', 'frost', 'icicle', 'glacial', 'freeze',
+    'dirt', 'mud', 'soil', 'earth', 'dust', 'grime', 'filth',
+    'cement', 'concrete', 'mortar', 'plaster',
+    'plastic', 'polymer', 'acrylic', 'vinyl',
+    'rust', 'rusty', 'corrode', 'corrosion', 'oxidize', 'patina',
+    'crack', 'cracked', 'broken', 'shatter', 'damage',
+    'wet', 'water', 'rain', 'splash', 'drip', 'flow',
+    'moss', 'algae', 'lichen', 'mold', 'organic growth',
+    'weathered', 'aged', 'worn', 'eroded', 'decay'
+  ];
   
-  if (hasMaterialRequest) {
-    return `${prompt}\n\n${materialsKnowledge}`;
+  const hasMaterialRequest = materialKeywords.some(keyword => lower.includes(keyword));
+  const hasTextureRequest = textureKeywords.some(keyword => lower.includes(keyword));
+  
+  if (hasMaterialRequest || hasTextureRequest) {
+    // Include both the multi-level texture system AND the original materials knowledge
+    return `${prompt}\n\n${MULTI_LEVEL_TEXTURE_SYSTEM}\n\n${materialsKnowledge}`;
   }
   
   return prompt;
