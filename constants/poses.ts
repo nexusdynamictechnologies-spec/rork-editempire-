@@ -80,7 +80,7 @@ export const posePresets: Record<PoseCategoryKey, PoseCategory> = {
         key: 'action-fighting',
         label: 'Fighting Stance',
         emoji: '🥊',
-        prompt: 'Combat stance: feet staggered, fists raised, ready position',
+        prompt: 'Advanced combat stance: Modern boxing or UFC fighting position with multiple variations - orthodox stance (left foot forward, right hand back for power), southpaw stance (right foot forward), Philly shell defensive position (shoulder rolled, lead hand low, rear hand protecting chin), peek-a-boo style (high guard, hands protecting face), MMA ready stance (balanced for striking and grappling, hands up, feet mobile), brawler stance (aggressive forward lean, both hands ready to throw), war-ready posture (intimidating presence, intense focus, body coiled like a spring ready to explode), professional fighter conditioning visible in muscle definition and stance stability',
       },
       {
         key: 'action-hero-landing',
