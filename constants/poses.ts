@@ -1,4 +1,4 @@
-export type PoseCategoryKey = 'Standing' | 'Action' | 'Sitting' | 'Crouching' | 'Dynamic';
+export type PoseCategoryKey = 'Standing' | 'Action' | 'Seated' | 'Dynamic';
 
 export interface PosePresetItem {
   key: string;
@@ -12,238 +12,157 @@ export interface PoseCategory {
   items: PosePresetItem[];
 }
 
-export const PRECISION_POSE_SYSTEM_PROMPT = `🎯 POSE TRANSFORMATION - ULTRA-REALISTIC CHARACTER POSITIONING:
+export const PRECISION_POSE_SYSTEM_PROMPT = `🎯 POSE GENERATION SYSTEM:
 
-You are generating multiple camera angle views of the SAME character in a specific pose. This is a pose transformation system that shows the character from different perspectives.
+Generate the character in the specified pose from the requested camera angle.
 
-🚨 CRITICAL REQUIREMENTS:
-1. KEEP IDENTITY PERFECT: Face, body, clothing, hair, accessories stay EXACTLY the same
-2. KEEP BACKGROUND: Same environment, lighting, and scene context
-3. CHANGE ONLY POSE: Transform body position and camera angle as specified
-4. FULL BODY FOCUS: Show complete body from head to toe (or close to it depending on pose)
-5. NATURAL TRANSITIONS: Pose should look natural and physically possible
+✅ PRESERVE:
+- Character identity (same face, body, clothing, hair)
+- Background environment and lighting
+- Natural appearance and realism
 
-💎 MULTI-ANGLE GENERATION:
-For each angle view, you must generate the character in the SAME pose but from different camera perspectives:
-- Front View: Face and front of body clearly visible
-- Left Side: 90° profile from left side
-- Right Side: 90° profile from right side  
-- Back View: Back of head and body visible
+⚡ POSE EXECUTION:
+- Apply the specified pose naturally
+- Show full body from head to feet
+- Maintain anatomically correct positioning
+- Natural clothing drape and hair flow
 
-⚡ POSE ACCURACY:
-- Body positioning must match the pose description exactly
-- Weight distribution and balance must be anatomically correct
-- Limb positions must be natural and achievable
-- Clothing should drape naturally based on pose and gravity
-- Hair should fall naturally based on head position
-
-✨ MAINTAIN CONSISTENCY:
-Across all angle views, these must stay IDENTICAL:
-- Character's face and identity
-- Clothing and accessories
-- Hairstyle (though angle may change appearance)
-- Body proportions
-- Background environment
-- Lighting conditions
-- Overall mood and atmosphere`;
+📸 CAMERA ANGLE:
+- Match the requested viewing perspective precisely
+- Maintain photorealistic quality`;
 
 export const posePresets: Record<PoseCategoryKey, PoseCategory> = {
   Standing: {
-    label: 'Standing Poses',
+    label: 'Standing',
     items: [
       {
-        key: 'stand-straight',
-        label: 'Standing Straight',
+        key: 'stand-neutral',
+        label: 'Neutral Stand',
         emoji: '🧍',
-        prompt: 'Character standing upright with perfect posture, feet shoulder-width apart, arms relaxed at sides, neutral expression, full body visible from head to toe, confident stance, natural weight distribution',
+        prompt: 'Standing upright, feet shoulder-width apart, arms relaxed at sides',
       },
       {
-        key: 'stand-contrapposto',
-        label: 'Contrapposto',
-        emoji: '💃',
-        prompt: 'Character in classic contrapposto pose: weight on one leg (back leg), other leg relaxed with bent knee, hips tilted, shoulders opposing hip angle, one shoulder slightly higher, arms relaxed, elegant S-curve posture, full body visible',
-      },
-      {
-        key: 'stand-arms-crossed',
-        label: 'Arms Crossed',
+        key: 'stand-confident',
+        label: 'Confident',
         emoji: '💪',
-        prompt: 'Character standing with arms crossed over chest, confident stance, feet shoulder-width apart, slight lean back, direct eye contact with camera, full body visible, authoritative but approachable demeanor',
+        prompt: 'Arms crossed over chest, confident stance, feet apart',
       },
       {
         key: 'stand-hands-hips',
         label: 'Hands on Hips',
         emoji: '🙌',
-        prompt: 'Character standing with hands on hips (power pose), elbows out to sides, chest slightly forward, confident stance, feet shoulder-width apart, full body visible, assertive energy',
+        prompt: 'Hands on hips, elbows out, chest forward, power pose',
       },
       {
-        key: 'stand-hands-pockets',
-        label: 'Hands in Pockets',
+        key: 'stand-casual',
+        label: 'Casual',
         emoji: '🧥',
-        prompt: 'Character standing casually with hands in pockets, relaxed posture, slight hip shift to one side, weight on one leg, shoulders relaxed, full body visible, casual and approachable vibe',
-      },
-      {
-        key: 'stand-leaning',
-        label: 'Leaning Pose',
-        emoji: '🚶',
-        prompt: 'Character standing and leaning against invisible wall or support, one shoulder back, arms crossed or one hand in pocket, relaxed stance, full body visible, casual and cool demeanor',
+        prompt: 'Hands in pockets, relaxed posture, weight on one leg',
       },
     ],
   },
   Action: {
-    label: 'Action Poses',
+    label: 'Action',
     items: [
       {
         key: 'action-running',
         label: 'Running',
         emoji: '🏃',
-        prompt: 'Character in dynamic running pose: one leg forward with bent knee, other leg back extended, arms pumping opposite to legs, torso slightly forward, hair and clothing showing motion, full body visible, athletic energy',
+        prompt: 'Dynamic running: one leg forward, other back, arms pumping, forward lean',
       },
       {
         key: 'action-jumping',
         label: 'Jumping',
         emoji: '🤸',
-        prompt: 'Character mid-jump with both feet off ground, knees bent, arms raised or extended for balance, body airborne, hair floating upward, clothing showing upward motion, full body visible including ground shadow, dynamic energy',
+        prompt: 'Mid-jump: both feet off ground, arms extended for balance, airborne',
       },
       {
         key: 'action-fighting',
         label: 'Fighting Stance',
         emoji: '🥊',
-        prompt: 'Character in martial arts or boxing stance: feet staggered one forward one back, knees bent, fists raised near face in guard position, weight distributed for quick movement, focused expression, full body visible, combat-ready posture',
+        prompt: 'Combat stance: feet staggered, fists raised, ready position',
       },
       {
-        key: 'action-superhero',
-        label: 'Superhero Landing',
+        key: 'action-hero-landing',
+        label: 'Hero Landing',
         emoji: '🦸',
-        prompt: 'Character in superhero landing pose: one knee on ground, other leg extended to side, one fist on ground for support, other arm back, head tilted down with eyes looking up, powerful dramatic pose, full body visible, heroic energy',
-      },
-      {
-        key: 'action-dancing',
-        label: 'Dancing',
-        emoji: '💃',
-        prompt: 'Character in mid-dance pose: body twisted with dynamic motion, one arm raised, other arm out to side, one leg supporting weight, other leg extended or stepped, flowing movement, hair and clothing showing motion, full body visible, joyful energy',
-      },
-      {
-        key: 'action-kicking',
-        label: 'Kicking',
-        emoji: '🦵',
-        prompt: 'Character executing high kick: standing leg planted firmly, kicking leg extended upward to waist or chest height, arms positioned for balance, torso leaning slightly back, focused expression, full body visible, martial arts energy',
+        prompt: 'Superhero landing: one knee down, fist on ground, powerful pose',
       },
     ],
   },
-  Sitting: {
-    label: 'Sitting Poses',
+  Seated: {
+    label: 'Seated',
     items: [
       {
         key: 'sit-chair',
-        label: 'Chair Sitting',
+        label: 'On Chair',
         emoji: '🪑',
-        prompt: 'Character sitting on chair: back straight or slightly leaning back, feet flat on floor, hands on thighs or armrests, comfortable posture, full body visible from head to feet, relaxed demeanor',
+        prompt: 'Sitting on chair: back straight, feet flat on floor, hands on thighs',
       },
       {
         key: 'sit-crosslegged',
         label: 'Cross-Legged',
         emoji: '🧘',
-        prompt: 'Character sitting on floor in cross-legged position (lotus or casual), back straight, hands resting on knees or in lap, centered balance, full body visible, meditative or relaxed vibe',
-      },
-      {
-        key: 'sit-floor-legs-side',
-        label: 'Sitting Legs to Side',
-        emoji: '👸',
-        prompt: 'Character sitting on floor with both legs bent to one side, one hand supporting body behind, other hand resting on thigh or lap, elegant posture, full body visible, graceful feminine pose',
+        prompt: 'Sitting cross-legged on floor: back straight, hands on knees',
       },
       {
         key: 'sit-edge',
-        label: 'Sitting on Edge',
+        label: 'Edge Sitting',
         emoji: '🏗️',
-        prompt: 'Character sitting on edge of elevated surface (wall, platform): legs dangling down, hands beside body or one behind for support, casual relaxed posture, full body visible, carefree vibe',
+        prompt: 'Sitting on edge: legs dangling, casual relaxed posture',
       },
       {
         key: 'sit-one-knee-up',
         label: 'One Knee Up',
         emoji: '🦵',
-        prompt: 'Character sitting with one leg extended flat, other leg bent with knee up near chest, arm wrapped around raised knee or hand resting on knee, casual comfortable pose, full body visible',
+        prompt: 'Sitting with one leg extended, other knee up near chest',
       },
-      {
-        key: 'sit-legs-crossed',
-        label: 'Legs Crossed Formal',
-        emoji: '💼',
-        prompt: 'Character sitting with legs crossed at knees (one ankle over other knee), back straight, hands in lap or on armrests, professional formal posture, full body visible, business demeanor',
-      },
-    ],
-  },
-  Crouching: {
-    label: 'Crouching Poses',
-    items: [
       {
         key: 'crouch-squat',
-        label: 'Deep Squat',
+        label: 'Squatting',
         emoji: '🦆',
-        prompt: 'Character in deep squat position: knees bent fully, bottom close to ground, feet flat or on balls of feet, arms resting on knees or hanging between legs, balanced centered posture, full body visible',
+        prompt: 'Deep squat: knees bent fully, feet flat, balanced posture',
       },
       {
         key: 'crouch-one-knee',
-        label: 'One Knee Down',
+        label: 'Kneeling',
         emoji: '🤴',
-        prompt: 'Character kneeling on one knee: one leg bent with knee on ground, other leg bent with foot flat (90-degree angle), upright torso, hands on raised knee or at sides, full body visible, respectful or proposing stance',
-      },
-      {
-        key: 'crouch-ready',
-        label: 'Ready Crouch',
-        emoji: '🏃',
-        prompt: 'Character in athletic ready crouch: knees bent, torso leaning forward, arms ready at sides or forward, weight on balls of feet, coiled spring energy ready to move, full body visible, athletic stance',
-      },
-      {
-        key: 'crouch-sneaking',
-        label: 'Sneaking Crouch',
-        emoji: '🥷',
-        prompt: 'Character in low sneaking crouch: knees deeply bent, body low to ground, one foot forward, arms bent and ready, torso leaning forward, cautious expression, full body visible, stealthy demeanor',
-      },
-      {
-        key: 'crouch-examining',
-        label: 'Examining Ground',
-        emoji: '🔍',
-        prompt: 'Character crouched examining something on ground: knees bent, body leaning forward, one hand reaching toward ground or one knee down, focused downward gaze, full body visible, investigative pose',
+        prompt: 'Kneeling on one knee: other foot flat, upright torso',
       },
     ],
   },
   Dynamic: {
-    label: 'Dynamic Poses',
+    label: 'Dynamic',
     items: [
       {
         key: 'dynamic-reaching',
         label: 'Reaching Up',
         emoji: '🙋',
-        prompt: 'Character reaching upward with one or both arms fully extended overhead, body stretched tall, standing on tiptoes or flat feet, looking up at reaching point, full body visible, striving energy',
+        prompt: 'Reaching upward: arms extended overhead, body stretched tall',
       },
       {
         key: 'dynamic-pointing',
-        label: 'Pointing Forward',
+        label: 'Pointing',
         emoji: '👉',
-        prompt: 'Character pointing forward with arm extended, confident stance, other arm at side or on hip, direct forward gaze following pointing direction, full body visible, commanding presence',
+        prompt: 'Pointing forward: arm extended, confident stance',
       },
       {
         key: 'dynamic-victory',
-        label: 'Victory Pose',
+        label: 'Victory',
         emoji: '🎉',
-        prompt: 'Character in victory celebration: both arms raised high in V-shape, fists clenched or hands open, head tilted back or forward with triumphant expression, full body visible, celebrating energy',
+        prompt: 'Victory celebration: both arms raised high in V-shape',
       },
       {
         key: 'dynamic-beckoning',
         label: 'Beckoning',
         emoji: '👋',
-        prompt: 'Character beckoning or waving: one arm raised with hand gesturing "come here" motion or waving, friendly expression, other arm relaxed at side, welcoming stance, full body visible, inviting demeanor',
+        prompt: 'Beckoning or waving: one arm raised, welcoming gesture',
       },
       {
         key: 'dynamic-looking-back',
         label: 'Looking Back',
         emoji: '👀',
-        prompt: 'Character looking back over shoulder: body facing away or to side, head turned to look back at camera, one hand may reach up to hair or face, elegant twist in torso, full body visible, mysterious or flirty vibe',
-      },
-      {
-        key: 'dynamic-stretching',
-        label: 'Stretching',
-        emoji: '🤸',
-        prompt: 'Character stretching: arms extended overhead with hands clasped, torso arched back slightly, standing tall, relaxed expression, full body visible, awakening or relaxing energy',
+        prompt: 'Looking back over shoulder: body facing away, head turned back',
       },
     ],
   },
