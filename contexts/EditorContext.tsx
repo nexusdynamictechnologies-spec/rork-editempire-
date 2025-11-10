@@ -945,18 +945,18 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
 
     if (Platform.OS !== 'web' && (sanitizedUri.startsWith('file://') || sanitizedUri.startsWith('content://'))) {
       try {
-        if (!FileSystem || !FileSystem.readAsStringAsync || !FileSystem.EncodingType || !FileSystem.EncodingType.Base64) {
+        if (!FileSystem || !FileSystem.readAsStringAsync || typeof FileSystem.EncodingType !== 'object' || !FileSystem.EncodingType || !FileSystem.EncodingType.Base64) {
           console.warn('FileSystem Base64 not available, falling back to fetch');
-        } else {
-          const base64 = await FileSystem.readAsStringAsync(sanitizedUri, { encoding: FileSystem.EncodingType.Base64 });
-          if (!base64 || base64.length === 0) {
-            throw new Error('Empty file data');
-          }
-          if (base64.length > 50 * 1024 * 1024) {
-            console.warn('Large base64 data:', base64.length);
-          }
-          return base64;
+          throw new Error('FileSystem not available');
         }
+        const base64 = await FileSystem.readAsStringAsync(sanitizedUri, { encoding: FileSystem.EncodingType.Base64 });
+        if (!base64 || base64.length === 0) {
+          throw new Error('Empty file data');
+        }
+        if (base64.length > 50 * 1024 * 1024) {
+          console.warn('Large base64 data:', base64.length);
+        }
+        return base64;
       } catch (e) {
         console.error('readAsStringAsync failed, falling back to fetch:', e);
       }
@@ -1404,6 +1404,11 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
     try {
       if (uri.startsWith('data:')) {
         if (Platform.OS === 'web') {
+          return uri;
+        }
+        
+        if (!FileSystem || typeof FileSystem.EncodingType !== 'object' || !FileSystem.EncodingType || !FileSystem.EncodingType.Base64) {
+          console.warn('FileSystem not available on this platform, returning data URI as-is');
           return uri;
         }
         
