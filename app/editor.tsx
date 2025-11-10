@@ -1063,14 +1063,23 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
   }, [selectedFrameKey, frameBoxSize.width]);
 
   const panResponder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
+    onStartShouldSetPanResponder: (e) => {
+      console.log('🎯 onStartShouldSetPanResponder - isEditBoxMode:', isEditBoxMode, 'selectMode:', selectMode, 'selectedFrameKey:', selectedFrameKey);
+      return isEditBoxMode || selectMode === 'region' || !!selectedFrameKey;
+    },
+    onMoveShouldSetPanResponder: (e) => {
+      console.log('🎯 onMoveShouldSetPanResponder - isEditBoxMode:', isEditBoxMode, 'selectMode:', selectMode, 'selectedFrameKey:', selectedFrameKey);
+      return isEditBoxMode || selectMode === 'region' || !!selectedFrameKey;
+    },
     onPanResponderGrant: (e: GestureResponderEvent) => {
-      if (selectMode === 'region') {
+      console.log('🎯 onPanResponderGrant - isEditBoxMode:', isEditBoxMode, 'selectMode:', selectMode);
+      if (isEditBoxMode || selectMode === 'region') {
         const { locationX, locationY } = e.nativeEvent;
+        console.log('🎯 Touch location:', locationX, locationY, 'Image box size:', imageBoxSize);
         if (imageBoxSize.width > 0 && imageBoxSize.height > 0) {
           const nx = Math.min(Math.max(locationX / imageBoxSize.width, 0), 1);
           const ny = Math.min(Math.max(locationY / imageBoxSize.height, 0), 1);
+          console.log('🎯 Starting selection at normalized coords:', nx, ny);
           setSelectionRect({ x: nx, y: ny, width: 0.001, height: 0.001 });
         }
       } else if (selectedFrameKey && e.nativeEvent.touches.length >= 2) {
@@ -1085,8 +1094,9 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
       }
     },
     onPanResponderMove: (e: GestureResponderEvent, gestureState: PanResponderGestureState) => {
-      if (selectMode === 'region' && selectionRect) {
+      if ((isEditBoxMode || selectMode === 'region') && selectionRect) {
         const { locationX, locationY } = e.nativeEvent;
+        console.log('🎯 Touch move:', locationX, locationY);
         if (imageBoxSize.width > 0 && imageBoxSize.height > 0) {
           const nx = Math.min(Math.max(locationX / imageBoxSize.width, 0), 1);
           const ny = Math.min(Math.max(locationY / imageBoxSize.height, 0), 1);
@@ -1094,6 +1104,7 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
           const y = Math.min(selectionRect.y, ny);
           const w = Math.abs(nx - selectionRect.x);
           const h = Math.abs(ny - selectionRect.y);
+          console.log('🎯 Updating selection rect:', { x, y, width: w, height: h });
           setSelectionRect({ x, y, width: Math.max(0.01, w), height: Math.max(0.01, h) });
         }
       } else if (selectedFrameKey) {
@@ -1122,13 +1133,20 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
       }
     },
     onPanResponderRelease: () => {
+      console.log('🎯 onPanResponderRelease - selection completed');
+      if (selectionRect && (isEditBoxMode || selectMode === 'region')) {
+        console.log('🎯 Final selection rect:', selectionRect);
+        if (Platform.OS !== 'web') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+      }
       if (isPinching.current && Platform.OS !== 'web') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
       isPinching.current = false;
       initialTouchDistance.current = 0;
     },
-  }), [imageBoxSize.width, imageBoxSize.height, selectMode, selectionRect, selectedFrameKey, imageScale, imagePositionX, imagePositionY, constrainPosition]);
+  }), [imageBoxSize.width, imageBoxSize.height, selectMode, selectionRect, selectedFrameKey, imageScale, imagePositionX, imagePositionY, constrainPosition, isEditBoxMode]);
 
   const renderToolContent = () => {
     switch (toolMode) {
@@ -1948,6 +1966,7 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                 setImageBoxSize({ width, height });
               }}
               style={StyleSheet.absoluteFill}
+              pointerEvents={isEditBoxMode ? 'auto' : selectedFrameKey ? 'auto' : 'none'}
               {...panResponder.panHandlers}
             />
             {selectedFrame ? (
