@@ -1367,10 +1367,10 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                       console.log('📸 Generating 4 angle views: front, left side, right side, back');
                       
                       const angles = [
-                        { name: 'Front View', prompt: 'FRONT VIEW: Camera directly facing the character showing full face, both eyes visible, head-on forward-facing angle. The hairstyle frames the face from the front.' },
-                        { name: 'Left Side View', prompt: 'LEFT SIDE VIEW: Camera positioned at the LEFT side of the character at exactly 90° angle. Shows the LEFT profile - left ear, left side of face, left side of hairstyle. The character is turned to show their left side to the camera.' },
-                        { name: 'Right Side View', prompt: 'RIGHT SIDE VIEW: Camera positioned at the RIGHT side of the character at exactly 90° angle. Shows the RIGHT profile - right ear, right side of face, right side of hairstyle. The character is turned to show their right side to the camera.' },
-                        { name: 'Back View', prompt: 'BACK VIEW: Camera behind the character showing the back of the head, back of hairstyle, and shoulders from behind. No face visible, only the back of the head and hair.' }
+                        { name: 'Front View', prompt: 'ANGLE: Front view, face forward, both eyes visible.' },
+                        { name: 'Left Side View', prompt: 'ANGLE: Left side profile at 90°, left ear visible.' },
+                        { name: 'Right Side View', prompt: 'ANGLE: Right side profile at 90°, right ear visible.' },
+                        { name: 'Back View', prompt: 'ANGLE: Back view, back of head visible, no face.' }
                       ];
                       
                       const generatedImages: string[] = [];
@@ -1381,8 +1381,7 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                         setStatusMessage(`🎨 Generating ${angle.name} (${i + 1}/${angles.length})...`);
                         setStatusType('info');
                         
-                        const angleSpecificPrompt = PRECISION_HAIRSTYLE_SYSTEM_PROMPT + '\n\n' + selectedHairstyle.prompt + 
-                          `\n\n🎯 CRITICAL CAMERA ANGLE & BACKGROUND PRESERVATION:\n${angle.prompt}\n\n📸 ANGLE REQUIREMENTS:\n- Rotate ONLY the character to show this specific viewing angle\n- Keep camera and perspective locked - the character turns, not the camera\n- Generate distinct and accurate angle views - left side must show LEFT, right side must show RIGHT\n\n🎨 PRESERVATION REQUIREMENTS:\n- Background: Preserve the EXACT same background from original image. Extend or adapt the background naturally and intelligently to fit the new character angle. Match lighting, colors, and atmosphere precisely.\n- Character: Maintain identical facial features, skin tone, body proportions, clothing, and accessories\n- Hairstyle: Apply the new hairstyle consistently across all angles while keeping texture, color, and style uniform\n- Lighting: Keep the same lighting direction, intensity, color temperature, and shadow patterns\n- Quality: Professional photo-realistic quality with natural integration`;
+                        const angleSpecificPrompt = PRECISION_HAIRSTYLE_SYSTEM_PROMPT + ' ' + selectedHairstyle.prompt + ' ' + angle.prompt + ' Character turns to show angle, camera stays fixed. Extend background naturally to match angle.';
                         
                         try {
                           const result = await generateEdit({
@@ -1592,105 +1591,7 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                         setStatusMessage(`🎨 Generating ${angle.name} (${i + 1}/${angles.length})...`);
                         setStatusType('info');
                         
-                        // ULTRA-ADVANCED POSE PROMPT WITH ABSOLUTE PRESERVATION
-                        const angleSpecificPrompt = `🎯 ULTRA-PRECISION POSE GENERATION WITH ABSOLUTE PRESERVATION
-
-⚡ PRIMARY DIRECTIVE:
-Generate the character in the specified pose from the requested camera angle while maintaining ABSOLUTE FIDELITY to the original image for ALL elements except body position.
-
-📸 CAMERA ANGLE: ${angle.prompt}
-
-🧘 POSE DETAILS: ${selectedPose.prompt}
-
-🔒 CRITICAL PRESERVATION PROTOCOL - ZERO TOLERANCE FOR CHANGES:
-
-💇 HAIRSTYLE PRESERVATION (MANDATORY):
-- Keep the EXACT SAME hairstyle from the original image
-- Maintain IDENTICAL hair length, texture, style, and color
-- Preserve hair volume, flow, and natural movement
-- Keep EXACT hair color, highlights, and tones
-- Maintain the same hair part, bangs, layers, and styling
-- Adjust ONLY the viewing angle based on camera position
-- The hairstyle must be 100% recognizable as the original
-- DO NOT change, modify, or alter the hairstyle in any way
-- Hair should appear as if the same person turned to show a different angle
-
-👤 FACIAL PRESERVATION (MANDATORY):
-- Maintain 100% facial identity with zero drift
-- Keep EXACT facial features, bone structure, and proportions
-- Preserve eye shape, color, nose, lips, and jawline identically
-- Maintain skin tone, texture, and all facial details
-- Keep facial expression identical to the original
-- Preserve any facial hair, makeup, or distinguishing marks
-
-👕 CLOTHING PRESERVATION (MANDATORY):
-- Keep the EXACT SAME outfit from the original image
-- Maintain identical clothing colors, patterns, and textures
-- Preserve garment fit, style, and all clothing details
-- Keep accessories, jewelry, and any worn items identical
-- Adjust only the viewing angle and natural drape for the pose
-
-🌄 BACKGROUND PRESERVATION (MANDATORY - CRITICAL):
-- Keep the EXACT SAME background environment from the original image
-- Maintain ALL background elements at their original positions
-- Preserve background colors, lighting, and atmospheric conditions
-- Keep the same scenery, setting, and environmental context
-- DO NOT add, remove, or modify any background elements
-- DO NOT change the environment, location, or setting
-- The background must be PIXEL-PERFECT identical to the original
-- Use intelligent background extension if more area is visible from new angle
-- Match existing background patterns, textures, and details seamlessly
-- Preserve depth of field, atmospheric perspective, and environmental lighting
-
-💡 INTELLIGENT BACKGROUND EXTENSION:
-- If the new camera angle reveals more background area:
-  • Analyze the existing background patterns, colors, and elements
-  • Extend the background naturally using context-aware generation
-  • Match lighting conditions, atmospheric effects, and environmental mood
-  • Maintain consistency with visible background architecture and elements
-  • Use intelligent extrapolation to fill unseen areas logically
-  • Ensure seamless blending between original and extended background
-- The extended background should look like it was always part of the original scene
-
-🎯 LIGHTING PRESERVATION (MANDATORY):
-- Keep the EXACT SAME lighting direction and quality
-- Maintain identical light source positions and intensities
-- Preserve shadow patterns and lighting atmosphere
-- Keep the same color temperature and lighting mood
-- Adjust shadows only based on the new body position
-- Background lighting must remain completely unchanged
-
-✅ PERMITTED MODIFICATIONS (ONLY THESE):
-- Character body position to match the specified pose
-- Camera angle to match the requested viewing perspective
-- Natural clothing drape adjustments for the pose
-- Shadow positioning based on new body angle
-- Limb positions and joint angles for the pose
-- Viewing angle of hairstyle (but NOT the hairstyle itself)
-- Natural anatomical adjustments for the pose
-
-🚫 ABSOLUTELY FORBIDDEN CHANGES:
-- Hairstyle modifications (length, color, texture, style)
-- Background changes (environment, setting, scenery)
-- Facial feature alterations
-- Clothing changes (color, style, pattern)
-- Lighting direction changes
-- Addition of new environmental elements
-- Removal of existing background elements
-- Identity drift or character changes
-
-⚡ EXECUTION GUARANTEE:
-This is a POSE-ONLY transformation. The character's body moves into the new pose and the camera angle changes, but EVERYTHING ELSE stays EXACTLY the same. Treat hairstyle, background, clothing, and face as LOCKED ELEMENTS that cannot be modified. Only the body pose and viewing angle should change. The background must be preserved with pixel-perfect accuracy or extended intelligently if needed.
-
-🎨 QUALITY STANDARDS:
-- Full body visibility from head to toe
-- Anatomically correct pose execution
-- Natural, professional appearance
-- Photorealistic rendering quality
-- Seamless integration of pose with preserved elements
-- Character appears as if they naturally moved into this pose
-- No jarring changes or inconsistencies
-- Background extension (if needed) is seamless and contextually perfect`;
+                        const angleSpecificPrompt = `POSE TRANSFORM: ${selectedPose.prompt}. Camera: ${angle.prompt}. Preserve: exact hairstyle, face, clothing, background. Change ONLY body pose & camera angle. Extend background naturally if needed. Photorealistic full-body view.`;
                         
                         try {
                           const result = await generateEdit({

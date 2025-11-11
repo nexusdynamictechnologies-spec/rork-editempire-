@@ -13,34 +13,7 @@ export interface HairstyleCategory {
 }
 
 // PRECISION HAIRSTYLE TRANSFORMATION SYSTEM PROMPT - OPTIMIZED FOR API LIMITS
-export const PRECISION_HAIRSTYLE_SYSTEM_PROMPT = `
-🎯 HAIRSTYLE TRANSFORMATION PROTOCOL:
-
-✅ PRESERVE WITH 100% FIDELITY:
-- Face: exact features, structure, skin tone, expression unchanged
-- Body position, pose, stance: EXACT same position and orientation
-- Camera angle and viewing direction: DO NOT rotate or change perspective
-- Background, clothing: completely unchanged
-- Lighting direction, color temperature, shadows: maintain exactly
-- Image dimensions and aspect ratio: preserve exactly
-
-💇 CHANGE ONLY THE HAIR:
-- Apply specified hairstyle to natural hairline and head shape
-- Match original lighting, cast natural shadows
-- Seamless integration at hairline with soft edges
-- Photorealistic strand detail and texture
-- Natural volume, physics, and environmental response
-
-❌ CRITICAL RESTRICTIONS:
-- DO NOT rotate the character's head or body
-- DO NOT change the camera angle or perspective
-- DO NOT turn the person to face a different direction
-- DO NOT change from front view to back view or side view unless EXPLICITLY requested
-- Face changes, beautification, background changes, pose alterations forbidden
-- Dimension changes, adding elements not related to hair forbidden
-
-🎨 EXECUTION: Analyze original angle → Lock camera angle, body position, and all non-hair elements → Apply hairstyle with natural integration → Verify face unchanged, position unchanged, and hairline seamless
-`;
+export const PRECISION_HAIRSTYLE_SYSTEM_PROMPT = `HAIRSTYLE TRANSFORM: Change ONLY hair. Preserve: face, body, pose, camera angle, background, clothing, lighting, dimensions. Apply hairstyle with photorealistic integration at hairline, natural shadows, strand detail. DO NOT rotate character or camera.`;
 
 // ✨ ADVANCED AI HAIRSTYLE TECHNOLOGY SPECIFICATIONS ✨
 // 
