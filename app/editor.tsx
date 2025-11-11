@@ -1592,37 +1592,105 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
                         setStatusMessage(`🎨 Generating ${angle.name} (${i + 1}/${angles.length})...`);
                         setStatusType('info');
                         
-                        // SIMPLIFIED POSE PROMPT WITH BACKGROUND PRESERVATION
-                        const angleSpecificPrompt = `🎯 POSE TRANSFORMATION: Generate the character in this specific pose and camera angle.
+                        // ULTRA-ADVANCED POSE PROMPT WITH ABSOLUTE PRESERVATION
+                        const angleSpecificPrompt = `🎯 ULTRA-PRECISION POSE GENERATION WITH ABSOLUTE PRESERVATION
+
+⚡ PRIMARY DIRECTIVE:
+Generate the character in the specified pose from the requested camera angle while maintaining ABSOLUTE FIDELITY to the original image for ALL elements except body position.
 
 📸 CAMERA ANGLE: ${angle.prompt}
 
-🧘 POSE: ${selectedPose.prompt}
+🧘 POSE DETAILS: ${selectedPose.prompt}
 
-✨ CRITICAL REQUIREMENTS:
-- Show FULL BODY from head to toe in the specified pose
-- Keep character IDENTITY identical (same face, body, clothing, hair)
-- Maintain photorealistic quality
-- Preserve all character details perfectly
+🔒 CRITICAL PRESERVATION PROTOCOL - ZERO TOLERANCE FOR CHANGES:
 
-🔒 MUST PRESERVE:
-- Facial features and identity
-- Clothing and accessories
-- Hairstyle (adjust for angle)
-- Body proportions
+💇 HAIRSTYLE PRESERVATION (MANDATORY):
+- Keep the EXACT SAME hairstyle from the original image
+- Maintain IDENTICAL hair length, texture, style, and color
+- Preserve hair volume, flow, and natural movement
+- Keep EXACT hair color, highlights, and tones
+- Maintain the same hair part, bangs, layers, and styling
+- Adjust ONLY the viewing angle based on camera position
+- The hairstyle must be 100% recognizable as the original
+- DO NOT change, modify, or alter the hairstyle in any way
+- Hair should appear as if the same person turned to show a different angle
 
-🌄 BACKGROUND CONSISTENCY PROTOCOL:
-- CRITICAL: Keep the EXACT SAME background from the original image
-- Maintain the same environment, setting, and scenery
-- Preserve all background elements, colors, and details
-- Keep the same lighting direction and quality
-- Maintain the same atmospheric conditions
-- DO NOT change or generate new backgrounds
-- The background should be IDENTICAL across all pose angles
-- Only the character's body position and camera angle change - background stays EXACTLY the same
+👤 FACIAL PRESERVATION (MANDATORY):
+- Maintain 100% facial identity with zero drift
+- Keep EXACT facial features, bone structure, and proportions
+- Preserve eye shape, color, nose, lips, and jawline identically
+- Maintain skin tone, texture, and all facial details
+- Keep facial expression identical to the original
+- Preserve any facial hair, makeup, or distinguishing marks
 
-⚡ EXECUTION:
-Transform ONLY the character's body position and camera perspective. The background, lighting, and all environmental elements must remain PIXEL-PERFECT identical to the original image. Generate a natural, anatomically correct pose that flows smoothly from the reference image.`;
+👕 CLOTHING PRESERVATION (MANDATORY):
+- Keep the EXACT SAME outfit from the original image
+- Maintain identical clothing colors, patterns, and textures
+- Preserve garment fit, style, and all clothing details
+- Keep accessories, jewelry, and any worn items identical
+- Adjust only the viewing angle and natural drape for the pose
+
+🌄 BACKGROUND PRESERVATION (MANDATORY - CRITICAL):
+- Keep the EXACT SAME background environment from the original image
+- Maintain ALL background elements at their original positions
+- Preserve background colors, lighting, and atmospheric conditions
+- Keep the same scenery, setting, and environmental context
+- DO NOT add, remove, or modify any background elements
+- DO NOT change the environment, location, or setting
+- The background must be PIXEL-PERFECT identical to the original
+- Use intelligent background extension if more area is visible from new angle
+- Match existing background patterns, textures, and details seamlessly
+- Preserve depth of field, atmospheric perspective, and environmental lighting
+
+💡 INTELLIGENT BACKGROUND EXTENSION:
+- If the new camera angle reveals more background area:
+  • Analyze the existing background patterns, colors, and elements
+  • Extend the background naturally using context-aware generation
+  • Match lighting conditions, atmospheric effects, and environmental mood
+  • Maintain consistency with visible background architecture and elements
+  • Use intelligent extrapolation to fill unseen areas logically
+  • Ensure seamless blending between original and extended background
+- The extended background should look like it was always part of the original scene
+
+🎯 LIGHTING PRESERVATION (MANDATORY):
+- Keep the EXACT SAME lighting direction and quality
+- Maintain identical light source positions and intensities
+- Preserve shadow patterns and lighting atmosphere
+- Keep the same color temperature and lighting mood
+- Adjust shadows only based on the new body position
+- Background lighting must remain completely unchanged
+
+✅ PERMITTED MODIFICATIONS (ONLY THESE):
+- Character body position to match the specified pose
+- Camera angle to match the requested viewing perspective
+- Natural clothing drape adjustments for the pose
+- Shadow positioning based on new body angle
+- Limb positions and joint angles for the pose
+- Viewing angle of hairstyle (but NOT the hairstyle itself)
+- Natural anatomical adjustments for the pose
+
+🚫 ABSOLUTELY FORBIDDEN CHANGES:
+- Hairstyle modifications (length, color, texture, style)
+- Background changes (environment, setting, scenery)
+- Facial feature alterations
+- Clothing changes (color, style, pattern)
+- Lighting direction changes
+- Addition of new environmental elements
+- Removal of existing background elements
+- Identity drift or character changes
+
+⚡ EXECUTION GUARANTEE:
+This is a POSE-ONLY transformation. The character's body moves into the new pose and the camera angle changes, but EVERYTHING ELSE stays EXACTLY the same. Treat hairstyle, background, clothing, and face as LOCKED ELEMENTS that cannot be modified. Only the body pose and viewing angle should change. The background must be preserved with pixel-perfect accuracy or extended intelligently if needed.
+
+🎨 QUALITY STANDARDS:
+- Full body visibility from head to toe
+- Anatomically correct pose execution
+- Natural, professional appearance
+- Photorealistic rendering quality
+- Seamless integration of pose with preserved elements
+- Character appears as if they naturally moved into this pose
+- No jarring changes or inconsistencies
+- Background extension (if needed) is seamless and contextually perfect`;
                         
                         try {
                           const result = await generateEdit({
