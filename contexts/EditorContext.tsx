@@ -1325,8 +1325,11 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
 - Create this scene with natural lighting, realistic positioning, and authentic environmental details`;
         }
         
+        // Add critical aspect ratio preservation instruction to prevent unwanted cropping/resizing
+        const aspectRatioInstruction = '\n\n🎯 CRITICAL ASPECT RATIO PRESERVATION: Maintain the EXACT aspect ratio and frame dimensions of the original image. DO NOT change from portrait to landscape or vice versa. DO NOT crop, resize, or reframe the image. Keep the EXACT same width-to-height ratio as the source image. Preserve ALL edges and the complete frame.';
+        
         const requestBody = { 
-          prompt: sanitizedPrompt + '\n\n🎯 ULTRA-HIGH RESOLUTION OUTPUT: Generate this image at MAXIMUM 4K RESOLUTION (3840x2160 or higher). Apply professional-grade upscaling with crystal-clear detail enhancement, ultra-sharp textures, and stunning visual clarity that matches cinema-quality standards.', 
+          prompt: sanitizedPrompt + aspectRatioInstruction + '\n\n🎯 ULTRA-HIGH RESOLUTION OUTPUT: Generate this image at MAXIMUM 4K RESOLUTION (3840x2160 or higher). Apply professional-grade upscaling with crystal-clear detail enhancement, ultra-sharp textures, and stunning visual clarity that matches cinema-quality standards.', 
           images 
         } as const;
         console.log('🚀 Calling image edit API with 4K resolution request');
