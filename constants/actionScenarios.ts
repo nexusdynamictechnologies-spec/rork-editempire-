@@ -613,6 +613,46 @@ Create a breathtaking, photorealistic free fall scene with perfect physics, dram
 Create a stunning, photorealistic underwater scene with perfect water physics, dramatic lighting, and authentic submerged atmosphere. Every detail must convey the unique physics and visual characteristics of being underwater with realistic light refraction, bubble dynamics, and water interaction effects.`
       }
     ]
+  },
+  {
+    key: 'destroyed-environments',
+    title: 'Destroyed & Chaotic Environments',
+    scenarios: [
+      {
+        key: 'destroyed-room',
+        label: 'Destroyed Room',
+        keywords: ['destroyed room', 'messy room', 'chaotic room', 'torn apart room', 'ransacked', 'trashed room', 'wrecked room', 'cluttered chaos', 'domestic violence scene', 'destroyed interior'],
+        enhancementPrompt: `DESTROYED ROOM - PROFESSIONAL CHAOS GENERATION:
+
+CORE DESTRUCTION: Furniture overturned/broken (chairs knocked over, tables cracked, cushions torn), scattered debris field (books/papers/objects spread across floor), wall damage (holes, cracks, scuff marks), broken items (shattered frames, lamps knocked over, electronics damaged).
+
+CLUTTER DENSITY: Dense object scatter - hundreds of small items (clothes, books, papers, dishes, toys) mixed with larger debris. Natural distribution patterns from violence/chaos - items thrown toward walls, swept from surfaces, knocked from shelves.
+
+MATERIAL DAMAGE: Torn fabrics (curtains ripped, cushions split with stuffing visible), shattered glass (mirrors/frames broken with shards), splintered wood (furniture legs broken, shelves collapsed), damaged walls (drywall punctured, paint scraped).
+
+LIGHTING: Natural light through damaged blinds/curtains creating dramatic shadows. Harsh reality aesthetic - no glamorization. Documentary-style realism showing authentic destruction aftermath.
+
+CRITICAL: NO characters/people/creatures added unless explicitly requested. Focus ONLY on environmental destruction and object placement. Maintain photorealistic quality - this is aftermath documentation, not horror/theatrical staging.`
+      },
+      {
+        key: 'cluttered-mess',
+        label: 'Extreme Clutter',
+        keywords: ['extremely cluttered', 'hoarder room', 'massive clutter', 'buried in objects', 'overwhelmed with stuff', 'piled high'],
+        enhancementPrompt: `EXTREME CLUTTER - HIGH-DENSITY OBJECT CHAOS:
+
+OBJECT DENSITY: Floor 80%+ covered with items stacked 1-4 feet high. Layered accumulation - clothes piles, box stacks, paper mountains, dish towers. Narrow pathways between object piles. Every surface (tables, chairs, counters) completely buried.
+
+ITEM VARIETY: Clothing heaps, magazine/newspaper stacks, unopened packages, food containers, dishes, electronics, tools, toys, books - organized chaos showing long-term accumulation. Items show age/dust/wear from sitting.
+
+VERTICAL STACKING: Objects piled precariously - teetering stacks, leaning towers, buried furniture visible only as mounds. Natural accumulation patterns - older items at bottom, newer on top.
+
+SPATIAL REALITY: Rooms feel smaller from clutter volume. Ceiling-to-floor stacks in corners. Furniture barely visible beneath layers. Authentic hoarding psychology - paths maintained for basic movement, but everything else filled.
+
+LIGHTING: Reduced light penetration due to blocked windows. Dusty atmosphere. Realistic shadows showing depth/layers of clutter. Natural documentary lighting - no dramatic effects.
+
+FOCUS: Environmental clutter only - NO people/creatures. Show overwhelming scale through dense realistic object placement and natural accumulation physics.`
+      }
+    ]
   }
 ];
 
