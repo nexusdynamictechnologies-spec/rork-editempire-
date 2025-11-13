@@ -25,6 +25,7 @@ import {
   Info,
   Scissors,
   Users,
+  Sparkles,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { Image as ExpoImage } from 'expo-image';
@@ -243,6 +244,31 @@ export default function InstructionsScreen() {
               The most advanced AI image editor that can transform anything while preserving what you want to keep. 
               Follow these guidelines to get professional-quality results every time.
             </Text>
+          </View>
+
+          {/* No Watermarks & No Ads Section */}
+          <View style={styles.noWatermarkSection}>
+            <LinearGradient
+              colors={['#9D4EDD', '#7B2CBF']}
+              style={styles.noWatermarkGradient}
+            >
+              <View style={styles.noWatermarkHeader}>
+                <Sparkles size={28} color="#FFFFFF" strokeWidth={3} />
+                <Text style={styles.noWatermarkTitle}>NO WATERMARKS • NO ADS</Text>
+              </View>
+              <Text style={styles.noWatermarkText}>
+                ✨ Completely FREE - No watermarks on your creations!
+              </Text>
+              <Text style={styles.noWatermarkText}>
+                🚫 Zero advertisements - Uninterrupted editing experience!
+              </Text>
+              <Text style={styles.noWatermarkText}>
+                💎 Professional-quality outputs without any branding or marks!
+              </Text>
+              <Text style={styles.noWatermarkText}>
+                🎨 Export and share your work freely with full ownership!
+              </Text>
+            </LinearGradient>
           </View>
 
           {/* Important Disclaimer */}
@@ -830,5 +856,36 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontWeight: '500' as const,
     marginBottom: 8,
+  },
+  noWatermarkSection: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 8,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  noWatermarkGradient: {
+    padding: 24,
+  },
+  noWatermarkHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 20,
+    justifyContent: 'center',
+  },
+  noWatermarkTitle: {
+    fontSize: 18,
+    fontWeight: '900' as const,
+    color: '#FFFFFF',
+    letterSpacing: 1.5,
+    textAlign: 'center',
+  },
+  noWatermarkText: {
+    fontSize: 15,
+    color: '#FFFFFF',
+    lineHeight: 24,
+    fontWeight: '600' as const,
+    marginBottom: 10,
   },
 });
