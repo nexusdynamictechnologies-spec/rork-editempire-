@@ -369,9 +369,6 @@ export const [EditorProvider, useEditor] = createContextHook(() => {
     if (!params || !params.prompt || !params.prompt.trim()) {
       throw new Error('Edit prompt is required');
     }
-    if (params.prompt.length > 2000) {
-      throw new Error('Prompt too long (max 2000 characters)');
-    }
     
     validatePromptContent(params.prompt);
     
@@ -926,6 +923,28 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
     prompt += ' FINAL QUALITY ASSURANCE: Maintain original image quality, lighting, and composition. Ensure seamless integration of edits with perfect environmental harmony. Apply professional-grade image processing with attention to detail that matches high-end photo editing standards. For character placement, ensure the integration is so natural that viewers cannot tell the character was added - they should appear as if they were originally part of the scene during photography. The result should be indistinguishable from a professionally edited photograph with stunning natural character integration.';
     // Add content safety guidelines to the prompt
     prompt += '\n\nCONTENT SAFETY REQUIREMENTS:\n- No nudity, sexual content, or explicit material\n- No graphic violence or gore\n- Family-friendly and appropriate content only\n- Focus on artistic and creative expression';
+    
+    // CRITICAL: Check final length and truncate if needed while preserving core instructions
+    if (prompt.length > 2000) {
+      console.warn('⚠️ Prompt too long (' + prompt.length + ' chars), intelligently truncating to 2000 chars while preserving core functionality');
+      
+      // Extract the user's original request and critical system instructions
+      const userPrompt = params.prompt.trim();
+      const criticalInstructions = ' CRITICAL: Change ONLY what is explicitly requested. Preserve exact positioning, face, background, and all unmodified elements. Apply changes with surgical precision while maintaining photorealistic quality and natural integration.';
+      const safetyNote = ' Family-friendly content only.';
+      
+      // Calculate available space
+      const maxUserPromptLength = 2000 - criticalInstructions.length - safetyNote.length - 50; // 50 char buffer
+      
+      // Truncate user prompt if needed
+      const truncatedUserPrompt = userPrompt.length > maxUserPromptLength 
+        ? userPrompt.substring(0, maxUserPromptLength) + '...' 
+        : userPrompt;
+      
+      prompt = truncatedUserPrompt + criticalInstructions + safetyNote;
+      
+      console.log('✅ Prompt truncated intelligently to ' + prompt.length + ' characters');
+    }
     
     return prompt;
   }, [referenceImages, validatePromptContent]);
