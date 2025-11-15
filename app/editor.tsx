@@ -235,6 +235,7 @@ export default function EditorScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const promptInputRef = useRef<TextInput>(null);
   const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
+  const textInputY = useRef<number>(0);
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [recordingInstance, setRecordingInstance] = useState<Audio.Recording | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -282,12 +283,15 @@ export default function EditorScreen() {
       console.log('⌨️ Keyboard shown, height:', e.endCoordinates.height);
       setIsKeyboardVisible(true);
       setKeyboardHeight(e.endCoordinates.height);
+      
+      // Scroll to the text input with extra padding
       setTimeout(() => {
-        if (scrollViewRef.current && toolMode === 'prompt') {
+        if (scrollViewRef.current) {
           scrollViewRef.current.scrollToEnd({ animated: true });
         }
-      }, Platform.OS === 'ios' ? 350 : 150);
+      }, Platform.OS === 'ios' ? 100 : 50);
     });
+    
     const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
       console.log('⌨️ Keyboard hidden');
       setIsKeyboardVisible(false);
@@ -1125,7 +1129,7 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
                     if (scrollViewRef.current) {
                       scrollViewRef.current.scrollToEnd({ animated: true });
                     }
-                  }, Platform.OS === 'ios' ? 400 : 200);
+                  }, Platform.OS === 'ios' ? 150 : 100);
                 }}
               />
               <View style={styles.promptButtonsContainer}>
@@ -1719,7 +1723,7 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
                     if (scrollViewRef.current) {
                       scrollViewRef.current.scrollToEnd({ animated: true });
                     }
-                  }, Platform.OS === 'ios' ? 400 : 200);
+                  }, Platform.OS === 'ios' ? 150 : 100);
                 }}
               />
               <View style={styles.promptButtonsContainer}>
@@ -2269,9 +2273,9 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
 
       {!isFullscreen && (
         <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={[styles.bottomSheet, cleanUI ? { maxHeight: '45%' } : null]}
-          keyboardVerticalOffset={0}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
         >
           <View style={styles.toolTabs}>
             {([
@@ -2295,11 +2299,11 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
             style={styles.bottomSheetScroll} 
             contentContainerStyle={[
               styles.bottomSheetScrollContent,
-              isKeyboardVisible && Platform.OS !== 'web' && { paddingBottom: keyboardHeight + 80 }
+              isKeyboardVisible && Platform.OS !== 'web' && { paddingBottom: Math.max(keyboardHeight - 80, 300) }
             ]} 
             keyboardShouldPersistTaps="handled" 
             showsVerticalScrollIndicator={true}
-            keyboardDismissMode="on-drag"
+            keyboardDismissMode="interactive"
             scrollEventThrottle={16}
           >
             <View style={styles.bottomControlsRow}>
@@ -2836,7 +2840,7 @@ const styles = StyleSheet.create({
   centeredImageContainer: { width: '100%', height: '100%', position: 'relative', alignItems: 'center', justifyContent: 'center' },
   dismissKeyboardButton: {
     position: 'absolute',
-    bottom: 30,
+    bottom: Platform.OS === 'ios' ? 20 : 30,
     right: 20,
     flexDirection: 'row',
     alignItems: 'center',
