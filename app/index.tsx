@@ -163,7 +163,7 @@ export default function HomeScreen() {
 
           </View>
 
-          {/* Main Action Button */}
+          {/* Main Action Buttons */}
           <View style={styles.actionButtonsContainer}>
             <TouchableOpacity
               style={styles.uploadButton}
@@ -183,6 +183,33 @@ export default function HomeScreen() {
                   <>
                     <Upload size={32} color="#1A1A1A" strokeWidth={2.5} />
                     <Text style={styles.uploadText}>Upload Image</Text>
+                  </>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setSourceImage(null);
+                router.push('/editor');
+              }}
+              disabled={loading}
+              activeOpacity={0.9}
+            >
+              <LinearGradient
+                colors={['#9D4EDD', '#7209B7']}
+                style={styles.actionGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                {loading ? (
+                  <ActivityIndicator size="large" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Sparkles size={32} color="#FFFFFF" strokeWidth={2.5} />
+                    <Text style={styles.createText}>Create Image</Text>
                   </>
                 )}
               </LinearGradient>
@@ -647,9 +674,19 @@ const styles = StyleSheet.create({
   actionButtonsContainer: {
     marginHorizontal: 20,
     marginBottom: 30,
+    gap: 12,
   },
   uploadButton: {
     width: '100%',
+  },
+  createButton: {
+    width: '100%',
+  },
+  createText: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+    marginTop: 12,
   },
   actionGradient: {
     height: 140,

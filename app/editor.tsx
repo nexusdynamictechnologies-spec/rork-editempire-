@@ -1120,7 +1120,7 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
             <View style={styles.promptContainer}>
               <TextInput
                 ref={promptInputRef}
-                style={styles.promptInput}
+                style={[styles.promptInput, isKeyboardVisible && Platform.OS !== 'web' && { marginBottom: 60 }]}
                 placeholder={sourceImage ? "Describe the exact change you want..." : "Describe the image you want to create..."}
                 placeholderTextColor="#666"
                 value={editPrompt}
@@ -1128,13 +1128,17 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
                 multiline
                 maxLength={500}
                 textAlignVertical="top"
+                returnKeyType="done"
+                blurOnSubmit={true}
                 onFocus={() => {
                   console.log('📝 TextInput focused');
-                  setTimeout(() => {
-                    if (scrollViewRef.current) {
-                      scrollViewRef.current.scrollToEnd({ animated: true });
-                    }
-                  }, Platform.OS === 'ios' ? 150 : 100);
+                  if (Platform.OS !== 'web') {
+                    setTimeout(() => {
+                      if (scrollViewRef.current) {
+                        scrollViewRef.current.scrollToEnd({ animated: true });
+                      }
+                    }, 200);
+                  }
                 }}
               />
               <View style={styles.promptButtonsContainer}>
@@ -2194,12 +2198,13 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
             style={styles.bottomSheetScroll} 
             contentContainerStyle={[
               styles.bottomSheetScrollContent,
-              isKeyboardVisible && Platform.OS !== 'web' && { paddingBottom: Math.max(keyboardHeight - 80, 300) }
+              isKeyboardVisible && Platform.OS !== 'web' && { paddingBottom: keyboardHeight + 20 }
             ]} 
             keyboardShouldPersistTaps="handled" 
             showsVerticalScrollIndicator={true}
-            keyboardDismissMode="interactive"
+            keyboardDismissMode="on-drag"
             scrollEventThrottle={16}
+            automaticallyAdjustKeyboardInsets={false}
           >
             <View style={styles.bottomControlsRow}>
               <TouchableOpacity testID="toggle-fullscreen" style={styles.bottomControlButton} onPress={() => setIsFullscreen(!isFullscreen)}>
@@ -2231,9 +2236,9 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
         </KeyboardAvoidingView>
       )}
 
-      {isKeyboardVisible && Platform.OS !== 'web' && (
+      {isKeyboardVisible && toolMode === 'prompt' && Platform.OS !== 'web' && (
         <TouchableOpacity 
-          style={styles.dismissKeyboardButton}
+          style={[styles.dismissKeyboardButton, { bottom: keyboardHeight + 10 }]}
           onPress={dismissKeyboard}
           testID="dismiss-keyboard"
           accessibilityLabel="Dismiss keyboard"
@@ -2735,21 +2740,20 @@ const styles = StyleSheet.create({
   centeredImageContainer: { width: '100%', height: '100%', position: 'relative', alignItems: 'center', justifyContent: 'center' },
   dismissKeyboardButton: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 20 : 30,
     right: 20,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFD700',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
     borderRadius: 30,
     gap: 8,
     zIndex: 2000,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 15,
   },
   dismissKeyboardText: {
     color: '#1A1A1A',
