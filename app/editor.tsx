@@ -1111,16 +1111,20 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
       case 'prompt':
         return (
           <View style={styles.toolContent}>
-            <Text style={styles.toolTitle}>{sourceImage ? '✨ Edit Image' : '🎨 Generate Image'}</Text>
-            <Text style={styles.toolSubtitle}>
-              {sourceImage 
-                ? 'Describe the exact change you want to make to the image.'
-                : 'Describe the image you want to create from scratch.'}
-            </Text>
+            {!isKeyboardVisible && (
+              <>
+                <Text style={styles.toolTitle}>{sourceImage ? '✨ Edit Image' : '🎨 Generate Image'}</Text>
+                <Text style={styles.toolSubtitle}>
+                  {sourceImage 
+                    ? 'Describe the exact change you want to make to the image.'
+                    : 'Describe the image you want to create from scratch.'}
+                </Text>
+              </>
+            )}
             <View style={styles.promptContainer}>
               <TextInput
                 ref={promptInputRef}
-                style={styles.promptInput}
+                style={[styles.promptInput, isKeyboardVisible && styles.promptInputKeyboardVisible]}
                 placeholder={sourceImage ? "Describe the exact change you want..." : "Describe the image you want to create..."}
                 placeholderTextColor="#666"
                 value={editPrompt}
@@ -1132,18 +1136,6 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
                 blurOnSubmit={true}
                 onFocus={() => {
                   console.log('📝 TextInput focused');
-                  if (Platform.OS !== 'web') {
-                    setTimeout(() => {
-                      promptInputRef.current?.measure((x, y, width, height, pageX, pageY) => {
-                        if (scrollViewRef.current && pageY) {
-                          scrollViewRef.current.scrollTo({
-                            y: pageY - 150,
-                            animated: true
-                          });
-                        }
-                      });
-                    }, 300);
-                  }
                 }}
               />
               <View style={styles.promptButtonsContainer}>
@@ -2179,8 +2171,12 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
       {!isFullscreen && (
         <KeyboardAvoidingView 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={[styles.bottomSheet, cleanUI ? { maxHeight: '45%' } : null]}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 20}
+          style={[
+            styles.bottomSheet, 
+            cleanUI ? { maxHeight: '45%' } : null,
+            isKeyboardVisible && toolMode === 'prompt' && Platform.OS !== 'web' && { maxHeight: '85%', minHeight: '50%' }
+          ]}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
         >
           <View style={styles.toolTabs}>
             {([
@@ -2201,10 +2197,7 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
           <ScrollView 
             ref={scrollViewRef}
             style={styles.bottomSheetScroll} 
-            contentContainerStyle={[
-              styles.bottomSheetScrollContent,
-              isKeyboardVisible && Platform.OS !== 'web' && { paddingBottom: Math.max(keyboardHeight - 100, 150) }
-            ]} 
+            contentContainerStyle={styles.bottomSheetScrollContent} 
             keyboardShouldPersistTaps="handled" 
             showsVerticalScrollIndicator={true}
             keyboardDismissMode="on-drag"
@@ -2609,6 +2602,7 @@ const styles = StyleSheet.create({
   promptContainer: { position: 'relative' },
   promptButtonsContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6, marginTop: 8 },
   promptInput: { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 12, padding: 12, color: '#FFFFFF', fontSize: 14, minHeight: 80, maxHeight: 120, borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.2)' },
+  promptInputKeyboardVisible: { minHeight: 120, maxHeight: 200 },
   deleteAllButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255, 107, 107, 0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, gap: 4, borderWidth: 1, borderColor: 'rgba(255, 107, 107, 0.3)' },
   deleteAllText: { fontSize: 11, fontWeight: '600' as const, color: '#FF6B6B' },
   voiceButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#9D4EDD', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, gap: 4 },
