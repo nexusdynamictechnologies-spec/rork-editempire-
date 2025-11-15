@@ -59,7 +59,7 @@ import { posePresets, PoseCategoryKey, PRECISION_POSE_SYSTEM_PROMPT } from '@/co
 
 // Slimmed down editor per request
 
-type ToolMode = 'prompt' | 'hairstyles' | 'poses' | 'frames' | 'enlarge' | 'undo' | 'upscale' | 'generate';
+type ToolMode = 'prompt' | 'hairstyles' | 'poses' | 'frames' | 'enlarge' | 'undo' | 'upscale';
 
 type SelectMode = 'none' | 'region';
 
@@ -1111,12 +1111,17 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
       case 'prompt':
         return (
           <View style={styles.toolContent}>
-            <Text style={styles.toolTitle}>✨ Edit Prompt</Text>
+            <Text style={styles.toolTitle}>{sourceImage ? '✨ Edit Image' : '🎨 Generate Image'}</Text>
+            <Text style={styles.toolSubtitle}>
+              {sourceImage 
+                ? 'Describe the exact change you want to make to the image.'
+                : 'Describe the image you want to create from scratch.'}
+            </Text>
             <View style={styles.promptContainer}>
               <TextInput
                 ref={promptInputRef}
                 style={styles.promptInput}
-                placeholder="Describe the exact change you want."
+                placeholder={sourceImage ? "Describe the exact change you want..." : "Describe the image you want to create..."}
                 placeholderTextColor="#666"
                 value={editPrompt}
                 onChangeText={setEditPrompt}
@@ -1165,14 +1170,65 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
 
             <TouchableOpacity
               testID="generate-quality-image"
-              accessibilityLabel="Generate quality image"
-              style={[styles.generateButton, (!sourceImage || !editPrompt.trim() || isGenerating) && styles.generateButtonDisabled]}
-              disabled={!sourceImage || !editPrompt.trim() || isGenerating}
+              accessibilityLabel="Generate or edit image"
+              style={[styles.generateButton, (!editPrompt.trim() || isGenerating) && styles.generateButtonDisabled]}
+              disabled={!editPrompt.trim() || isGenerating}
               onPress={async () => {
                 try {
-                  console.log('🚀 ========================================');
-                  console.log('🚀 STARTING IMAGE GENERATION');
-                  console.log('🚀 ========================================');
+                  // If no source image, generate from text
+                  if (!sourceImage) {
+                    console.log('🚀 STARTING TEXT-TO-IMAGE GENERATION');
+                    console.log('📝 Prompt:', editPrompt);
+                    console.log('⏰ Start time:', new Date().toISOString());
+                    
+                    if (editPrompt.length > 1000) {
+                      Alert.alert('Prompt too long', 'Please keep your prompt under 1000 characters. Use AI Enhance to optimize it.');
+                      return;
+                    }
+                    
+                    setStatusMessage(null);
+                    setIsGenerating(true);
+                    if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    
+                    console.log('📤 Calling image generation API...');
+                    const response = await fetch('https://toolkit.rork.com/images/generate/', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        prompt: editPrompt.trim(),
+                        size: '1024x1024'
+                      })
+                    });
+                    
+                    if (!response.ok) {
+                      const errorText = await response.text().catch(() => '');
+                      console.error('❌ Generation API error:', response.status, errorText.substring(0, 200));
+                      throw new Error(`Image generation failed (${response.status})`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (!result || !result.image || !result.image.base64Data) {
+                      throw new Error('Invalid response from image generation service');
+                    }
+                    
+                    const generatedImageUri = `data:${result.image.mimeType || 'image/png'};base64,${result.image.base64Data}`;
+                    
+                    startNewSourceImage(generatedImageUri);
+                    
+                    console.log('✅ GENERATION COMPLETED SUCCESSFULLY');
+                    console.log('⏰ End time:', new Date().toISOString());
+                    
+                    setIsGenerating(false);
+                    setStatusType('success');
+                    setStatusMessage('Image generated successfully! You can now edit it further.');
+                    if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    setTimeout(() => setStatusMessage(null), 3500);
+                    return;
+                  }
+                  
+                  // Otherwise, edit existing image
+                  console.log('🚀 STARTING IMAGE EDITING');
                   console.log('📸 Source image exists:', !!sourceImage);
                   console.log('✏️ Edited image exists:', !!editedImage);
                   console.log('📝 Prompt:', editPrompt);
@@ -1193,38 +1249,27 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
                     additionsLock: true,
                   });
                   
-                  console.log('✅ ========================================');
-                  console.log('✅ GENERATION COMPLETED SUCCESSFULLY');
-                  console.log('✅ ========================================');
+                  console.log('✅ EDITING COMPLETED SUCCESSFULLY');
                   console.log('⏰ End time:', new Date().toISOString());
                   console.log('📊 Result received:', !!result);
                   setIsGenerating(false);
                   
                   if (result) {
                     setStatusType('success');
-                    setStatusMessage('Image generated successfully');
+                    setStatusMessage('Image edited successfully');
                     if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                     setTimeout(() => setStatusMessage(null), 3500);
                   } else {
-                    console.error('❌ ========================================');
-                    console.error('❌ GENERATION FAILED - NULL RESULT');
-                    console.error('❌ ========================================');
-                    console.warn('⚠️ Generation returned null result');
+                    console.error('❌ EDITING FAILED - NULL RESULT');
+                    console.warn('⚠️ Edit returned null result');
                     setStatusType('error');
-                    setStatusMessage('🚨 Generation failed to return a result.\n\nThis usually means the AI service is overloaded.\n\nPlease wait 5-10 minutes and try again.');
+                    setStatusMessage('🚨 Edit failed to return a result.\n\nThis usually means the AI service is overloaded.\n\nPlease wait 5-10 minutes and try again.');
                     setTimeout(() => setStatusMessage(null), 8000);
                   }
                 } catch (e) {
                   setIsGenerating(false);
-                  const msg = e instanceof Error ? e.message : 'Failed to generate image';
-                  console.error('❌ ========================================');
-                  console.error('❌ GENERATION ERROR OCCURRED');
-                  console.error('❌ ========================================');
-                  console.error('❌ Error time:', new Date().toISOString());
-                  console.error('❌ Error type:', e instanceof Error ? e.constructor.name : typeof e);
-                  console.error('❌ Error message:', msg);
-                  console.error('❌ Full error:', e);
-                  console.error('❌ ========================================');
+                  const msg = e instanceof Error ? e.message : 'Failed to process image';
+                  console.error('❌ ERROR OCCURRED:', msg);
                   setStatusType('error');
                   setStatusMessage(msg);
                   
@@ -1238,7 +1283,7 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
               ) : (
                 <>
                   <Wand2 size={16} color="#1A1A1A" />
-                  <Text style={styles.generateButtonText}>Generate Quality Image</Text>
+                  <Text style={styles.generateButtonText}>{sourceImage ? 'Edit Image' : 'Generate Image'}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -1700,156 +1745,7 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
           </View>
         );
 
-      case 'generate':
-        return (
-          <View style={styles.toolContent}>
-            <Text style={styles.toolTitle}>🎨 Generate Image</Text>
-            <Text style={styles.toolSubtitle}>Create any image from scratch using AI. Describe what you want to see.</Text>
-            
-            <View style={styles.promptContainer}>
-              <TextInput
-                ref={promptInputRef}
-                style={styles.promptInput}
-                placeholder="Describe the image you want to create..."
-                placeholderTextColor="#666"
-                value={editPrompt}
-                onChangeText={setEditPrompt}
-                multiline
-                maxLength={1000}
-                textAlignVertical="top"
-                onFocus={() => {
-                  console.log('📝 TextInput focused');
-                  setTimeout(() => {
-                    if (scrollViewRef.current) {
-                      scrollViewRef.current.scrollToEnd({ animated: true });
-                    }
-                  }, Platform.OS === 'ios' ? 150 : 100);
-                }}
-              />
-              <View style={styles.promptButtonsContainer}>
-                {editPrompt.trim() ? (
-                  <TouchableOpacity testID="clear-prompt" accessibilityLabel="Clear prompt" style={styles.deleteAllButton} onPress={() => setEditPrompt('')}>
-                    <X size={14} color="#FF6B6B" />
-                    <Text style={styles.deleteAllText}>Clear</Text>
-                  </TouchableOpacity>
-                ) : null}
-                <TouchableOpacity 
-                  style={[styles.voiceButton, isRecording && styles.voiceButtonActive]} 
-                  onPress={isRecording ? stopRecording : startRecording}
-                  testID="voice-input"
-                  accessibilityLabel={isRecording ? 'Stop recording' : 'Start voice input'}
-                >
-                  {isRecording ? <MicOff size={16} color="#1A1A1A" strokeWidth={2} /> : <Mic size={16} color="#1A1A1A" strokeWidth={2} />}
-                  <Text style={styles.voiceButtonText}>{isRecording ? 'Stop' : 'Voice'}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.enhancePromptButton} onPress={handleEnhancePrompt} disabled={isEnhancingPrompt || !editPrompt.trim()} testID="ai-enhance">
-                  {isEnhancingPrompt ? <ActivityIndicator size="small" color="#1A1A1A" /> : <Sparkles size={16} color="#1A1A1A" strokeWidth={2} />}
-                  <Text style={styles.enhancePromptText}>{isEnhancingPrompt ? 'Enhancing...' : 'AI Enhance'}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
 
-            <View style={styles.generateInfoBox}>
-              <Text style={styles.generateInfoTitle}>💡 How it works:</Text>
-              <Text style={styles.generateInfoText}>
-                1. Describe what you want to see in detail
-                2. Use "AI Enhance" for professional-quality prompts (max 1000 chars)
-                3. Tap "Generate" to create your image
-                4. The AI will create high-quality, accurate results
-              </Text>
-            </View>
-
-            {isGenerating && (
-              <View style={styles.progressIndicatorContainer}>
-                <ActivityIndicator size="large" color="#FFD700" />
-                <Text style={styles.progressText}>🎨 Creating your image...</Text>
-                <Text style={styles.progressSubtext}>This may take 15-30 seconds</Text>
-              </View>
-            )}
-
-            <TouchableOpacity
-              testID="generate-image-from-text"
-              accessibilityLabel="Generate image from text"
-              style={[styles.generateButton, (!editPrompt.trim() || isGenerating) && styles.generateButtonDisabled]}
-              disabled={!editPrompt.trim() || isGenerating}
-              onPress={async () => {
-                try {
-                  console.log('🚀 ========================================')
-                  console.log('🚀 STARTING TEXT-TO-IMAGE GENERATION')
-                  console.log('🚀 ========================================')
-                  console.log('📝 Prompt:', editPrompt)
-                  console.log('⏰ Start time:', new Date().toISOString())
-                  
-                  if (editPrompt.length > 1000) {
-                    Alert.alert('Prompt too long', 'Please keep your prompt under 1000 characters. Use AI Enhance to optimize it.');
-                    return;
-                  }
-                  
-                  setStatusMessage(null)
-                  setIsGenerating(true)
-                  if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                  
-                  console.log('📤 Calling image generation API...')
-                  const response = await fetch('https://toolkit.rork.com/images/generate/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      prompt: editPrompt.trim(),
-                      size: '1024x1024'
-                    })
-                  })
-                  
-                  if (!response.ok) {
-                    const errorText = await response.text().catch(() => '')
-                    console.error('❌ Generation API error:', response.status, errorText.substring(0, 200))
-                    throw new Error(`Image generation failed (${response.status})`)
-                  }
-                  
-                  const result = await response.json()
-                  
-                  if (!result || !result.image || !result.image.base64Data) {
-                    throw new Error('Invalid response from image generation service')
-                  }
-                  
-                  const generatedImageUri = `data:${result.image.mimeType || 'image/png'};base64,${result.image.base64Data}`
-                  
-                  startNewSourceImage(generatedImageUri)
-                  
-                  console.log('✅ ========================================')
-                  console.log('✅ GENERATION COMPLETED SUCCESSFULLY')
-                  console.log('✅ ========================================')
-                  console.log('⏰ End time:', new Date().toISOString())
-                  
-                  setIsGenerating(false)
-                  setStatusType('success')
-                  setStatusMessage('Image generated successfully! You can now edit it further.')
-                  if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-                  setTimeout(() => setStatusMessage(null), 3500)
-                  
-                } catch (e) {
-                  setIsGenerating(false)
-                  const msg = e instanceof Error ? e.message : 'Failed to generate image'
-                  console.error('❌ ========================================')
-                  console.error('❌ GENERATION ERROR OCCURRED')
-                  console.error('❌ ========================================')
-                  console.error('❌ Error:', msg)
-                  setStatusType('error')
-                  setStatusMessage(msg)
-                  setTimeout(() => setStatusMessage(null), 6000)
-                }
-              }}
-            >
-              {isGenerating ? (
-                <ActivityIndicator size="small" color="#1A1A1A" />
-              ) : (
-                <>
-                  <Wand2 size={16} color="#1A1A1A" />
-                  <Text style={styles.generateButtonText}>Generate Image</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-        )
 
       case 'upscale':
         return (
@@ -2279,7 +2175,6 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
         >
           <View style={styles.toolTabs}>
             {([
-              { key: 'generate' as ToolMode, label: 'Generate', icon: Sparkles },
               { key: 'prompt' as ToolMode, label: 'Edit', icon: Wand2 },
               { key: 'hairstyles' as ToolMode, label: 'Hair', icon: Wand2 },
               { key: 'poses' as ToolMode, label: 'Poses', icon: Brain },
