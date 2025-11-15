@@ -1233,38 +1233,66 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
                     }
                     
                     const result = await response.json();
-                    console.log('✅ Generation response received:', { hasImage: !!result?.image, hasBase64: !!result?.image?.base64Data, resultType: typeof result });
-                    console.log('🔍 Result structure:', JSON.stringify(result).substring(0, 200));
+                    console.log('✅ Generation response received');
+                    console.log('🔍 Full result structure:', JSON.stringify(result, null, 2).substring(0, 500));
                     
                     if (!result || typeof result !== 'object') {
                       console.error('❌ Invalid result object:', result);
                       throw new Error('🚨 Invalid Response Format\n\n⚠️ AI service returned unexpected data\n\n💡 Please try again');
                     }
                     
-                    if (!result.image || typeof result.image !== 'object') {
-                      console.error('❌ Missing or invalid image object:', result);
-                      throw new Error('🚨 Missing Image Data\n\n⚠️ AI service did not return image data\n\n💡 Please try again');
+                    // Handle different response formats from the image generation API
+                    let base64Data: string | undefined;
+                    let mimeType = 'image/png';
+                    
+                    // Try to extract base64 data from various possible response structures
+                    if (result.image && typeof result.image === 'object') {
+                      console.log('📦 Extracting from result.image object');
+                      
+                      // Handle base64Data as string
+                      if (typeof result.image.base64Data === 'string') {
+                        base64Data = result.image.base64Data;
+                        mimeType = result.image.mimeType || 'image/png';
+                        console.log('✅ Found base64Data as string, length:', base64Data.length);
+                      }
+                      // Handle data field (alternative naming)
+                      else if (typeof result.image.data === 'string') {
+                        base64Data = result.image.data;
+                        mimeType = result.image.mimeType || result.image.type || 'image/png';
+                        console.log('✅ Found image.data as string, length:', base64Data.length);
+                      }
+                      // Handle base64 field (another alternative)
+                      else if (typeof result.image.base64 === 'string') {
+                        base64Data = result.image.base64;
+                        mimeType = result.image.mimeType || result.image.type || 'image/png';
+                        console.log('✅ Found image.base64 as string, length:', base64Data.length);
+                      }
+                    }
+                    // Handle flat response structure where image data is at root level
+                    else if (typeof result.base64Data === 'string') {
+                      base64Data = result.base64Data;
+                      mimeType = result.mimeType || 'image/png';
+                      console.log('✅ Found base64Data at root level, length:', base64Data.length);
+                    }
+                    else if (typeof result.data === 'string') {
+                      base64Data = result.data;
+                      mimeType = result.mimeType || result.type || 'image/png';
+                      console.log('✅ Found data at root level, length:', base64Data.length);
+                    }
+                    else if (typeof result.base64 === 'string') {
+                      base64Data = result.base64;
+                      mimeType = result.mimeType || result.type || 'image/png';
+                      console.log('✅ Found base64 at root level, length:', base64Data.length);
                     }
                     
-                    // Extract base64Data - handle both string and object cases
-                    let base64Data: string;
-                    if (typeof result.image.base64Data === 'string') {
-                      base64Data = result.image.base64Data;
-                    } else if (result.image.base64Data && typeof result.image.base64Data === 'object') {
-                      // If it's an object, try to extract the base64 string from it
-                      console.warn('⚠️ base64Data is an object, attempting to extract string value');
-                      base64Data = String(result.image.base64Data);
-                    } else {
-                      console.error('❌ Invalid base64 data type:', { type: typeof result.image.base64Data, value: result.image.base64Data });
+                    if (!base64Data || typeof base64Data !== 'string' || base64Data.length < 100) {
+                      console.error('❌ Could not extract valid base64 data from response');
+                      console.error('Response keys:', Object.keys(result));
+                      console.error('Result.image keys:', result.image ? Object.keys(result.image) : 'N/A');
                       throw new Error('🚨 Invalid Image Data\n\n⚠️ AI service returned corrupted image\n\n💡 Please try again');
                     }
                     
-                    if (!base64Data || base64Data.length < 100) {
-                      console.error('❌ Invalid base64 data length:', { length: base64Data?.length });
-                      throw new Error('🚨 Invalid Image Data\n\n⚠️ AI service returned corrupted image\n\n💡 Please try again');
-                    }
-                    
-                    const generatedImageUri = `data:${result.image.mimeType || 'image/png'};base64,${base64Data}`;
+                    const generatedImageUri = `data:${mimeType};base64,${base64Data}`;
                     
                     startNewSourceImage(generatedImageUri);
                     
