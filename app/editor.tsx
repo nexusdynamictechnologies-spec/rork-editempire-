@@ -1192,25 +1192,62 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
                     if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     
                     console.log('📤 Calling image generation API...');
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 180000);
+                    
                     const response = await fetch('https://toolkit.rork.com/images/generate/', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         prompt: editPrompt.trim(),
                         size: '1024x1024'
-                      })
+                      }),
+                      signal: controller.signal,
                     });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    console.log('📡 Image generation response status:', response.status);
+                    console.log('📡 Content-Type:', response.headers.get('content-type'));
                     
                     if (!response.ok) {
                       const errorText = await response.text().catch(() => '');
                       console.error('❌ Generation API error:', response.status, errorText.substring(0, 200));
+                      
+                      if (response.status === 503 || response.status === 502 || response.status === 504) {
+                        throw new Error('🚨 AI Image Service Temporarily Unavailable\n\n⚠️ The AI provider is experiencing high demand or maintenance\n\n💡 Please wait 5-10 minutes and try again');
+                      }
+                      
+                      if (response.status === 400 || errorText.toLowerCase().includes('blocked')) {
+                        throw new Error('🚫 Content Safety Filter\n\n⚠️ Your prompt may violate content policies\n\n💡 Try simplifying your description');
+                      }
+                      
                       throw new Error(`Image generation failed (${response.status})`);
                     }
                     
-                    const result = await response.json();
+                    const contentType = response.headers.get('content-type') || '';
+                    if (!contentType.includes('application/json')) {
+                      const text = await response.text();
+                      console.error('❌ Non-JSON response:', text.substring(0, 300));
+                      throw new Error('🚨 Service Error\n\n⚠️ AI service returned invalid response\n\n💡 Please try again in a few minutes');
+                    }
                     
-                    if (!result || !result.image || !result.image.base64Data) {
-                      throw new Error('Invalid response from image generation service');
+                    const result = await response.json();
+                    console.log('✅ Generation response received:', { hasImage: !!result?.image, hasBase64: !!result?.image?.base64Data });
+                    
+                    if (!result || typeof result !== 'object') {
+                      console.error('❌ Invalid result object:', result);
+                      throw new Error('🚨 Invalid Response Format\n\n⚠️ AI service returned unexpected data\n\n💡 Please try again');
+                    }
+                    
+                    if (!result.image || typeof result.image !== 'object') {
+                      console.error('❌ Missing or invalid image object:', result);
+                      throw new Error('🚨 Missing Image Data\n\n⚠️ AI service did not return image data\n\n💡 Please try again');
+                    }
+                    
+                    if (!result.image.base64Data || typeof result.image.base64Data !== 'string' || result.image.base64Data.length < 100) {
+                      console.error('❌ Invalid base64 data:', { hasBase64: !!result.image.base64Data, length: result.image.base64Data?.length });
+                      throw new Error('🚨 Invalid Image Data\n\n⚠️ AI service returned corrupted image\n\n💡 Please try again');
                     }
                     
                     const generatedImageUri = `data:${result.image.mimeType || 'image/png'};base64,${result.image.base64Data}`;
