@@ -1120,7 +1120,7 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
             <View style={styles.promptContainer}>
               <TextInput
                 ref={promptInputRef}
-                style={[styles.promptInput, isKeyboardVisible && Platform.OS !== 'web' && { marginBottom: 60 }]}
+                style={styles.promptInput}
                 placeholder={sourceImage ? "Describe the exact change you want..." : "Describe the image you want to create..."}
                 placeholderTextColor="#666"
                 value={editPrompt}
@@ -1134,10 +1134,15 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
                   console.log('📝 TextInput focused');
                   if (Platform.OS !== 'web') {
                     setTimeout(() => {
-                      if (scrollViewRef.current) {
-                        scrollViewRef.current.scrollToEnd({ animated: true });
-                      }
-                    }, 200);
+                      promptInputRef.current?.measure((x, y, width, height, pageX, pageY) => {
+                        if (scrollViewRef.current && pageY) {
+                          scrollViewRef.current.scrollTo({
+                            y: pageY - 150,
+                            animated: true
+                          });
+                        }
+                      });
+                    }, 300);
                   }
                 }}
               />
@@ -2173,9 +2178,9 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
 
       {!isFullscreen && (
         <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={[styles.bottomSheet, cleanUI ? { maxHeight: '45%' } : null]}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 20}
         >
           <View style={styles.toolTabs}>
             {([
@@ -2198,13 +2203,14 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
             style={styles.bottomSheetScroll} 
             contentContainerStyle={[
               styles.bottomSheetScrollContent,
-              isKeyboardVisible && Platform.OS !== 'web' && { paddingBottom: keyboardHeight + 20 }
+              isKeyboardVisible && Platform.OS !== 'web' && { paddingBottom: Math.max(keyboardHeight - 100, 150) }
             ]} 
             keyboardShouldPersistTaps="handled" 
             showsVerticalScrollIndicator={true}
             keyboardDismissMode="on-drag"
             scrollEventThrottle={16}
             automaticallyAdjustKeyboardInsets={false}
+            nestedScrollEnabled={true}
           >
             <View style={styles.bottomControlsRow}>
               <TouchableOpacity testID="toggle-fullscreen" style={styles.bottomControlButton} onPress={() => setIsFullscreen(!isFullscreen)}>
