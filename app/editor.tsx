@@ -2178,7 +2178,8 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
           ]}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
         >
-          <View style={styles.toolTabs}>
+          {!(isKeyboardVisible && toolMode === 'prompt' && Platform.OS !== 'web') && (
+            <View style={styles.toolTabs}>
             {([
               { key: 'prompt' as ToolMode, label: 'Edit', icon: Wand2 },
               { key: 'hairstyles' as ToolMode, label: 'Hair', icon: Wand2 },
@@ -2192,7 +2193,8 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
                 <Text style={[styles.toolTabLabel, toolMode === tab.key && styles.toolTabLabelActive]}>{tab.label}</Text>
               </TouchableOpacity>
             ))}
-          </View>
+            </View>
+          )}
 
           <ScrollView 
             ref={scrollViewRef}
@@ -2205,7 +2207,8 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
             automaticallyAdjustKeyboardInsets={false}
             nestedScrollEnabled={true}
           >
-            <View style={styles.bottomControlsRow}>
+            {!(isKeyboardVisible && toolMode === 'prompt' && Platform.OS !== 'web') && (
+              <View style={styles.bottomControlsRow}>
               <TouchableOpacity testID="toggle-fullscreen" style={styles.bottomControlButton} onPress={() => setIsFullscreen(!isFullscreen)}>
                 {isFullscreen ? <Minimize size={18} color="#FFD700" /> : <Expand size={18} color="#FFD700" />}
                 <Text style={styles.bottomControlText}>{isFullscreen ? 'Exit' : 'Fullscreen'}</Text>
@@ -2226,7 +2229,8 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
                   <Text style={[styles.bottomControlText, { color: '#FF6B6B' }]}>Delete</Text>
                 </TouchableOpacity>
               )}
-            </View>
+              </View>
+            )}
 
             {renderToolContent()}
 
