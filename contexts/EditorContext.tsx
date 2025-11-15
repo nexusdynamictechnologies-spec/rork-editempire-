@@ -1379,11 +1379,33 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
 - Create this scene with natural lighting, realistic positioning, and authentic environmental details`;
         }
         
-        // Add critical aspect ratio preservation instruction to prevent unwanted cropping/resizing
-        const aspectRatioInstruction = '\n\n🎯 CRITICAL ASPECT RATIO PRESERVATION: Maintain the EXACT aspect ratio and frame dimensions of the original image. DO NOT change from portrait to landscape or vice versa. DO NOT crop, resize, or reframe the image. Keep the EXACT same width-to-height ratio as the source image. Preserve ALL edges and the complete frame.';
+        // CRITICAL: Get original image dimensions for aspect ratio preservation
+        let originalWidth = 0;
+        let originalHeight = 0;
+        try {
+          const dimensions = await getImageDimensions(currentImage);
+          originalWidth = dimensions.width;
+          originalHeight = dimensions.height;
+          console.log(`📐 Original image dimensions: ${originalWidth}x${originalHeight}`);
+        } catch (e) {
+          console.warn('Could not get original dimensions, aspect ratio may not be preserved:', e);
+        }
+        
+        // Add critical aspect ratio preservation instruction with exact dimensions
+        const aspectRatioInstruction = `\n\n🎯 CRITICAL ASPECT RATIO & DIMENSION PRESERVATION:
+- Original image dimensions: ${originalWidth}x${originalHeight}
+- MAINTAIN EXACT aspect ratio: ${(originalWidth / originalHeight).toFixed(4)}:1
+- DO NOT change from portrait to landscape or vice versa
+- DO NOT crop, zoom, resize, or reframe the image
+- DO NOT change the field of view or camera distance
+- Keep EXACT same width-to-height ratio as source image
+- Preserve ALL edges and the complete frame
+- Keep objects at their ORIGINAL SIZE relative to frame
+- DO NOT zoom in or zoom out - maintain exact framing
+- OUTPUT MUST BE ${originalWidth}x${originalHeight} pixels or maintain exact ${(originalWidth / originalHeight).toFixed(4)}:1 ratio`;
         
         const requestBody = { 
-          prompt: sanitizedPrompt + aspectRatioInstruction + '\n\n🎯 ULTRA-HIGH RESOLUTION OUTPUT: Generate this image at MAXIMUM 4K RESOLUTION (3840x2160 or higher). Apply professional-grade upscaling with crystal-clear detail enhancement, ultra-sharp textures, and stunning visual clarity that matches cinema-quality standards.', 
+          prompt: sanitizedPrompt + aspectRatioInstruction, 
           images 
         } as const;
         console.log('🚀 Calling image edit API with 4K resolution request');
