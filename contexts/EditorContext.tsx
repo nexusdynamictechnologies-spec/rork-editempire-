@@ -365,6 +365,54 @@ export const [EditorProvider, useEditor] = createContextHook(() => {
     return enhanced;
   }, []);
 
+  const [characterDescriptions, setCharacterDescriptions] = useState<Map<string, string>>(new Map());
+
+  const parseCharacterDescription = useCallback((description: string): { name: string; identity: string; codes: Record<string, string> } | null => {
+    try {
+      const nameMatch = description.match(/(?:character|name|called)\s*[:=]\s*([^\n,]+)/i);
+      const identityMatch = description.match(/(?:identity|appearance|looks|description)\s*[:=]\s*([^\n]+)/i);
+      
+      const codePattern = /(?:code|color|hex|rgb)\s*[:=]\s*([#\w\d]+)|([A-Z_]+)\s*[:=]\s*([#\w\d]+)/gi;
+      const codes: Record<string, string> = {};
+      
+      let match;
+      while ((match = codePattern.exec(description)) !== null) {
+        if (match[1]) {
+          codes['default'] = match[1];
+        } else if (match[2] && match[3]) {
+          codes[match[2]] = match[3];
+        }
+      }
+      
+      if (nameMatch || identityMatch) {
+        return {
+          name: nameMatch ? nameMatch[1].trim() : 'Unknown',
+          identity: identityMatch ? identityMatch[1].trim() : description.substring(0, 200),
+          codes
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Failed to parse character description:', error);
+      return null;
+    }
+  }, []);
+
+  const extractCharacterFromPrompt = useCallback((prompt: string): string | null => {
+    const descriptionMatch = prompt.match(/character description:\s*([^\n]+(?:\n(?!\n)[^\n]+)*)/i);
+    if (descriptionMatch) {
+      const description = descriptionMatch[1].trim();
+      const parsed = parseCharacterDescription(description);
+      if (parsed) {
+        console.log('📝 Detected character description:', parsed.name);
+        setCharacterDescriptions(prev => new Map(prev).set(parsed.name, JSON.stringify(parsed)));
+        return description;
+      }
+    }
+    return null;
+  }, [parseCharacterDescription]);
+
   const buildEnhancedPrompt = useCallback((params: EditParams): string => {
     if (!params || !params.prompt || !params.prompt.trim()) {
       throw new Error('Edit prompt is required');
@@ -373,6 +421,12 @@ export const [EditorProvider, useEditor] = createContextHook(() => {
     validatePromptContent(params.prompt);
     
     let prompt = resolveAssetAliasesInText(params.prompt.trim());
+    
+    const customCharDescription = extractCharacterFromPrompt(prompt);
+    if (customCharDescription) {
+      console.log('🎯 Using custom character description for consistency');
+      prompt += '\n\n🎨 CHARACTER CONSISTENCY PROTOCOL:\nThis character has a specific identity and appearance that MUST be preserved across all generations. Maintain EXACT facial features, proportions, distinctive characteristics, and color specifications provided in the description. Character identity is paramount.';
+    }
     
     // APPLY CAMERA ANGLE DETECTION
     prompt = detectCameraAngles(prompt);
@@ -947,7 +1001,7 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
     }
     
     return prompt;
-  }, [referenceImages, validatePromptContent]);
+  }, [referenceImages, validatePromptContent, extractCharacterFromPrompt]);
 
   const convertImageToBase64 = useCallback(async (imageUri: string): Promise<string> => {
     if (!imageUri || !imageUri.trim()) {
