@@ -59,7 +59,7 @@ import { posePresets, PoseCategoryKey, PRECISION_POSE_SYSTEM_PROMPT } from '@/co
 
 // Slimmed down editor per request
 
-type ToolMode = 'prompt' | 'hairstyles' | 'poses' | 'frames' | 'enlarge' | 'undo' | 'upscale';
+type ToolMode = 'prompt' | 'hairstyles' | 'poses' | 'frames' | 'enlarge' | 'undo' | 'upscale' | 'generate';
 
 type SelectMode = 'none' | 'region';
 
@@ -918,73 +918,55 @@ export default function EditorScreen() {
           messages: [
             { 
               role: 'system', 
-              content: `You are an ELITE AI image editing prompt engineer with MASTER-LEVEL understanding of photography, cinematography, and visual composition. Your expertise rivals professional directors of photography and visual effects supervisors.
+              content: `You are an ELITE AI image generation prompt engineer with MASTER-LEVEL understanding of photography, cinematography, and visual composition.
 
-CRITICAL MISSION:
-Enhance user prompts with SURGICAL PRECISION while maintaining ABSOLUTE FIDELITY to their exact intent. You are creating prompts that will generate photorealistic images that perform 100x better than competing apps.
+🎯 CRITICAL MISSION:
+Enhance user prompts to create STUNNING photorealistic images. Keep prompts CONCISE yet POWERFUL - maximum 1000 characters. Focus on the most impactful details.
 
-🎯 CORE RULES:
-1. ONLY respond with the enhanced prompt - NO questions, NO explanations, NO preamble
-2. Enhance ONLY what the user explicitly requested - ZERO unauthorized additions
-3. NEVER change style unless explicitly requested (default is PHOTOREALISTIC)
-4. NEVER add decorative elements unless specifically asked
-5. Focus on technical mastery: lighting, camera angles, materials, composition
-6. Preserve the original image's existing elements with PIXEL-PERFECT accuracy
+⚡ CORE RULES:
+1. ONLY respond with enhanced prompt - NO questions, NO explanations
+2. Keep under 1000 characters - be concise and focused
+3. Enhance ONLY what user requested - no unauthorized additions
+4. Default to PHOTOREALISTIC unless user requests different style
+5. Focus on: lighting, camera angles, composition, key details
+6. Use efficient, powerful descriptive language
 
-📷 CAMERA ANGLE EXPERTISE:
-You are a MASTER of cinematography and understand all camera angles:
+📷 CAMERA MASTERY:
+- Specify camera angle: eye-level, overhead, low-angle, diagonal
+- Define perspective: wide-angle, telephoto, macro
+- Set focus: sharp foreground, bokeh background, depth of field
 
-- DIAGONAL/TILTED: Camera rotated 30-45°, horizon line slanted, dynamic energy
-- OVERHEAD/TOP-DOWN: Camera 60-90° above subject, bird's eye view, looking straight down
-- LOW ANGLE: Camera at ground level looking up 20-45°, subject appears powerful
-- EYE-LEVEL: Camera at subject's eye height, neutral perspective
-- DUTCH ANGLE: Deliberate tilt for disorientation or tension
-- POV (Point of View): Camera represents character's exact viewpoint
-- OVER-THE-SHOULDER: Camera behind one character looking at another
-- WORM'S EYE: Extreme low angle from ground looking up
-- BIRD'S EYE: Extreme overhead, straight down perspective
+💡 LIGHTING EFFICIENCY:
+- Light direction: front-lit, backlit, side-lit
+- Quality: soft diffused, hard dramatic, golden hour
+- Color temp: warm sunset, cool blue, neutral daylight
 
-When user mentions camera angles like "diagonal cam", "overhead angle", "looking down but showing face" - you UNDERSTAND these are CAMERA POSITIONING requests, not subject positioning. Add detailed camera angle specifications.
+🎨 COMPOSITION ESSENTIALS:
+- Subject placement: rule of thirds, centered, offset
+- Depth: foreground/midground/background elements
+- Atmosphere: misty, clear, dramatic, serene
 
-🎬 COMPLEX SCENARIO UNDERSTANDING:
-You excel at understanding complex, multi-element scenes:
+🚫 ANTI-CARTOON:
+For realism: "Photorealistic with authentic textures, natural lighting, real-world materials, professional photography quality."
 
-- HOLDING PHONES/CAMERAS: Character grips device naturally at chest/eye level, proper finger placement, screen orientation correct, realistic arm extension
-- DOORDASH/DELIVERY SCENES: Delivery person at door with food bag, natural standing posture, door partially open, realistic residential setting
-- ACTION SCENES: Dynamic poses, realistic physics, environmental interaction, proper spatial relationships
-- MULTI-CHARACTER SCENES: Each character with distinct position, proper scaling, natural interactions
+💎 EFFICIENT ENHANCEMENT:
+- BACKGROUNDS: Specific colors, lighting, depth
+- SUBJECTS: Clear positioning, natural poses, expressions
+- DETAILS: Key textures, materials, authentic features
+- MOOD: Emotional tone, atmosphere, visual feel
 
-🚫 ANTI-CARTOON INTELLIGENCE:
-You NEVER convert realistic images to cartoon unless explicitly requested. When user wants realism (default), you add:
-"Maintain photorealistic rendering with authentic human anatomy, real-world materials, natural lighting, genuine skin texture with pores, realistic hair strands, and cinematic quality. NO cartoon, anime, or stylized conversion. This must look like professional photography."
+📝 CONCISE EXAMPLES:
 
-💎 ENHANCEMENT APPROACH:
+INPUT: "person holding phone"
+OUTPUT: "Person holding smartphone at eye level, natural grip, taking photo. Front-lit, soft shadows, photorealistic details, authentic hand anatomy, clear facial features, blurred background."
 
-- BACKGROUNDS: Specify exact colors (RGB/hex if possible), gradient direction, atmospheric depth, lighting integration
-- HAIRSTYLES: Detail texture (straight/wavy/curly), length (shoulder/waist), volume, flow physics, while LOCKING face/body/pose
-- CAMERA ANGLES: Specify camera position, height, tilt angle, field of view, perspective characteristics
-- CHARACTER PLACEMENT: Exact position coordinates (left/right/center), distance from camera, orientation, lighting match
-- OBJECTS IN HANDS: Item type, grip style, hand position, object orientation, natural interaction
-- EXPRESSIONS: Facial muscle details, eye contact direction, mouth position, emotional authenticity
-- LIGHTING: Source direction, color temperature, intensity, shadow characteristics, bounce light
+INPUT: "destroyed messy room"
+OUTPUT: "Chaotic destroyed room: broken furniture scattered, torn fabrics, damaged walls, debris on floor. Dramatic lighting, photorealistic destruction, natural shadows, realistic textures, cinematic atmosphere."
 
-${advertisingKnowledge}
+INPUT: "sunset beach scene"
+OUTPUT: "Golden sunset beach: warm orange sky, gentle waves, wet sand reflections. Backlit silhouettes, soft glow, dreamy atmosphere, photorealistic water, natural colors, peaceful mood."
 
-📚 ENHANCED EXAMPLES:
-
-INPUT: "diagonal camera angle looking down at character but still showing their face"
-OUTPUT: "Position camera at 30-45° diagonal tilt angle, elevated 3-4 feet above character, angled downward to capture overhead perspective while maintaining clear facial visibility. Character naturally looks up toward camera with slight head tilt (15-20°) revealing full face: eyes, nose, mouth all clearly visible. Camera FOV captures top of head, face, shoulders, and upper torso. Apply proper overhead perspective with realistic foreshortening. Lighting matches elevated camera position. Maintain photorealistic rendering with cinema-quality depth and authentic human features."
-
-INPUT: "character holding cell phone like taking a picture"
-OUTPUT: "Character holds smartphone at chest-to-eye level with natural grip: device in both hands, thumbs on screen sides, fingers wrapped around back. Phone tilted at realistic angle for photo capture (slight forward tilt). Arms extended 8-12 inches from body in natural photography stance. Phone screen faces character, camera lens faces forward/target direction. Render phone with accurate size proportions, visible screen glow on face, natural muscle tension in hands and forearms. Character's gaze directed at phone screen or target subject. Maintain photorealistic human anatomy and natural interaction physics."
-
-INPUT: "make it more realistic and not cartoon looking"
-OUTPUT: "Transform to maximum photorealistic quality: authentic human skin with natural pore texture and subsurface scattering, individual hair strand definition with realistic highlights and shadows, real-world fabric textures on clothing with natural wrinkles and drape, genuine environmental lighting with accurate color temperature and shadow softness, professional camera depth of field with natural bokeh, cinematic color grading. Eliminate any cartoon stylization, cel-shading, or animated aesthetics. Render with the visual fidelity of professional DSLR photography at f/2.8, ISO 400, with natural light. Every surface must have authentic material properties and realistic light interaction."
-
-INPUT: "delivery guy at front door taking photo of sleeping person on couch"
-OUTPUT: "Scene composition: Delivery person (DoorDash attire, food bag in one hand) positioned at front doorway in natural standing pose. Door is ajar (cracked open 30-40 degrees) revealing interior. Character holds smartphone at waist-chest level, screen facing them, capturing photo angle toward interior. Inside: person sleeping on couch in relaxed position, unaware. Lighting: exterior daylight from delivery person side, interior ambient lighting, natural light transition through doorway. Camera positioned at delivery person's shoulder level showing their figure, phone, and view through door to interior couch/person. Maintain photorealistic residential architecture, authentic home interior details, natural spatial depth, proper perspective with correct scale relationships. This is a harmless, everyday delivery scenario rendered with documentary photography realism."
-
-Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining ABSOLUTE FIDELITY to their exact request. Make this prompt generate results that are 100x better than competitors. Respond ONLY with the enhanced prompt.` 
+Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 characters. Respond ONLY with the enhanced prompt.` 
             },
             { role: 'user', content: editPrompt.trim() },
           ],
@@ -1714,6 +1696,157 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
           </View>
         );
 
+      case 'generate':
+        return (
+          <View style={styles.toolContent}>
+            <Text style={styles.toolTitle}>🎨 Generate Image</Text>
+            <Text style={styles.toolSubtitle}>Create any image from scratch using AI. Describe what you want to see.</Text>
+            
+            <View style={styles.promptContainer}>
+              <TextInput
+                ref={promptInputRef}
+                style={styles.promptInput}
+                placeholder="Describe the image you want to create..."
+                placeholderTextColor="#666"
+                value={editPrompt}
+                onChangeText={setEditPrompt}
+                multiline
+                maxLength={1000}
+                textAlignVertical="top"
+                onFocus={() => {
+                  console.log('📝 TextInput focused');
+                  setTimeout(() => {
+                    if (scrollViewRef.current) {
+                      scrollViewRef.current.scrollToEnd({ animated: true });
+                    }
+                  }, Platform.OS === 'ios' ? 400 : 200);
+                }}
+              />
+              <View style={styles.promptButtonsContainer}>
+                {editPrompt.trim() ? (
+                  <TouchableOpacity testID="clear-prompt" accessibilityLabel="Clear prompt" style={styles.deleteAllButton} onPress={() => setEditPrompt('')}>
+                    <X size={14} color="#FF6B6B" />
+                    <Text style={styles.deleteAllText}>Clear</Text>
+                  </TouchableOpacity>
+                ) : null}
+                <TouchableOpacity 
+                  style={[styles.voiceButton, isRecording && styles.voiceButtonActive]} 
+                  onPress={isRecording ? stopRecording : startRecording}
+                  testID="voice-input"
+                  accessibilityLabel={isRecording ? 'Stop recording' : 'Start voice input'}
+                >
+                  {isRecording ? <MicOff size={16} color="#1A1A1A" strokeWidth={2} /> : <Mic size={16} color="#1A1A1A" strokeWidth={2} />}
+                  <Text style={styles.voiceButtonText}>{isRecording ? 'Stop' : 'Voice'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.enhancePromptButton} onPress={handleEnhancePrompt} disabled={isEnhancingPrompt || !editPrompt.trim()} testID="ai-enhance">
+                  {isEnhancingPrompt ? <ActivityIndicator size="small" color="#1A1A1A" /> : <Sparkles size={16} color="#1A1A1A" strokeWidth={2} />}
+                  <Text style={styles.enhancePromptText}>{isEnhancingPrompt ? 'Enhancing...' : 'AI Enhance'}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.generateInfoBox}>
+              <Text style={styles.generateInfoTitle}>💡 How it works:</Text>
+              <Text style={styles.generateInfoText}>
+                1. Describe what you want to see in detail
+                2. Use "AI Enhance" for professional-quality prompts (max 1000 chars)
+                3. Tap "Generate" to create your image
+                4. The AI will create high-quality, accurate results
+              </Text>
+            </View>
+
+            {isGenerating && (
+              <View style={styles.progressIndicatorContainer}>
+                <ActivityIndicator size="large" color="#FFD700" />
+                <Text style={styles.progressText}>🎨 Creating your image...</Text>
+                <Text style={styles.progressSubtext}>This may take 15-30 seconds</Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              testID="generate-image-from-text"
+              accessibilityLabel="Generate image from text"
+              style={[styles.generateButton, (!editPrompt.trim() || isGenerating) && styles.generateButtonDisabled]}
+              disabled={!editPrompt.trim() || isGenerating}
+              onPress={async () => {
+                try {
+                  console.log('🚀 ========================================')
+                  console.log('🚀 STARTING TEXT-TO-IMAGE GENERATION')
+                  console.log('🚀 ========================================')
+                  console.log('📝 Prompt:', editPrompt)
+                  console.log('⏰ Start time:', new Date().toISOString())
+                  
+                  if (editPrompt.length > 1000) {
+                    Alert.alert('Prompt too long', 'Please keep your prompt under 1000 characters. Use AI Enhance to optimize it.');
+                    return;
+                  }
+                  
+                  setStatusMessage(null)
+                  setIsGenerating(true)
+                  if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                  
+                  console.log('📤 Calling image generation API...')
+                  const response = await fetch('https://toolkit.rork.com/images/generate/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      prompt: editPrompt.trim(),
+                      size: '1024x1024'
+                    })
+                  })
+                  
+                  if (!response.ok) {
+                    const errorText = await response.text().catch(() => '')
+                    console.error('❌ Generation API error:', response.status, errorText.substring(0, 200))
+                    throw new Error(`Image generation failed (${response.status})`)
+                  }
+                  
+                  const result = await response.json()
+                  
+                  if (!result || !result.image || !result.image.base64Data) {
+                    throw new Error('Invalid response from image generation service')
+                  }
+                  
+                  const generatedImageUri = `data:${result.image.mimeType || 'image/png'};base64,${result.image.base64Data}`
+                  
+                  startNewSourceImage(generatedImageUri)
+                  
+                  console.log('✅ ========================================')
+                  console.log('✅ GENERATION COMPLETED SUCCESSFULLY')
+                  console.log('✅ ========================================')
+                  console.log('⏰ End time:', new Date().toISOString())
+                  
+                  setIsGenerating(false)
+                  setStatusType('success')
+                  setStatusMessage('Image generated successfully! You can now edit it further.')
+                  if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+                  setTimeout(() => setStatusMessage(null), 3500)
+                  
+                } catch (e) {
+                  setIsGenerating(false)
+                  const msg = e instanceof Error ? e.message : 'Failed to generate image'
+                  console.error('❌ ========================================')
+                  console.error('❌ GENERATION ERROR OCCURRED')
+                  console.error('❌ ========================================')
+                  console.error('❌ Error:', msg)
+                  setStatusType('error')
+                  setStatusMessage(msg)
+                  setTimeout(() => setStatusMessage(null), 6000)
+                }
+              }}
+            >
+              {isGenerating ? (
+                <ActivityIndicator size="small" color="#1A1A1A" />
+              ) : (
+                <>
+                  <Wand2 size={16} color="#1A1A1A" />
+                  <Text style={styles.generateButtonText}>Generate Image</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        )
+
       case 'upscale':
         return (
           <View style={styles.toolContent}>
@@ -2142,7 +2275,8 @@ Now enhance the user's prompt with ELITE TECHNICAL PRECISION while maintaining A
         >
           <View style={styles.toolTabs}>
             {([
-              { key: 'prompt' as ToolMode, label: 'Prompt', icon: Sparkles },
+              { key: 'generate' as ToolMode, label: 'Generate', icon: Sparkles },
+              { key: 'prompt' as ToolMode, label: 'Edit', icon: Wand2 },
               { key: 'hairstyles' as ToolMode, label: 'Hair', icon: Wand2 },
               { key: 'poses' as ToolMode, label: 'Poses', icon: Brain },
               { key: 'frames' as ToolMode, label: 'Frame', icon: Crop },
@@ -2610,6 +2744,9 @@ const styles = StyleSheet.create({
   upscaleProgressBox: { marginTop: 16, backgroundColor: 'rgba(157, 78, 221, 0.1)', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: 'rgba(157, 78, 221, 0.3)' },
   upscaleProgressText: { fontSize: 12, fontWeight: '600' as const, color: '#9D4EDD', textAlign: 'center' as const, marginBottom: 4 },
   upscaleProgressSubtext: { fontSize: 10, color: '#999', textAlign: 'center' as const },
+  generateInfoBox: { backgroundColor: 'rgba(255, 215, 0, 0.08)', borderRadius: 12, padding: 14, marginTop: 16, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.2)' },
+  generateInfoTitle: { fontSize: 13, fontWeight: '700' as const, color: '#FFD700', marginBottom: 8 },
+  generateInfoText: { fontSize: 11, color: '#CCCCCC', lineHeight: 18 },
 
   undoActionsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   undoOneButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: '#FFD700' },
