@@ -1233,7 +1233,8 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
                     }
                     
                     const result = await response.json();
-                    console.log('✅ Generation response received:', { hasImage: !!result?.image, hasBase64: !!result?.image?.base64Data });
+                    console.log('✅ Generation response received:', { hasImage: !!result?.image, hasBase64: !!result?.image?.base64Data, resultType: typeof result });
+                    console.log('🔍 Result structure:', JSON.stringify(result).substring(0, 200));
                     
                     if (!result || typeof result !== 'object') {
                       console.error('❌ Invalid result object:', result);
@@ -1245,12 +1246,25 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
                       throw new Error('🚨 Missing Image Data\n\n⚠️ AI service did not return image data\n\n💡 Please try again');
                     }
                     
-                    if (!result.image.base64Data || typeof result.image.base64Data !== 'string' || result.image.base64Data.length < 100) {
-                      console.error('❌ Invalid base64 data:', { hasBase64: !!result.image.base64Data, length: result.image.base64Data?.length });
+                    // Extract base64Data - handle both string and object cases
+                    let base64Data: string;
+                    if (typeof result.image.base64Data === 'string') {
+                      base64Data = result.image.base64Data;
+                    } else if (result.image.base64Data && typeof result.image.base64Data === 'object') {
+                      // If it's an object, try to extract the base64 string from it
+                      console.warn('⚠️ base64Data is an object, attempting to extract string value');
+                      base64Data = String(result.image.base64Data);
+                    } else {
+                      console.error('❌ Invalid base64 data type:', { type: typeof result.image.base64Data, value: result.image.base64Data });
                       throw new Error('🚨 Invalid Image Data\n\n⚠️ AI service returned corrupted image\n\n💡 Please try again');
                     }
                     
-                    const generatedImageUri = `data:${result.image.mimeType || 'image/png'};base64,${result.image.base64Data}`;
+                    if (!base64Data || base64Data.length < 100) {
+                      console.error('❌ Invalid base64 data length:', { length: base64Data?.length });
+                      throw new Error('🚨 Invalid Image Data\n\n⚠️ AI service returned corrupted image\n\n💡 Please try again');
+                    }
+                    
+                    const generatedImageUri = `data:${result.image.mimeType || 'image/png'};base64,${base64Data}`;
                     
                     startNewSourceImage(generatedImageUri);
                     
