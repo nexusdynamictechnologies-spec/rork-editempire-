@@ -53,44 +53,54 @@ export default function HomeScreen() {
 
 
   const pickImage = async () => {
-    if (Platform.OS !== 'web') {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false,
-      aspect: undefined,
-      quality: 0.8,
-      allowsMultipleSelection: true,
-      exif: false,
-      base64: true,
-    } as ImagePicker.ImagePickerOptions);
-
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const first = result.assets[0] as ImagePicker.ImagePickerAsset;
-      const firstMime = (first as any)?.mimeType || 'image/jpeg';
-      const firstDataUri = first.base64 ? `data:${firstMime};base64,${first.base64}` : first.uri;
-      
-      if (result.assets.length > 1) {
-        setLoading(true);
-        const resizedFirst = await resizeImageIfNeeded(firstDataUri, 2048);
-        setSourceImage(resizedFirst.uri);
-        
-        for (let i = 1; i < result.assets.length; i++) {
-          const a = result.assets[i] as ImagePicker.ImagePickerAsset;
-          const mime = (a as any)?.mimeType || 'image/jpeg';
-          const dataUri = a.base64 ? `data:${mime};base64,${a.base64}` : a.uri;
-          await addReferenceImage(dataUri, true);
-        }
-        
-        setTimeout(() => {
-          setLoading(false);
-          router.push('/editor');
-        }, 300);
-      } else {
-        await processAndNavigate(firstDataUri);
+    try {
+      if (Platform.OS !== 'web') {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(e => console.warn('Haptics failed:', e));
       }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        aspect: undefined,
+        quality: 0.8,
+        allowsMultipleSelection: true,
+        exif: false,
+        base64: true,
+      } as ImagePicker.ImagePickerOptions);
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const first = result.assets[0] as ImagePicker.ImagePickerAsset;
+        const firstMime = (first as any)?.mimeType || 'image/jpeg';
+        const firstDataUri = first.base64 ? `data:${firstMime};base64,${first.base64}` : first.uri;
+        
+        if (result.assets.length > 1) {
+          setLoading(true);
+          try {
+            const resizedFirst = await resizeImageIfNeeded(firstDataUri, 2048);
+            setSourceImage(resizedFirst.uri);
+            
+            for (let i = 1; i < result.assets.length; i++) {
+              const a = result.assets[i] as ImagePicker.ImagePickerAsset;
+              const mime = (a as any)?.mimeType || 'image/jpeg';
+              const dataUri = a.base64 ? `data:${mime};base64,${a.base64}` : a.uri;
+              await addReferenceImage(dataUri, true).catch(e => console.warn(`Failed to add reference image ${i + 1}:`, e));
+            }
+            
+            setTimeout(() => {
+              setLoading(false);
+              router.push('/editor');
+            }, 300);
+          } catch (error) {
+            console.error('Error processing multiple images:', error);
+            setLoading(false);
+          }
+        } else {
+          await processAndNavigate(firstDataUri);
+        }
+      }
+    } catch (error) {
+      console.error('pickImage error:', error);
+      setLoading(false);
     }
   };
 
@@ -272,17 +282,24 @@ export default function HomeScreen() {
                     key={savedImage.id}
                     style={styles.recentCard}
                     onPress={async () => {
-                      if (Platform.OS !== 'web') {
-                        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      try {
+                        if (Platform.OS !== 'web') {
+                          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(e => console.warn('Haptics error:', e));
+                        }
+                        
+                        const imageUri = await loadSavedImage(savedImage.id).catch(err => {
+                          console.error('Failed to load saved image:', err);
+                          return savedImage.thumbnail || savedImage.imageUri;
+                        });
+                        
+                        setEnlargedImage({
+                          uri: imageUri || savedImage.thumbnail || savedImage.imageUri,
+                          date: savedImage.date,
+                          isEdited: savedImage.isEdited
+                        });
+                      } catch (error) {
+                        console.error('Error opening saved image:', error);
                       }
-                      
-                      // Enlarge the image instead of navigating to editor
-                      const imageUri = await loadSavedImage(savedImage.id);
-                      setEnlargedImage({
-                        uri: imageUri || savedImage.thumbnail || savedImage.imageUri,
-                        date: savedImage.date,
-                        isEdited: savedImage.isEdited
-                      });
                     }}
                   >
                     <ExpoImage
