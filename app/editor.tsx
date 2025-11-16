@@ -1113,19 +1113,15 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
           <View style={styles.toolContent}>
             {!isKeyboardVisible && (
               <>
-                <Text style={styles.toolTitle}>{sourceImage ? '✨ Edit Image' : '🎨 Generate Image'}</Text>
-                <Text style={styles.toolSubtitle}>
-                  {sourceImage 
-                    ? 'Describe the exact change you want to make to the image.'
-                    : 'Describe the image you want to create from scratch.'}
-                </Text>
+                <Text style={styles.toolTitle}>✨ Edit Image</Text>
+                <Text style={styles.toolSubtitle}>Describe the exact change you want to make to the image.</Text>
               </>
             )}
             <View style={styles.promptContainer}>
               <TextInput
                 ref={promptInputRef}
                 style={[styles.promptInput, isKeyboardVisible && styles.promptInputKeyboardVisible]}
-                placeholder={sourceImage ? "Describe the exact change you want..." : "Describe the image you want to create..."}
+                placeholder="Describe the exact change you want..."
                 placeholderTextColor="#666"
                 value={editPrompt}
                 onChangeText={setEditPrompt}
@@ -1171,143 +1167,17 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
 
             <TouchableOpacity
               testID="generate-quality-image"
-              accessibilityLabel="Generate or edit image"
-              style={[styles.generateButton, (!editPrompt.trim() || isGenerating) && styles.generateButtonDisabled]}
-              disabled={!editPrompt.trim() || isGenerating}
+              accessibilityLabel="Edit image"
+              style={[styles.generateButton, (!editPrompt.trim() || isGenerating || !sourceImage) && styles.generateButtonDisabled]}
+              disabled={!editPrompt.trim() || isGenerating || !sourceImage}
               onPress={async () => {
                 try {
-                  // If no source image, generate from text
                   if (!sourceImage) {
-                    console.log('🚀 STARTING TEXT-TO-IMAGE GENERATION');
-                    console.log('📝 Prompt:', editPrompt);
-                    console.log('⏰ Start time:', new Date().toISOString());
-                    
-                    if (editPrompt.length > 1000) {
-                      Alert.alert('Prompt too long', 'Please keep your prompt under 1000 characters. Use AI Enhance to optimize it.');
-                      return;
-                    }
-                    
-                    setStatusMessage(null);
-                    setIsGenerating(true);
-                    if (Platform.OS !== 'web') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    
-                    console.log('📤 Calling image generation API...');
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 180000);
-                    
-                    const response = await fetch('https://toolkit.rork.com/images/generate/', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        prompt: editPrompt.trim(),
-                        size: '1024x1024'
-                      }),
-                      signal: controller.signal,
-                    });
-                    
-                    clearTimeout(timeoutId);
-                    
-                    console.log('📡 Image generation response status:', response.status);
-                    console.log('📡 Content-Type:', response.headers.get('content-type'));
-                    
-                    if (!response.ok) {
-                      const errorText = await response.text().catch(() => '');
-                      console.error('❌ Generation API error:', response.status, errorText.substring(0, 200));
-                      
-                      if (response.status === 503 || response.status === 502 || response.status === 504) {
-                        throw new Error('🚨 AI Image Service Temporarily Unavailable\n\n⚠️ The AI provider is experiencing high demand or maintenance\n\n💡 Please wait 5-10 minutes and try again');
-                      }
-                      
-                      if (response.status === 400 || errorText.toLowerCase().includes('blocked')) {
-                        throw new Error('🚫 Content Safety Filter\n\n⚠️ Your prompt may violate content policies\n\n💡 Try simplifying your description');
-                      }
-                      
-                      throw new Error(`Image generation failed (${response.status})`);
-                    }
-                    
-                    const contentType = response.headers.get('content-type') || '';
-                    if (!contentType.includes('application/json')) {
-                      const text = await response.text();
-                      console.error('❌ Non-JSON response:', text.substring(0, 300));
-                      throw new Error('🚨 Service Error\n\n⚠️ AI service returned invalid response\n\n💡 Please try again in a few minutes');
-                    }
-                    
-                    const result = await response.json();
-                    console.log('✅ Generation response received');
-                    console.log('🔍 Full result structure:', JSON.stringify(result, null, 2).substring(0, 500));
-                    
-                    if (!result || typeof result !== 'object') {
-                      console.error('❌ Invalid result object:', result);
-                      throw new Error('🚨 Invalid Response Format\n\n⚠️ AI service returned unexpected data\n\n💡 Please try again');
-                    }
-                    
-                    // Handle different response formats from the image generation API
-                    let base64Data: string | undefined;
-                    let mimeType = 'image/png';
-                    
-                    // Try to extract base64 data from various possible response structures
-                    if (result.image && typeof result.image === 'object') {
-                      console.log('📦 Extracting from result.image object');
-                      
-                      // Handle base64Data as string
-                      if (typeof result.image.base64Data === 'string') {
-                        base64Data = result.image.base64Data;
-                        mimeType = result.image.mimeType || 'image/png';
-                        console.log('✅ Found base64Data as string, length:', base64Data.length);
-                      }
-                      // Handle data field (alternative naming)
-                      else if (typeof result.image.data === 'string') {
-                        base64Data = result.image.data;
-                        mimeType = result.image.mimeType || result.image.type || 'image/png';
-                        console.log('✅ Found image.data as string, length:', base64Data.length);
-                      }
-                      // Handle base64 field (another alternative)
-                      else if (typeof result.image.base64 === 'string') {
-                        base64Data = result.image.base64;
-                        mimeType = result.image.mimeType || result.image.type || 'image/png';
-                        console.log('✅ Found image.base64 as string, length:', base64Data.length);
-                      }
-                    }
-                    // Handle flat response structure where image data is at root level
-                    else if (typeof result.base64Data === 'string') {
-                      base64Data = result.base64Data;
-                      mimeType = result.mimeType || 'image/png';
-                      console.log('✅ Found base64Data at root level, length:', base64Data.length);
-                    }
-                    else if (typeof result.data === 'string') {
-                      base64Data = result.data;
-                      mimeType = result.mimeType || result.type || 'image/png';
-                      console.log('✅ Found data at root level, length:', base64Data.length);
-                    }
-                    else if (typeof result.base64 === 'string') {
-                      base64Data = result.base64;
-                      mimeType = result.mimeType || result.type || 'image/png';
-                      console.log('✅ Found base64 at root level, length:', base64Data.length);
-                    }
-                    
-                    if (!base64Data || typeof base64Data !== 'string' || base64Data.length < 100) {
-                      console.error('❌ Could not extract valid base64 data from response');
-                      console.error('Response keys:', Object.keys(result));
-                      console.error('Result.image keys:', result.image ? Object.keys(result.image) : 'N/A');
-                      throw new Error('🚨 Invalid Image Data\n\n⚠️ AI service returned corrupted image\n\n💡 Please try again');
-                    }
-                    
-                    const generatedImageUri = `data:${mimeType};base64,${base64Data}`;
-                    
-                    startNewSourceImage(generatedImageUri);
-                    
-                    console.log('✅ GENERATION COMPLETED SUCCESSFULLY');
-                    console.log('⏰ End time:', new Date().toISOString());
-                    
-                    setIsGenerating(false);
-                    setStatusType('success');
-                    setStatusMessage('Image generated successfully! You can now edit it further.');
-                    if (Platform.OS !== 'web') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    setTimeout(() => setStatusMessage(null), 3500);
+                    Alert.alert('No Image', 'Please upload an image first to edit it.');
                     return;
                   }
                   
-                  // Otherwise, edit existing image
+                  // Edit existing image
                   console.log('🚀 STARTING IMAGE EDITING');
                   console.log('📸 Source image exists:', !!sourceImage);
                   console.log('✏️ Edited image exists:', !!editedImage);
@@ -1363,7 +1233,7 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
               ) : (
                 <>
                   <Wand2 size={16} color="#1A1A1A" />
-                  <Text style={styles.generateButtonText}>{sourceImage ? 'Edit Image' : 'Generate Image'}</Text>
+                  <Text style={styles.generateButtonText}>Edit Image</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -2228,10 +2098,14 @@ Now enhance the prompt with MAXIMUM IMPACT in MINIMUM WORDS. Keep under 1000 cha
           </View>
         ) : (
           <View style={styles.centeredImageContainer}> 
-            <TouchableOpacity style={[styles.applyFrameGuidance, styles.alignCenter]} onPress={() => pickMainImage()} testID="pick-image-empty">
-              <Images size={16} color="#1A1A1A" />
-              <Text style={styles.applyFrameGuidanceText}>Upload Image</Text>
-            </TouchableOpacity>
+            <View style={styles.noImageContainer}>
+              <Text style={styles.noImageTitle}>No Image Loaded</Text>
+              <Text style={styles.noImageSubtitle}>Please upload an image from the home screen to start editing</Text>
+              <TouchableOpacity style={styles.goBackButton} onPress={() => router.back()} testID="go-back-home">
+                <ArrowLeft size={16} color="#FFD700" />
+                <Text style={styles.goBackText}>Go Back to Home</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
@@ -2821,6 +2695,11 @@ const styles = StyleSheet.create({
   alignStart: { alignSelf: 'flex-start' },
   alignCenter: { alignSelf: 'center' },
   centeredImageContainer: { width: '100%', height: '100%', position: 'relative', alignItems: 'center', justifyContent: 'center' },
+  noImageContainer: { alignItems: 'center', justifyContent: 'center', padding: 40, gap: 16 },
+  noImageTitle: { fontSize: 20, fontWeight: '700' as const, color: '#FFFFFF', textAlign: 'center' as const },
+  noImageSubtitle: { fontSize: 14, color: '#999', textAlign: 'center' as const, lineHeight: 20 },
+  goBackButton: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255, 215, 0, 0.15)', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12, marginTop: 8, borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.3)' },
+  goBackText: { fontSize: 14, fontWeight: '600' as const, color: '#FFD700' },
   dismissKeyboardButton: {
     position: 'absolute',
     right: 20,
