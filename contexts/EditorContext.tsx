@@ -1003,6 +1003,83 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
     return prompt;
   }, [referenceImages, validatePromptContent, extractCharacterFromPrompt]);
 
+  const compressImageToBase64 = useCallback(async (imageUri: string, maxSizeKB: number = 4096): Promise<string> => {
+    console.log('🔄 Compressing image to stay under', maxSizeKB, 'KB...');
+    
+    try {
+      // First, resize the image if needed to reduce file size
+      const fileUri = await ensureFileUri(imageUri);
+      
+      // Get original dimensions
+      const { width, height } = await getImageDimensions(fileUri);
+      console.log(`📐 Original dimensions: ${width}x${height}`);
+      
+      // Start with 70% quality and reduce if needed
+      let quality = 0.7;
+      let attempts = 0;
+      const maxAttempts = 5;
+      
+      while (attempts < maxAttempts) {
+        attempts++;
+        console.log(`🔄 Compression attempt ${attempts}/${maxAttempts} with quality ${quality}...`);
+        
+        // Compress the image
+        const compressed = await ImageManipulator.manipulateAsync(
+          fileUri,
+          [],
+          { 
+            compress: quality, 
+            format: ImageManipulator.SaveFormat.JPEG,
+            base64: true
+          }
+        );
+        
+        if (compressed.base64) {
+          const sizeKB = (compressed.base64.length * 0.75) / 1024; // Approximate size in KB
+          console.log(`📊 Compressed size: ${sizeKB.toFixed(2)} KB`);
+          
+          if (sizeKB <= maxSizeKB) {
+            console.log(`✅ Image compressed successfully to ${sizeKB.toFixed(2)} KB`);
+            return compressed.base64;
+          }
+          
+          // Reduce quality for next attempt
+          quality = quality * 0.85;
+          
+          if (quality < 0.1) {
+            console.warn('⚠️ Quality too low, attempting to resize image instead...');
+            // If quality is too low, try resizing the image
+            const scale = Math.sqrt(maxSizeKB / sizeKB) * 0.9; // Target 90% of max size
+            const newWidth = Math.round(width * scale);
+            const newHeight = Math.round(height * scale);
+            console.log(`📐 Resizing to ${newWidth}x${newHeight}...`);
+            
+            const resized = await ImageManipulator.manipulateAsync(
+              fileUri,
+              [{ resize: { width: newWidth, height: newHeight } }],
+              { 
+                compress: 0.8, 
+                format: ImageManipulator.SaveFormat.JPEG,
+                base64: true
+              }
+            );
+            
+            if (resized.base64) {
+              const finalSizeKB = (resized.base64.length * 0.75) / 1024;
+              console.log(`✅ Final compressed size: ${finalSizeKB.toFixed(2)} KB`);
+              return resized.base64;
+            }
+          }
+        }
+      }
+      
+      throw new Error('Failed to compress image to acceptable size');
+    } catch (error) {
+      console.error('❌ Image compression error:', error);
+      throw new Error('Failed to compress image. Try using a smaller image.');
+    }
+  }, [ensureFileUri, getImageDimensions]);
+
   const convertImageToBase64 = useCallback(async (imageUri: string): Promise<string> => {
     if (!imageUri || !imageUri.trim()) {
       throw new Error('Image URI is required');
@@ -1013,6 +1090,16 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
       if (!base64Part) {
         throw new Error('Invalid data URI format');
       }
+      
+      // Check size and compress if needed
+      const sizeKB = (base64Part.length * 0.75) / 1024;
+      console.log(`📊 Data URI size: ${sizeKB.toFixed(2)} KB`);
+      
+      if (sizeKB > 4096) {
+        console.log('⚠️ Image too large, attempting compression...');
+        return await compressImageToBase64(sanitizedUri, 4096);
+      }
+      
       return base64Part;
     }
 
@@ -1281,20 +1368,27 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
         enhancedPrompt += `\n\nREGION CONSTRAINT: Limit edits strictly to the rectangular region: left ${pct(r.x)}%, top ${pct(r.y)}%, width ${pct(r.width)}%, height ${pct(r.height)}% of the canvas. Do NOT modify pixels outside this box.`;
       }
       try {
-        const mainImageBase64 = await convertImageToBase64(currentImage);
+        // Compress main image before sending to API
+        console.log('📤 Preparing main image for API...');
+        const mainImageBase64 = await compressImageToBase64(currentImage, 4096); // 4MB limit
         if (!mainImageBase64 || mainImageBase64.length === 0) {
-          throw new Error('Failed to convert main image to base64');
+          throw new Error('Failed to compress main image');
         }
+        console.log('✅ Main image prepared successfully');
+        
         const images = [{ type: 'image' as const, image: mainImageBase64 }];
         if (referenceImages.length > 0) {
-          for (const refImage of referenceImages) {
+          console.log(`📤 Preparing ${referenceImages.length} reference images...`);
+          for (let i = 0; i < referenceImages.length; i++) {
             try {
-              const refBase64 = await convertImageToBase64(refImage);
+              console.log(`🔄 Compressing reference image ${i + 1}/${referenceImages.length}...`);
+              const refBase64 = await compressImageToBase64(referenceImages[i], 2048); // 2MB limit for reference images
               if (refBase64) {
                 images.push({ type: 'image' as const, image: refBase64 });
+                console.log(`✅ Reference image ${i + 1} prepared successfully`);
               }
             } catch (e) {
-              console.warn('Failed to convert reference image, skipping:', e);
+              console.warn(`⚠️ Failed to compress reference image ${i + 1}, skipping:`, e);
             }
           }
         }
@@ -1920,11 +2014,14 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
 
       console.log('🚀 Starting quality enhancement with advanced AI sharpening and detail boost...');
       
-      // Convert image to base64
-      const imageBase64 = await convertImageToBase64(imageToUpscale);
+      // Compress image before upscaling
+      console.log('📤 Preparing image for quality enhancement...');
+      const imageBase64 = await compressImageToBase64(imageToUpscale, 4096);
       if (!imageBase64 || imageBase64.length === 0) {
-        throw new Error('Failed to convert image to base64 for upscaling');
+        throw new Error('Failed to compress image for quality enhancement');
       }
+      console.log('✅ Image prepared for quality enhancement');
+      
 
       // ENHANCED QUALITY IMPROVEMENT PROMPT
       // Note: This uses an image editing API, not a dedicated upscaling service
