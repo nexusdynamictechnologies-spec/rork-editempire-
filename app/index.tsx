@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Upload, Sparkles, Zap, Palette, Film, BookOpen, Heart, X } from 'lucide-react-native';
+import { Upload, Sparkles, Zap, Palette, Film, BookOpen, Heart, X, Mail } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 
@@ -387,6 +387,31 @@ export default function HomeScreen() {
                 </View>
               ))}
             </View>
+          </View>
+
+          {/* Contact Button */}
+          <View style={styles.contactSection}>
+            <TouchableOpacity
+              style={styles.contactButton}
+              onPress={() => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(e => console.warn('Haptics failed:', e));
+                }
+                router.push('/contact');
+              }}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['rgba(99, 102, 241, 0.15)', 'rgba(139, 92, 246, 0.15)']}
+                style={styles.contactGradient}
+              >
+                <Mail size={24} color="#6366F1" strokeWidth={2} />
+                <View style={styles.contactTextContainer}>
+                  <Text style={styles.contactTitle}>Contact Information</Text>
+                  <Text style={styles.contactSubtitle}>Get in touch with our team</Text>
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
 
           {/* Footer with Attribution */}
@@ -841,6 +866,36 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   instructionsSubtitle: {
+    fontSize: 13,
+    color: '#999',
+  },
+  contactSection: {
+    paddingHorizontal: 20,
+    marginBottom: 30,
+  },
+  contactButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  contactGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.3)',
+    borderRadius: 16,
+  },
+  contactTextContainer: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  contactTitle: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  contactSubtitle: {
     fontSize: 13,
     color: '#999',
   },

@@ -62,6 +62,7 @@ function RootLayoutNav() {
       <Stack.Screen name="instructions" options={{ headerShown: false }} />
       <Stack.Screen name="smart-help" options={{ headerShown: false }} />
       <Stack.Screen name="camera-angles" options={{ headerShown: false }} />
+      <Stack.Screen name="contact" options={{ headerShown: false }} />
       <Stack.Screen 
         name="export" 
         options={{ 
