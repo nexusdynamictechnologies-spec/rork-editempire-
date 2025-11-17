@@ -1003,6 +1003,72 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
     return prompt;
   }, [referenceImages, validatePromptContent, extractCharacterFromPrompt]);
 
+  const ensureFileUri = useCallback(async (uri: string): Promise<string> => {
+    try {
+      if (uri.startsWith('data:')) {
+        if (Platform.OS === 'web') {
+          return uri;
+        }
+        
+        if (!FileSystem || !FileSystem.EncodingType || typeof FileSystem.EncodingType !== 'object' || typeof FileSystem.EncodingType.Base64 === 'undefined') {
+          console.warn('FileSystem not available on this platform, returning data URI as-is');
+          return uri;
+        }
+        
+        const parts = uri.split(',');
+        if (parts.length !== 2) {
+          throw new Error('Invalid data URI format');
+        }
+        const [header, data] = parts;
+        if (!data) {
+          throw new Error('No data in URI');
+        }
+        const mime = (header.split(';')[0] || '').replace('data:', '') || 'image/png';
+        const ext = mime.includes('png') ? 'png' : (mime.includes('jpeg') || mime.includes('jpg')) ? 'jpg' : 'png';
+        const filename = `img_${Date.now()}.${ext}`;
+        const cacheDir = FileSystem.cacheDirectory || FileSystem.documentDirectory || '';
+        const fileUri = `${cacheDir}${filename}`;
+        
+        await FileSystem.writeAsStringAsync(fileUri, data, { encoding: FileSystem.EncodingType.Base64 });
+        return fileUri;
+      }
+      return uri;
+    } catch (e) {
+      console.error('ensureFileUri error:', e);
+      const errorMessage = e instanceof Error ? e.message : 'Failed to prepare image for export';
+      throw new Error(errorMessage);
+    }
+  }, []);
+
+  const getImageDimensions = useCallback(async (uri: string): Promise<{ width: number; height: number }> => {
+    return new Promise((resolve, reject) => {
+      try {
+        if (!uri || !uri.trim()) {
+          reject(new Error('Image URI is required to get dimensions'));
+          return;
+        }
+        
+        Image.getSize(
+          uri,
+          (width: number, height: number) => {
+            if (width > 0 && height > 0) {
+              resolve({ width, height });
+            } else {
+              reject(new Error('Invalid image dimensions received'));
+            }
+          },
+          (err) => {
+            console.error('❌ Image.getSize error:', err);
+            reject(new Error(`Failed to get image dimensions: ${err}`));
+          }
+        );
+      } catch (error) {
+        console.error('❌ getImageDimensions error:', error);
+        reject(error);
+      }
+    });
+  }, []);
+
   const compressImageToBase64 = useCallback(async (imageUri: string, maxSizeKB: number = 4096): Promise<string> => {
     console.log('🔄 Compressing image to stay under', maxSizeKB, 'KB...');
     
@@ -1601,72 +1667,6 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
       }
     }
   }, [sourceImage, editedImage, referenceImages, buildEnhancedPrompt, convertImageToBase64, setIsEditLoading, addToHistory]);
-
-  const ensureFileUri = useCallback(async (uri: string): Promise<string> => {
-    try {
-      if (uri.startsWith('data:')) {
-        if (Platform.OS === 'web') {
-          return uri;
-        }
-        
-        if (!FileSystem || !FileSystem.EncodingType || typeof FileSystem.EncodingType !== 'object' || typeof FileSystem.EncodingType.Base64 === 'undefined') {
-          console.warn('FileSystem not available on this platform, returning data URI as-is');
-          return uri;
-        }
-        
-        const parts = uri.split(',');
-        if (parts.length !== 2) {
-          throw new Error('Invalid data URI format');
-        }
-        const [header, data] = parts;
-        if (!data) {
-          throw new Error('No data in URI');
-        }
-        const mime = (header.split(';')[0] || '').replace('data:', '') || 'image/png';
-        const ext = mime.includes('png') ? 'png' : (mime.includes('jpeg') || mime.includes('jpg')) ? 'jpg' : 'png';
-        const filename = `img_${Date.now()}.${ext}`;
-        const cacheDir = FileSystem.cacheDirectory || FileSystem.documentDirectory || '';
-        const fileUri = `${cacheDir}${filename}`;
-        
-        await FileSystem.writeAsStringAsync(fileUri, data, { encoding: FileSystem.EncodingType.Base64 });
-        return fileUri;
-      }
-      return uri;
-    } catch (e) {
-      console.error('ensureFileUri error:', e);
-      const errorMessage = e instanceof Error ? e.message : 'Failed to prepare image for export';
-      throw new Error(errorMessage);
-    }
-  }, []);
-
-  const getImageDimensions = useCallback(async (uri: string): Promise<{ width: number; height: number }> => {
-    return new Promise((resolve, reject) => {
-      try {
-        if (!uri || !uri.trim()) {
-          reject(new Error('Image URI is required to get dimensions'));
-          return;
-        }
-        
-        Image.getSize(
-          uri,
-          (width: number, height: number) => {
-            if (width > 0 && height > 0) {
-              resolve({ width, height });
-            } else {
-              reject(new Error('Invalid image dimensions received'));
-            }
-          },
-          (err) => {
-            console.error('❌ Image.getSize error:', err);
-            reject(new Error(`Failed to get image dimensions: ${err}`));
-          }
-        );
-      } catch (error) {
-        console.error('❌ getImageDimensions error:', error);
-        reject(error);
-      }
-    });
-  }, []);
 
   const resizeImageIfNeeded = useCallback(async (uri: string, maxSize: number = 2048): Promise<{ uri: string; wasResized: boolean; originalSize: { width: number; height: number }; newSize?: { width: number; height: number } }> => {
     try {
