@@ -1003,6 +1003,35 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
     return prompt;
   }, [referenceImages, validatePromptContent, extractCharacterFromPrompt]);
 
+  const getImageDimensions = useCallback(async (uri: string): Promise<{ width: number; height: number }> => {
+    return new Promise((resolve, reject) => {
+      try {
+        if (!uri || !uri.trim()) {
+          reject(new Error('Image URI is required to get dimensions'));
+          return;
+        }
+        
+        Image.getSize(
+          uri,
+          (width: number, height: number) => {
+            if (width > 0 && height > 0) {
+              resolve({ width, height });
+            } else {
+              reject(new Error('Invalid image dimensions received'));
+            }
+          },
+          (err) => {
+            console.error('❌ Image.getSize error:', err);
+            reject(new Error(`Failed to get image dimensions: ${err}`));
+          }
+        );
+      } catch (error) {
+        console.error('❌ getImageDimensions error:', error);
+        reject(error);
+      }
+    });
+  }, []);
+
   const ensureFileUri = useCallback(async (uri: string): Promise<string> => {
     try {
       if (uri.startsWith('data:')) {
@@ -1038,35 +1067,6 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
       const errorMessage = e instanceof Error ? e.message : 'Failed to prepare image for export';
       throw new Error(errorMessage);
     }
-  }, []);
-
-  const getImageDimensions = useCallback(async (uri: string): Promise<{ width: number; height: number }> => {
-    return new Promise((resolve, reject) => {
-      try {
-        if (!uri || !uri.trim()) {
-          reject(new Error('Image URI is required to get dimensions'));
-          return;
-        }
-        
-        Image.getSize(
-          uri,
-          (width: number, height: number) => {
-            if (width > 0 && height > 0) {
-              resolve({ width, height });
-            } else {
-              reject(new Error('Invalid image dimensions received'));
-            }
-          },
-          (err) => {
-            console.error('❌ Image.getSize error:', err);
-            reject(new Error(`Failed to get image dimensions: ${err}`));
-          }
-        );
-      } catch (error) {
-        console.error('❌ getImageDimensions error:', error);
-        reject(error);
-      }
-    });
   }, []);
 
   const compressImageToBase64 = useCallback(async (imageUri: string, maxSizeKB: number = 4096): Promise<string> => {
@@ -1148,7 +1148,7 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
       const errorMsg = error instanceof Error ? error.message : 'Failed to compress image';
       throw new Error(`Image compression failed: ${errorMsg}. Try using a smaller image.`);
     }
-  }, [ensureFileUri, getImageDimensions]);
+  }, [getImageDimensions, ensureFileUri]);
 
   const convertImageToBase64 = useCallback(async (imageUri: string): Promise<string> => {
     try {
@@ -1234,7 +1234,7 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
       const errorMsg = error instanceof Error ? error.message : 'Failed to convert image';
       throw new Error(`Image conversion failed: ${errorMsg}`);
     }
-  }, [compressImageToBase64]);
+  }, [ensureFileUri, compressImageToBase64]);
 
   const fetchJsonWithRetries = useCallback(async (url: string, body: unknown, opts?: { retries?: number; timeoutMs?: number }): Promise<any> => {
     const maxRetries = opts?.retries ?? 3;
