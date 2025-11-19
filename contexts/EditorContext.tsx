@@ -15,7 +15,7 @@ import { enhancePromptWithGMCVehicle } from '@/constants/gmcVehicles';
 import { enhancePromptWithMaterialsKnowledge } from '@/constants/materials';
 import { enhancePromptWithShoeKnowledge } from '@/constants/shoes';
 import { enhancePromptWithVehicleKnowledge } from '@/constants/vehicles';
-import * as FileSystemLegacy from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as MediaLibrary from 'expo-media-library';
 
@@ -1039,7 +1039,7 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
           return uri;
         }
         
-        if (!FileSystemLegacy?.cacheDirectory) {
+        if (!FileSystem.cacheDirectory) {
           console.warn('FileSystem not available on this platform, returning data URI as-is');
           return uri;
         }
@@ -1055,9 +1055,9 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
         const mime = (header.split(';')[0] || '').replace('data:', '') || 'image/png';
         const ext = mime.includes('png') ? 'png' : (mime.includes('jpeg') || mime.includes('jpg')) ? 'jpg' : 'png';
         const filename = `img_${Date.now()}.${ext}`;
-        const fileUri = `${FileSystemLegacy.cacheDirectory}${filename}`;
+        const fileUri = `${FileSystem.cacheDirectory}${filename}`;
         
-        await FileSystemLegacy.writeAsStringAsync(fileUri, data, { encoding: FileSystemLegacy.EncodingType.Base64 });
+        await FileSystem.writeAsStringAsync(fileUri, data, { encoding: FileSystem.EncodingType.Base64 });
         return fileUri;
       }
       return uri;
@@ -1175,11 +1175,11 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
 
     if (Platform.OS !== 'web' && (sanitizedUri.startsWith('file://') || sanitizedUri.startsWith('content://'))) {
       try {
-        if (!FileSystemLegacy?.readAsStringAsync) {
+        if (!FileSystem.readAsStringAsync) {
           console.warn('FileSystem Base64 not available, falling back to fetch');
           throw new Error('FileSystem not available');
         }
-        const base64 = await FileSystemLegacy.readAsStringAsync(sanitizedUri, { encoding: FileSystemLegacy.EncodingType.Base64 });
+        const base64 = await FileSystem.readAsStringAsync(sanitizedUri, { encoding: FileSystem.EncodingType.Base64 });
         if (!base64 || base64.length === 0) {
           throw new Error('Empty file data');
         }
