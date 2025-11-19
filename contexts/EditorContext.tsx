@@ -1039,7 +1039,8 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
           return uri;
         }
         
-        if (!FileSystem || !FileSystem.EncodingType || typeof FileSystem.EncodingType !== 'object' || typeof FileSystem.EncodingType.Base64 === 'undefined') {
+        const fsModule = FileSystem as any;
+        if (!fsModule?.writeAsStringAsync || !fsModule?.EncodingType?.Base64) {
           console.warn('FileSystem not available on this platform, returning data URI as-is');
           return uri;
         }
@@ -1055,10 +1056,10 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
         const mime = (header.split(';')[0] || '').replace('data:', '') || 'image/png';
         const ext = mime.includes('png') ? 'png' : (mime.includes('jpeg') || mime.includes('jpg')) ? 'jpg' : 'png';
         const filename = `img_${Date.now()}.${ext}`;
-        const cacheDir = FileSystem.cacheDirectory || FileSystem.documentDirectory || '';
+        const cacheDir = fsModule.cacheDirectory || fsModule.documentDirectory || '';
         const fileUri = `${cacheDir}${filename}`;
         
-        await FileSystem.writeAsStringAsync(fileUri, data, { encoding: FileSystem.EncodingType.Base64 });
+        await fsModule.writeAsStringAsync(fileUri, data, { encoding: fsModule.EncodingType.Base64 });
         return fileUri;
       }
       return uri;
@@ -1176,11 +1177,12 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
 
     if (Platform.OS !== 'web' && (sanitizedUri.startsWith('file://') || sanitizedUri.startsWith('content://'))) {
       try {
-        if (!FileSystem || !FileSystem.readAsStringAsync || !FileSystem.EncodingType || typeof FileSystem.EncodingType !== 'object' || typeof FileSystem.EncodingType.Base64 === 'undefined') {
+        const fsModule = FileSystem as any;
+        if (!fsModule?.readAsStringAsync || !fsModule?.EncodingType?.Base64) {
           console.warn('FileSystem Base64 not available, falling back to fetch');
           throw new Error('FileSystem not available');
         }
-        const base64 = await FileSystem.readAsStringAsync(sanitizedUri, { encoding: FileSystem.EncodingType.Base64 });
+        const base64 = await fsModule.readAsStringAsync(sanitizedUri, { encoding: fsModule.EncodingType.Base64 });
         if (!base64 || base64.length === 0) {
           throw new Error('Empty file data');
         }
