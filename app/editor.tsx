@@ -2501,7 +2501,7 @@ async function getBase64FromUri(uri: string): Promise<string> {
       });
     } else {
       const FS = await import('expo-file-system');
-      const b64 = await FS.readAsStringAsync(uri, { encoding: FS.EncodingType.Base64 });
+      const b64 = await FS.readAsStringAsync(uri, { encoding: 'base64' });
       return b64;
     }
   } catch (e) {
