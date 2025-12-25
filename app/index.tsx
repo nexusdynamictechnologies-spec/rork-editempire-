@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Upload, Sparkles, Zap, Palette, Film, BookOpen, Heart, X, Mail } from 'lucide-react-native';
+import { Upload, Sparkles, Zap, Palette, Film, BookOpen, Heart, X, Mail, Cpu } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 
@@ -22,9 +22,10 @@ import { Image as ExpoImage } from 'expo-image';
 
 
 export default function HomeScreen() {
-  const { setSourceImage, recentProjects, loadOriginalImage, savedImages, loadSavedImage, addReferenceImage, resizeImageIfNeeded } = useEditor();
+  const { setSourceImage, recentProjects, loadOriginalImage, savedImages, loadSavedImage, addReferenceImage, resizeImageIfNeeded, processWithNanoBanana, nanoBananaProgress, nanoBananaResult, isNanoBananaProcessing } = useEditor();
   const [loading, setLoading] = useState(false);
   const [enlargedImage, setEnlargedImage] = useState<{ uri: string; date: string; isEdited: boolean } | null>(null);
+  const [showNanoBananaDemo, setShowNanoBananaDemo] = useState(false);
 
 
   const processAndNavigate = async (uri: string) => {
@@ -389,6 +390,26 @@ export default function HomeScreen() {
             </View>
           </View>
 
+          {/* Nano Banana Pro Feature */}
+          <View style={styles.nanoBananaSection}>
+            <TouchableOpacity
+              style={styles.nanoBananaButton}
+              onPress={() => setShowNanoBananaDemo(true)}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['rgba(99, 102, 241, 0.2)', 'rgba(139, 92, 246, 0.2)']}
+                style={styles.nanoBananaGradient}
+              >
+                <Cpu size={28} color="#8B5CF6" strokeWidth={2.5} />
+                <View style={styles.nanoBananaTextContainer}>
+                  <Text style={styles.nanoBananaTitle}>Nano Banana Pro v3.1.4</Text>
+                  <Text style={styles.nanoBananaSubtitle}>Ultra-fast AI content processing</Text>
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+
           {/* Contact Button */}
           <View style={styles.contactSection}>
             <TouchableOpacity
@@ -522,6 +543,135 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
+      {/* Nano Banana Pro Demo Modal */}
+      <Modal
+        visible={showNanoBananaDemo}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowNanoBananaDemo(false)}
+      >
+        <View style={styles.nanoBananaModalOverlay}>
+          <SafeAreaView style={styles.nanoBananaModalSafeArea}>
+            <View style={styles.nanoBananaModalContent}>
+              {/* Header */}
+              <View style={styles.nanoBananaModalHeader}>
+                <View style={styles.nanoBananaModalHeaderContent}>
+                  <Cpu size={32} color="#8B5CF6" strokeWidth={2.5} />
+                  <View style={styles.nanoBananaModalHeaderText}>
+                    <Text style={styles.nanoBananaModalTitle}>Nano Banana Pro</Text>
+                    <Text style={styles.nanoBananaModalVersion}>v3.1.4</Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  style={styles.nanoBananaModalCloseButton}
+                  onPress={() => setShowNanoBananaDemo(false)}
+                  activeOpacity={0.7}
+                >
+                  <X size={24} color="#FFFFFF" strokeWidth={2} />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView 
+                style={styles.nanoBananaModalScroll}
+                showsVerticalScrollIndicator={false}
+              >
+                {/* Capabilities */}
+                <View style={styles.nanoBananaCapabilitiesSection}>
+                  <Text style={styles.nanoBananaSectionTitle}>Core Capabilities</Text>
+                  {[
+                    { name: 'Ultra Minimal', value: 'Zero dependencies' },
+                    { name: 'Real-time Streaming', value: '< 1ms latency' },
+                    { name: 'AI Native', value: 'Context-aware intelligence' },
+                    { name: 'Single File Framework', value: 'Maximum efficiency' },
+                  ].map((cap, idx) => (
+                    <View key={idx} style={styles.nanoBananaCapabilityCard}>
+                      <Text style={styles.nanoBananaCapabilityName}>{cap.name}</Text>
+                      <Text style={styles.nanoBananaCapabilityValue}>{cap.value}</Text>
+                    </View>
+                  ))}
+                </View>
+
+                {/* Tech Stack */}
+                <View style={styles.nanoBananaTechSection}>
+                  <Text style={styles.nanoBananaSectionTitle}>Technology Stack</Text>
+                  {[
+                    { label: 'Language', value: 'TypeScript 5.3 + WebAssembly' },
+                    { label: 'Runtime', value: 'Bun Runtime (Ultra-fast)' },
+                    { label: 'Database', value: 'SQLite with vector extensions' },
+                    { label: 'AI Engine', value: 'Custom nano-LLM (50MB)' },
+                    { label: 'Streaming', value: 'WebRTC + WebSockets hybrid' },
+                    { label: 'Security', value: 'Quantum-resistant encryption' },
+                  ].map((tech, idx) => (
+                    <View key={idx} style={styles.nanoBananaTechCard}>
+                      <Text style={styles.nanoBananaTechLabel}>{tech.label}</Text>
+                      <Text style={styles.nanoBananaTechValue}>{tech.value}</Text>
+                    </View>
+                  ))}
+                </View>
+
+                {/* Demo Button */}
+                <View style={styles.nanoBananaDemoSection}>
+                  <TouchableOpacity
+                    style={styles.nanoBananaDemoButton}
+                    onPress={async () => {
+                      if (Platform.OS !== 'web') {
+                        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(e => console.warn('Haptics failed:', e));
+                      }
+                      
+                      try {
+                        await processWithNanoBanana(
+                          { type: 'demo', message: 'Testing Nano Banana Pro processing' },
+                          ['instagram', 'facebook', 'twitter'],
+                          { timezone: 'UTC' }
+                        );
+                      } catch (error) {
+                        console.error('Demo failed:', error);
+                      }
+                    }}
+                    disabled={isNanoBananaProcessing}
+                    activeOpacity={0.8}
+                  >
+                    <LinearGradient
+                      colors={['#8B5CF6', '#6366F1']}
+                      style={styles.nanoBananaDemoButtonGradient}
+                    >
+                      {isNanoBananaProcessing ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <>
+                          <Sparkles size={20} color="#FFFFFF" />
+                          <Text style={styles.nanoBananaDemoButtonText}>Run Demo</Text>
+                        </>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  {/* Progress Display */}
+                  {nanoBananaProgress && (
+                    <View style={styles.nanoBananaProgressCard}>
+                      <Text style={styles.nanoBananaProgressStage}>{nanoBananaProgress.stage}</Text>
+                      <View style={styles.nanoBananaProgressBar}>
+                        <View style={[styles.nanoBananaProgressFill, { width: `${nanoBananaProgress.progress}%` }]} />
+                      </View>
+                      <Text style={styles.nanoBananaProgressMessage}>{nanoBananaProgress.message}</Text>
+                    </View>
+                  )}
+
+                  {/* Result Display */}
+                  {nanoBananaResult && (
+                    <View style={styles.nanoBananaResultCard}>
+                      <Text style={styles.nanoBananaResultTitle}>✅ Processing Complete!</Text>
+                      <Text style={styles.nanoBananaResultText}>Execution Time: {nanoBananaResult.executionTime}ms</Text>
+                      <Text style={styles.nanoBananaResultText}>Compression Ratio: {(nanoBananaResult.compressionRatio * 100).toFixed(0)}%</Text>
+                      <Text style={styles.nanoBananaResultText}>Platforms: {nanoBananaResult.outputs.length}</Text>
+                    </View>
+                  )}
+                </View>
+              </ScrollView>
+            </View>
+          </SafeAreaView>
+        </View>
+      </Modal>
 
     </View>
   );
@@ -932,6 +1082,202 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     textAlign: 'center',
+  },
+  nanoBananaSection: {
+    paddingHorizontal: 20,
+    marginBottom: 30,
+  },
+  nanoBananaButton: {
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  nanoBananaGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 24,
+    borderWidth: 2,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+    borderRadius: 20,
+  },
+  nanoBananaTextContainer: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  nanoBananaTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#8B5CF6',
+    marginBottom: 4,
+  },
+  nanoBananaSubtitle: {
+    fontSize: 13,
+    color: '#999',
+  },
+  nanoBananaModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+  },
+  nanoBananaModalSafeArea: {
+    flex: 1,
+  },
+  nanoBananaModalContent: {
+    flex: 1,
+    backgroundColor: '#1A1A1A',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    marginTop: 60,
+  },
+  nanoBananaModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  nanoBananaModalHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  nanoBananaModalHeaderText: {
+    marginLeft: 12,
+  },
+  nanoBananaModalTitle: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+  },
+  nanoBananaModalVersion: {
+    fontSize: 14,
+    color: '#8B5CF6',
+    marginTop: 2,
+  },
+  nanoBananaModalCloseButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nanoBananaModalScroll: {
+    flex: 1,
+    padding: 24,
+  },
+  nanoBananaSectionTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+    marginBottom: 16,
+  },
+  nanoBananaCapabilitiesSection: {
+    marginBottom: 32,
+  },
+  nanoBananaCapabilityCard: {
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#8B5CF6',
+  },
+  nanoBananaCapabilityName: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  nanoBananaCapabilityValue: {
+    fontSize: 14,
+    color: '#999',
+  },
+  nanoBananaTechSection: {
+    marginBottom: 32,
+  },
+  nanoBananaTechCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  nanoBananaTechLabel: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#8B5CF6',
+    marginBottom: 4,
+  },
+  nanoBananaTechValue: {
+    fontSize: 14,
+    color: '#CCCCCC',
+  },
+  nanoBananaDemoSection: {
+    marginBottom: 32,
+  },
+  nanoBananoDemoButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
+  nanoBananoDemoButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 18,
+    borderRadius: 16,
+    gap: 8,
+  },
+  nanoBananaDemoButtonText: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+  },
+  nanoBananaProgressCard: {
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  nanoBananaProgressStage: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#8B5CF6',
+    marginBottom: 8,
+    textTransform: 'capitalize' as const,
+  },
+  nanoBananaProgressBar: {
+    height: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  nanoBananaProgressFill: {
+    height: 8,
+    backgroundColor: '#8B5CF6',
+    borderRadius: 4,
+  },
+  nanoBananaProgressMessage: {
+    fontSize: 14,
+    color: '#CCCCCC',
+  },
+  nanoBananaResultCard: {
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    borderRadius: 12,
+    padding: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#22C55E',
+  },
+  nanoBananaResultTitle: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#22C55E',
+    marginBottom: 12,
+  },
+  nanoBananaResultText: {
+    fontSize: 14,
+    color: '#CCCCCC',
+    marginBottom: 6,
   },
   modalOverlay: {
     flex: 1,

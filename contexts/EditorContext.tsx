@@ -18,6 +18,7 @@ import { enhancePromptWithVehicleKnowledge } from '@/constants/vehicles';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as MediaLibrary from 'expo-media-library';
+import nanoBananaPro, { ExecutionProgress, ExecutionResult } from '@/utils/nanoBananaPro';
 
 
 
@@ -87,6 +88,10 @@ export const [EditorProvider, useEditor] = createContextHook(() => {
   const [isEditLoading, setIsEditLoading] = useState(false);
   const [isUpscaleLoading, setIsUpscaleLoading] = useState(false);
   const [lastRenderedVideoUrl, setLastRenderedVideoUrl] = useState<string | null>(null);
+
+  const [nanoBananaProgress, setNanoBananaProgress] = useState<ExecutionProgress | null>(null);
+  const [nanoBananaResult, setNanoBananaResult] = useState<ExecutionResult | null>(null);
+  const [isNanoBananaProcessing, setIsNanoBananaProcessing] = useState(false);
 
   useEffect(() => {
     loadRecentProjects();
@@ -2375,6 +2380,38 @@ Deliver MAXIMUM QUALITY with EXCEPTIONAL CLARITY that reveals every intricate de
     });
   }, []);
 
+  const processWithNanoBanana = useCallback(async (
+    content: any,
+    platforms: string[],
+    scheduleConfig?: { timezone?: string; optimalTimes?: Date[] }
+  ) => {
+    console.log('🍌 Starting Nano Banana Pro processing...');
+    setIsNanoBananaProcessing(true);
+    setNanoBananaProgress(null);
+    setNanoBananaResult(null);
+
+    try {
+      const result = await nanoBananaPro.processContent(
+        content,
+        platforms,
+        scheduleConfig || {},
+        (progress) => {
+          setNanoBananaProgress(progress);
+          console.log(`Progress: ${progress.stage} - ${progress.progress}%`);
+        }
+      );
+
+      setNanoBananaResult(result);
+      console.log('✅ Nano Banana Pro processing complete!', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Nano Banana Pro processing failed:', error);
+      throw error;
+    } finally {
+      setIsNanoBananaProcessing(false);
+    }
+  }, []);
+
   return useMemo(() => ({
     sourceImage,
     setSourceImage,
@@ -2409,6 +2446,10 @@ Deliver MAXIMUM QUALITY with EXCEPTIONAL CLARITY that reveals every intricate de
     undoOne,
     undoAll,
     revertToHistoryIndex,
+    processWithNanoBanana,
+    nanoBananaProgress,
+    nanoBananaResult,
+    isNanoBananaProcessing,
   }), [
     sourceImage,
     editedImage,
@@ -2440,5 +2481,9 @@ Deliver MAXIMUM QUALITY with EXCEPTIONAL CLARITY that reveals every intricate de
     undoOne,
     undoAll,
     revertToHistoryIndex,
+    processWithNanoBanana,
+    nanoBananaProgress,
+    nanoBananaResult,
+    isNanoBananaProcessing,
   ]);
 });
