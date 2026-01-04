@@ -612,7 +612,7 @@ export default function HomeScreen() {
                 {/* Demo Button */}
                 <View style={styles.nanoBananaDemoSection}>
                   <TouchableOpacity
-                    style={styles.nanoBananaDemoButton}
+                    style={styles.nanoBananoDemoButton}
                     onPress={async () => {
                       if (Platform.OS !== 'web') {
                         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(e => console.warn('Haptics failed:', e));
@@ -633,7 +633,7 @@ export default function HomeScreen() {
                   >
                     <LinearGradient
                       colors={['#8B5CF6', '#6366F1']}
-                      style={styles.nanoBananaDemoButtonGradient}
+                      style={styles.nanoBananoDemoButtonGradient}
                     >
                       {isNanoBananaProcessing ? (
                         <ActivityIndicator size="small" color="#FFFFFF" />
