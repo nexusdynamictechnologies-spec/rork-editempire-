@@ -1063,7 +1063,9 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
         const filename = `img_${Date.now()}.${ext}`;
         const fileUri = `${cacheDir}/${filename}`;
         
-        await FileSystem.writeAsStringAsync(fileUri, data, { encoding: 'base64' } as any);
+        await FileSystem.writeAsStringAsync(fileUri, data, { 
+          encoding: 'base64' 
+        });
         return fileUri;
       }
       return uri;
@@ -1185,7 +1187,9 @@ This is a PRECISION OPERATION. Accuracy and consistency are paramount. The resul
           console.warn('FileSystem Base64 not available, falling back to fetch');
           throw new Error('FileSystem not available');
         }
-        const base64 = await FileSystem.readAsStringAsync(sanitizedUri, { encoding: 'base64' } as any);
+        const base64 = await FileSystem.readAsStringAsync(sanitizedUri, { 
+          encoding: 'base64' 
+        });
         if (!base64 || base64.length === 0) {
           throw new Error('Empty file data');
         }
